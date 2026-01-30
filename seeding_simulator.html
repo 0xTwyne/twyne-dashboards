@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twyne Seeding Simulation</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0f1419;
+            --bg-secondary: #1a1f2e;
+            --bg-card: #232b3b;
+            --text-primary: #e8eaed;
+            --text-secondary: #9aa0a6;
+            --accent-blue: #4a9bb5;
+            --accent-orange: #ef6c00;
+            --accent-green: #4caf50;
+            --accent-purple: #9c7cf4;
+            --accent-amber: #e0a732;
+            --border-color: #3a4556;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            min-height: 100vh;
+            transition: grid-template-columns 0.3s ease;
+        }
+        .container.sidebar-closed {
+            grid-template-columns: 0px 1fr;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--bg-secondary);
+            padding: 24px;
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            overflow-x: hidden;
+            max-height: 100vh;
+            position: sticky;
+            top: 0;
+            transition: padding 0.3s ease, opacity 0.2s ease;
+        }
+        .sidebar-closed .sidebar {
+            padding: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .sidebar-header span {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .sidebar-toggle {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sidebar-toggle:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+        .sidebar-open-btn {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: 1px solid rgba(156,124,244,0.35);
+            background: rgba(156,124,244,0.08);
+            color: var(--accent-purple);
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            margin-bottom: 16px;
+            align-self: flex-start;
+        }
+        .sidebar-open-btn:hover {
+            background: rgba(156,124,244,0.15);
+            border-color: rgba(156,124,244,0.5);
+        }
+        .sidebar-closed .sidebar-open-btn {
+            display: flex;
+        }
+
+        .sidebar h1 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: var(--accent-blue);
+        }
+
+        .sidebar .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .section {
+            margin-bottom: 24px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        details > summary {
+            list-style: none;
+        }
+        details > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details.section summary.section-header {
+            list-style: none;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            margin-bottom: 0;
+            padding: 10px 12px;
+            border-radius: 6px;
+            border-bottom: none;
+            background: rgba(255, 255, 255, 0.03);
+            transition: background 0.15s;
+        }
+        details.section summary.section-header:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        details.section summary.section-header::-webkit-details-marker {
+            display: none;
+        }
+        details.section summary.section-header::after {
+            content: '▾';
+            font-size: 1rem;
+            color: var(--text-secondary);
+            transition: transform 0.2s;
+        }
+        details:not([open]).section summary.section-header::after {
+            content: '▸';
+        }
+        details[open].section summary.section-header {
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            border-radius: 6px 6px 0 0;
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .input-wrapper.has-prefix input {
+            padding-left: 24px;
+        }
+
+        .input-wrapper.has-suffix input {
+            padding-right: 28px;
+        }
+
+        .input-prefix, .input-suffix {
+            position: absolute;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+
+        .input-prefix {
+            left: 10px;
+        }
+
+        .input-suffix {
+            right: 10px;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .stat-display {
+            background: var(--bg-card);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            padding: 4px 0;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: var(--accent-blue);
+        }
+
+        .stat-value.positive {
+            color: var(--accent-green);
+        }
+
+        .stat-value.warning {
+            color: var(--accent-orange);
+        }
+
+        /* Main Content */
+        .main {
+            padding: 24px 32px;
+            overflow-y: auto;
+        }
+
+        .main h2 {
+            font-size: 1.25rem;
+            margin-bottom: 8px;
+        }
+
+        .main .description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+
+        .chart-container {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .chart-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hf-range-controls {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .hf-range-controls label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .hf-range-controls input {
+            width: 80px;
+            padding: 6px 10px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+        }
+
+        .tables-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 14px 20px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        #tvlTradeoffTable th {
+            background: rgba(156,124,244,0.1);
+            color: var(--accent-purple);
+        }
+
+        th[data-tip] {
+            cursor: help;
+        }
+
+        #tip {
+            position: fixed;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 0.75rem;
+            font-weight: 400;
+            line-height: 1.5;
+            max-width: 260px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 9999;
+        }
+
+        td {
+            font-variant-numeric: tabular-nums;
+        }
+
+        #tvlTradeoffTable {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            width: 100%;
+        }
+
+        #tvlTradeoffTable colgroup {
+            display: none;
+        }
+
+        #tvlTradeoffTable thead,
+        #tvlTradeoffTable tbody {
+            display: contents;
+        }
+
+        #tvlTradeoffTable tr {
+            display: grid;
+            grid-template-columns: subgrid;
+            grid-column: 1 / -1;
+        }
+
+        #tvlTradeoffTable th,
+        #tvlTradeoffTable td {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            padding: 11px 16px;
+        }
+
+
+        #tvlTradeoffTable tbody tr:not(.box-single) {
+            cursor: pointer;
+        }
+        #tvlTradeoffTable tbody tr:not(.box-single):hover td:last-child .row-select-icon {
+            opacity: 0.4;
+        }
+        #tvlTradeoffTable tbody tr.selected td:last-child .row-select-icon {
+            opacity: 1;
+        }
+        .row-select-icon {
+            opacity: 0;
+            transition: opacity 0.15s ease;
+            color: var(--accent-purple);
+            font-size: 0.7rem;
+            margin-left: 12px;
+            vertical-align: middle;
+        }
+
+        #tvlTradeoffTable tr.box-single {
+            border: 1px solid rgba(156,124,244,0.3);
+            border-radius: 8px;
+            margin-bottom: 6px;
+            background: rgba(156,124,244,0.03);
+        }
+
+        #tvlTradeoffTable tr.box-single td {
+            border-bottom: none;
+        }
+
+        #tvlTradeoffTable tr.box-top {
+            border: 1px solid rgba(156,124,244,0.3);
+            border-bottom: none;
+            border-radius: 8px 8px 0 0;
+            background: rgba(156,124,244,0.04);
+        }
+
+        #tvlTradeoffTable tr.box-mid {
+            border-left: 1px solid rgba(156,124,244,0.3);
+            border-right: 1px solid rgba(156,124,244,0.3);
+            background: rgba(156,124,244,0.03);
+        }
+
+        #tvlTradeoffTable tr.box-bottom {
+            border-left: 1px solid rgba(156,124,244,0.3);
+            border-right: 1px solid rgba(156,124,244,0.3);
+            border-bottom: 1px solid rgba(156,124,244,0.3);
+            border-radius: 0 0 8px 8px;
+            background: rgba(156,124,244,0.03);
+        }
+
+        #tvlTradeoffTable tr.box-bottom td {
+            border-bottom: none;
+        }
+
+        .table-with-labels {
+            display: flex;
+            gap: 0;
+        }
+
+        .table-with-labels table {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .table-labels {
+            width: 56px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            padding-top: 36px; /* skip header row */
+        }
+
+        .table-labels .label-cell {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .table-labels .label-cell img {
+            width: 40px;
+        }
+
+        tr:hover td {
+            background: rgba(74, 155, 181, 0.1);
+        }
+
+        .aave-badge {
+            display: inline-block;
+            background: var(--accent-orange);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 1200px) {
+            .tables-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                position: relative;
+                max-height: none;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container sidebar-closed">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span>Parameters</span>
+                <button class="sidebar-toggle" id="sidebarToggle" title="Close sidebar">&#x2039;</button>
+            </div>
+            <div class="section">
+                <div class="section-header">Creditor Deposit</div>
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-left: 3px solid var(--accent-blue); border-radius: 8px; padding: 12px;">
+                    <div class="input-group">
+                        <label>Amount</label>
+                        <div class="input-wrapper has-prefix">
+                            <span class="input-prefix">$</span>
+                            <input type="text" id="clpDeposited" value="1,000,000" inputmode="numeric">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-header">Rates</div>
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-left: 3px solid var(--accent-purple); border-radius: 8px; padding: 12px;">
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Staking APY</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="stethStaking" value="2.60" step="0.1" min="0" max="20">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Lending APY</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="stethLending" value="0" step="0.1" min="0" max="10">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Borrow APY</label>
+                        <div class="input-wrapper has-suffix">
+                            <input type="number" id="ethBorrow" value="2.10" step="0.1" min="0" max="20">
+                            <span class="input-suffix">%</span>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" id="betaSafe" value="100">
+            </div>
+
+            <div class="section">
+                <div class="section-header">Liquidation LTVs</div>
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-left: 3px solid var(--accent-purple); border-radius: 8px; padding: 12px;">
+                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                        <img src="icons/aave_logo_light.png" alt="Aave" style="width: 64px;">
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Liq LTV</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="liqLtvE" value="95" step="1" min="70" max="98">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Borrow LTV</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="borrowLtvE" value="93" step="1" min="60" max="95">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-left: 3px solid var(--accent-purple); border-radius: 8px; padding: 12px; margin-top: 8px;">
+                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                        <img src="icons/twyne_logo_white_full.png" alt="Twyne" style="width: 64px;">
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Liq LTV</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="liqLtvT" value="98" step="1" min="90" max="99">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Borrow LTV</label>
+                            <span class="stat-value" id="summaryBorrowLtvTwyne" style="font-size: 14px; line-height: 32px; color: var(--accent-purple);">—</span>
+                        </div>
+                    </div>
+                    <div class="stat-display" style="margin-top: 8px;">
+                        <div class="stat-row">
+                            <span class="stat-label">Credit Requirements</span>
+                            <span class="stat-value" id="psiValue">3.16%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <details class="section" style="margin-bottom: 0; margin-top: 12px; --detail-accent: var(--accent-purple);">
+                <summary class="section-header" style="border-left: 3px solid var(--accent-purple);">Interest Rate</summary>
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-left: 3px solid var(--accent-purple); border-radius: 8px; padding: 12px; margin-top: 8px;">
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>I_min</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="iMin" value="0" step="0.1" min="0" max="10">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>I_max</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="iMax" value="15" step="1" min="1" max="50">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>I_0 (kink rate)</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="i0" value="0.8" step="0.1" min="0" max="10">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>u_0 (kink util)</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="u0" value="90" step="1" min="50" max="99">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>gamma</label>
+                            <input type="number" id="gamma" value="32" step="1" min="1" max="100">
+                        </div>
+                        <div class="input-group">
+                            <label>Utilization</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="utilization" value="90" step="1" min="80" max="100">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </aside>
+
+        <main class="main">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 20px; margin-bottom: 16px;">
+                <h2 style="margin: 0; color: var(--accent-purple);">Seeding Simulator</h2>
+                <img src="icons/twyne_logo_white_full.png" alt="Twyne" style="height: 36px;">
+            </div>
+
+            <!-- Seed input box flowing into result cards -->
+            <button class="sidebar-open-btn" id="sidebarOpen" title="Open sidebar">&#x203A; Parameters</button>
+            <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 24px;">
+                <!-- Seed box (centered, compact) -->
+                <div style="background: rgba(74, 155, 181, 0.08); border: 1px solid rgba(74, 155, 181, 0.25); border-radius: 10px; padding: 12px 24px; display: inline-flex; align-items: center; gap: 16px;">
+                    <span style="display: inline-flex; align-items: center; gap: 6px;">
+                        <span style="color: var(--text-secondary); font-size: 0.85rem;">Seed Amount</span>
+                        <strong style="color: var(--accent-blue); font-size: 1.05rem;" id="topSeedAmount">—</strong>
+                    </span>
+                    <span style="width: 1px; height: 18px; background: var(--border-color);"></span>
+                    <span style="display: inline-flex; align-items: center; gap: 6px;">
+                        <span style="color: var(--text-secondary); font-size: 0.85rem;">Creditor Yield</span>
+                        <strong style="color: #4a9bb5; font-size: 1.05rem;" id="topClpYield">—</strong>
+                    </span>
+                </div>
+                <!-- Connector: forking lines with label -->
+                <div style="position: relative; width: 100%; height: 80px;">
+                    <!-- Center vertical stem -->
+                    <div style="position: absolute; left: 50%; top: 0; width: 2px; height: 24px; background: var(--border-color); transform: translateX(-50%);"></div>
+                    <!-- Horizontal bar -->
+                    <div style="position: absolute; left: 25%; right: 25%; top: 24px; height: 2px; background: var(--border-color);"></div>
+                    <!-- Left drop -->
+                    <div style="position: absolute; left: 25%; top: 24px; width: 2px; height: 56px; background: var(--border-color);"></div>
+                    <!-- Right drop -->
+                    <div style="position: absolute; right: 25%; top: 24px; width: 2px; height: 56px; background: var(--border-color);"></div>
+                    <!-- Label -->
+                    <div style="position: absolute; top: 42px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-secondary); background: var(--bg-primary); padding: 2px 16px;">credit delegation unlocks</div>
+                </div>
+                <!-- Result cards -->
+                <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; width: 100%;">
+                    <div style="background: rgba(156, 124, 244, 0.08); border: 1px solid rgba(156, 124, 244, 0.25); border-radius: 12px; padding: 20px;">
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-purple);">Generated TVL Range</div>
+                            <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.7rem; color: var(--text-secondary);">
+                                <span id="tvlToggleLabel">$</span>
+                                <div id="tvlToggle" onclick="toggleTvlMode()" style="width: 32px; height: 18px; background: var(--border-color); border-radius: 9px; position: relative; cursor: pointer; transition: background 0.2s;">
+                                    <div id="tvlToggleKnob" style="width: 14px; height: 14px; background: var(--text-secondary); border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: left 0.2s;"></div>
+                                </div>
+                                <span id="tvlToggleLabelRight">x</span>
+                            </label>
+                        </div>
+                        <div style="font-size: 1.8rem; font-weight: 700; color: var(--text-primary);"><span id="summaryMaxTvl">—</span> <span style="font-size: 1rem; color: var(--text-secondary);">to</span> <span id="summaryMinTvl">—</span></div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">from <span id="summaryClpDeposited">—</span> creditor deposit</div>
+                    </div>
+                    <div style="background: rgba(156, 124, 244, 0.08); border: 1px solid rgba(156, 124, 244, 0.25); border-radius: 12px; padding: 20px;">
+                        <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-purple); margin-bottom: 8px;">Leverage Range</div>
+                        <div style="font-size: 1.8rem; font-weight: 700; color: var(--text-primary);"><span id="summaryLevMin">—</span> <span style="font-size: 1rem; color: var(--text-secondary);">to</span> <span id="summaryLevMax">—</span></div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">Aave alone: <span id="summaryAaveLev">—</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mini charts: TVL and Leverage vs Borrow LTV -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                <div style="background: rgba(156, 124, 244, 0.06); border: 1px solid rgba(156, 124, 244, 0.2); border-radius: 12px; padding: 16px;">
+                    <div id="tvlChartTitle" style="font-size: 0.8rem; font-weight: 600; color: var(--accent-purple); margin-bottom: 8px;">Generated TVL by Borrow LTV</div>
+                    <div id="tvlByLtvChart" style="width: 100%; height: 180px;"></div>
+                </div>
+                <div style="background: rgba(156, 124, 244, 0.06); border: 1px solid rgba(156, 124, 244, 0.2); border-radius: 12px; padding: 16px;">
+                    <div style="font-size: 0.8rem; font-weight: 600; color: var(--accent-purple); margin-bottom: 8px;">Leverage by Borrow LTV</div>
+                    <div id="levByLtvChart" style="width: 100%; height: 180px;"></div>
+                </div>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0 0 20px;">
+                <div style="display: flex; gap: 10px; align-items: flex-start; background: rgba(156, 124, 244, 0.06); border: 1px solid rgba(156, 124, 244, 0.2); border-radius: 8px; padding: 12px 14px;">
+                    <span style="font-size: 0.85rem; flex-shrink: 0; margin-top: 1px;">&#8505;</span>
+                    <span style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.6;">Higher liquidation LTVs require more credit per borrower, reducing supported TVL. Realistic TVL falls between the extremes.</span>
+                </div>
+                <div style="display: flex; gap: 10px; align-items: flex-start; background: rgba(156, 124, 244, 0.06); border: 1px solid rgba(156, 124, 244, 0.2); border-radius: 8px; padding: 12px 14px;">
+                    <span style="font-size: 0.85rem; flex-shrink: 0; margin-top: 1px;">&#8505;</span>
+                    <span style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.6;">Higher leverage reduces total supported TVL, but increases TVL generated per unit of borrower equity.</span>
+                </div>
+            </div>
+
+            <!-- TVL vs LTV Tradeoff Table -->
+            <div class="chart-container" style="background: rgba(156,124,244,0.06); border: 1px solid rgba(156,124,244,0.2);">
+                <div style="display: flex; align-items: center; justify-content: space-between; padding-right: 56px;">
+                    <div class="chart-title" style="color: var(--accent-purple);">TVL Breakdown by LTV</div>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;">Rows</span>
+                        <button id="tradeoffRowMinus" style="width: 26px; height: 26px; border-radius: 6px; border: 1px solid rgba(156,124,244,0.3); background: rgba(156,124,244,0.1); color: var(--accent-purple); font-size: 1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;">−</button>
+                        <span id="tradeoffRowCount" style="font-size: 0.8rem; color: var(--text-primary); min-width: 16px; text-align: center; font-weight: 600;">5</span>
+                        <button id="tradeoffRowPlus" style="width: 26px; height: 26px; border-radius: 6px; border: 1px solid rgba(156,124,244,0.3); background: rgba(156,124,244,0.1); color: var(--accent-purple); font-size: 1rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; line-height: 1;">+</button>
+                    </div>
+                </div>
+                <div class="table-with-labels">
+                    <table id="tvlTradeoffTable">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;" data-tip="Borrower equity needed to fill capacity at max leverage">Borrower Equity</th>
+                                <th style="text-align: left;" data-tip="Leverage multiple: 1 / (1 - Borrow LTV)">Leverage</th>
+                                <th id="netYieldHeader" style="text-align: left; overflow: visible; white-space: normal;" data-tip="Annualized yield including Twyne credit cost">Net Yield <span style="font-weight: 400; font-size: 0.7rem; text-transform: none; letter-spacing: 0; margin-left: 6px;">HF <input type="number" id="tradeoffHfInput" value="1.02" step="0.01" min="1.01" max="1.5" style="width: 46px; padding: 2px 4px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 3px; color: var(--text-primary); font-size: 0.7rem; text-align: center;"></span></th>
+                                <th style="text-align: left;" data-tip="Total looped TVL from looper collateral + creditor deposits">Generated TVL</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <div class="table-labels" id="tableLabels"></div>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; align-items: flex-start; background: rgba(156, 124, 244, 0.06); border: 1px solid rgba(156, 124, 244, 0.2); border-radius: 8px; padding: 12px 14px; margin: 0 0 20px;">
+                <span style="font-size: 0.55rem; flex-shrink: 0; margin-top: 5px; color: var(--accent-purple);">&#9679;</span>
+                <span style="color: var(--text-secondary); font-size: 0.8rem; line-height: 1.6;">
+                    <strong style="color: var(--text-primary);">How to read</strong> <span style="font-size: 0.7rem; opacity: 0.5; margin-left: 10px;">click a row above</span><br><span id="qClpSeed" style="color: var(--text-primary); font-weight: 600;">—</span> in creditor deposits earning <span id="qClpBaseYield" style="color: var(--text-primary); font-weight: 600;">—</span> base + <span id="qClpRate" style="color: var(--text-primary); font-weight: 600;">—</span> delegation yield enables a borrower to deploy <span id="qBorrowerEquity" style="color: var(--text-primary); font-weight: 600;">—</span> at <span id="qLeverage" style="color: var(--text-primary); font-weight: 600;">—</span> leverage, netting <span id="qNetYield" style="color: var(--text-primary); font-weight: 600;">—</span> APY and generating <span id="qGeneratedTvl" style="color: var(--text-primary); font-weight: 600;">—</span> in protocol TVL.
+                </span>
+            </div>
+
+            <!-- Trade-off Section -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+                <div style="background: rgba(74, 155, 181, 0.08); border: 1px solid rgba(74, 155, 181, 0.25); border-radius: 8px; padding: 14px 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                        <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent-blue); font-weight: 600;">Creditor</span>
+                        <span style="font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; background: rgba(74, 155, 181, 0.15); color: var(--accent-blue); font-weight: 600; letter-spacing: 0.5px;">PASSIVE</span>
+                    </div>
+                    <ul style="margin: 0; padding-left: 16px; color: var(--text-secondary); font-size: 0.82rem; line-height: 1.8;">
+                        <li>Staking + Lending + Delegation yield</li>
+                        <li>No interest rate or slippage risk</li>
+                        <li>Carries liquidation risk (heavily reduced with correlated assets)</li>
+                    </ul>
+                </div>
+                <div style="background: rgba(224, 167, 50, 0.08); border: 1px solid rgba(224, 167, 50, 0.25); border-radius: 8px; padding: 14px 16px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px;">
+                        <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; color: var(--accent-amber); font-weight: 600;">Borrower</span>
+                        <span style="font-size: 0.65rem; padding: 2px 8px; border-radius: 10px; background: rgba(224, 167, 50, 0.15); color: var(--accent-amber); font-weight: 600; letter-spacing: 0.5px;">ACTIVE</span>
+                    </div>
+                    <ul style="margin: 0; padding-left: 16px; color: var(--text-secondary); font-size: 0.82rem; line-height: 1.8;">
+                        <li>Higher leverage for more yield, or same leverage with less capital</li>
+                        <li>Added buffer against liquidation at any leverage level</li>
+                        <li>Interest rate risk (Twyne rate is marginal relative to ETH borrow cost)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Beta Safety Impact Warning -->
+            <div class="chart-container" id="betaWarningBox" style="background: linear-gradient(135deg, rgba(239, 108, 0, 0.1), rgba(239, 108, 0, 0.05)); border: 1px solid rgba(239, 108, 0, 0.3); display: none;">
+                <div class="chart-title" style="color: var(--accent-orange);">⚠️ Safety Buffer Impact</div>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 12px;">
+                    When β &lt; 1, capital efficiency drops significantly:
+                </p>
+                <div class="stat-display" style="background: var(--bg-secondary);">
+                    <div class="stat-row">
+                        <span class="stat-label">β = 1.00 (max efficiency)</span>
+                        <span class="stat-value">$<span id="betaOneMultiplier">18.6</span>/creditor</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">β = <span id="currentBetaDisplay">0.95</span> (current)</span>
+                        <span class="stat-value warning">$<span id="currentBetaMultiplier">5.4</span>/creditor</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Efficiency Loss</span>
+                        <span class="stat-value warning" id="betaEfficiencyLoss">71% drop</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Yield Analysis Section (dropdown) -->
+            <details style="margin-top: 40px; background: rgba(156,124,244,0.06); border: 1px solid rgba(156,124,244,0.2); border-radius: 12px;">
+                <summary style="cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px;">
+                    <div>
+                        <h2 style="margin: 0; font-size: 1.3rem;">More Analytics</h2>
+                        <p class="description" style="margin: 4px 0 0;">Net looping yield across health factor and liquidation LTV combinations.</p>
+                    </div>
+                    <span style="font-size: 1rem; color: var(--text-secondary); flex-shrink: 0; margin-left: 12px;">&#9662;</span>
+                </summary>
+                <div style="padding: 0 20px 16px;">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div style="background: rgba(156,124,244,0.06); border: 1px solid rgba(156,124,244,0.15); border-radius: 10px; padding: 14px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                                <div style="font-size: 0.8rem; font-weight: 600; color: var(--accent-purple);">Net Looping Yield</div>
+                                <div style="display: flex; gap: 10px; align-items: center; font-size: 0.75rem; color: var(--text-secondary);">
+                                    <label>HF <input type="number" id="hfMin" value="1.01" step="0.01" min="1.01" max="1.5" style="width: 50px; padding: 2px 4px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 3px; color: var(--text-primary); font-size: 0.7rem; text-align: center;"></label>
+                                    <span style="color: var(--text-secondary);">to</span>
+                                    <label><input type="number" id="hfMax" value="1.05" step="0.01" min="1.02" max="2.0" style="width: 50px; padding: 2px 4px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 3px; color: var(--text-primary); font-size: 0.7rem; text-align: center;"></label>
+                                </div>
+                            </div>
+                            <div id="yieldHeatmap"></div>
+                        </div>
+                        <div style="background: rgba(156,124,244,0.06); border: 1px solid rgba(156,124,244,0.15); border-radius: 10px; padding: 14px;">
+                            <div style="font-size: 0.8rem; font-weight: 600; color: var(--accent-purple); margin-bottom: 6px;">Interest Rate Model</div>
+                            <div style="display: flex; gap: 16px; padding: 6px 10px; background: rgba(156,124,244,0.06); border-radius: 6px; margin-bottom: 8px; font-size: 0.75rem;">
+                                <span>At <span id="irmUtilDisplay" style="color: var(--text-primary); font-weight: 600;">—</span> util</span>
+                                <span style="color: var(--border-color);">|</span>
+                                <span>Creditor Rate: <span id="irmClpRateMain" style="color: var(--accent-blue); font-weight: 600;">—</span></span>
+                                <span style="color: var(--border-color);">|</span>
+                                <span>Borrower Cost: <span id="irmBorrowerRateMain" style="color: var(--accent-amber); font-weight: 600;">—</span></span>
+                            </div>
+                            <div id="irmChartMain" style="width: 100%; height: 220px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </details>
+
+        </main>
+    </div>
+
+    <script>
+        // =====================================================================
+        // Economic Formulas (ported from Python)
+        // =====================================================================
+
+        function psi(liqLtvT, betaSafe, liqLtvClp, liqLtvC) {
+            return liqLtvT / (betaSafe * liqLtvClp) - liqLtvC / liqLtvClp;
+        }
+
+        function interestRate(u, iMin, i0, u0, iMax, gamma) {
+            const linearSlope = (i0 - iMin) / u0;
+            const nonlinearCoeff = iMax - iMin - linearSlope;
+            return iMin + linearSlope * u + nonlinearCoeff * Math.pow(u, gamma);
+        }
+
+        function ltvFromHf(liqLtvT, hf) {
+            return liqLtvT / hf;
+        }
+
+        function leverageFromLtv(lambdaT) {
+            return 1.0 / (1.0 - lambdaT);
+        }
+
+        function loopedYield(rStake, rBorrow, lambdaT, irU, psiVal) {
+            const numerator = rStake - rBorrow * lambdaT - irU * psiVal;
+            const denominator = 1.0 - lambdaT;
+            return numerator / denominator;
+        }
+
+        // =====================================================================
+        // Dashboard State & Updates
+        // =====================================================================
+
+        let tvlMultiplierMode = false;
+        let _tvlCache = null;
+
+        function formatNum(n) {
+            if (n >= 1000000000) return '$' + (n / 1000000000).toFixed(1) + 'B';
+            if (n >= 1000000) return '$' + (n / 1000000).toFixed(1) + 'M';
+            if (n >= 1000) return '$' + (n / 1000).toFixed(0) + 'K';
+            return '$' + n.toFixed(0);
+        }
+
+        function toggleTvlMode() {
+            tvlMultiplierMode = !tvlMultiplierMode;
+            const knob = document.getElementById('tvlToggleKnob');
+            const toggle = document.getElementById('tvlToggle');
+            const labelLeft = document.getElementById('tvlToggleLabel');
+            const labelRight = document.getElementById('tvlToggleLabelRight');
+            if (tvlMultiplierMode) {
+                knob.style.left = '16px';
+                toggle.style.background = 'var(--accent-green)';
+                labelRight.style.color = 'var(--text-primary)';
+                labelLeft.style.color = 'var(--text-secondary)';
+            } else {
+                knob.style.left = '2px';
+                toggle.style.background = 'var(--border-color)';
+                labelLeft.style.color = 'var(--text-primary)';
+                labelRight.style.color = 'var(--text-secondary)';
+            }
+            applyTvlDisplayMode();
+        }
+
+        function applyTvlDisplayMode() {
+            if (!_tvlCache) return;
+            const { maxTvl, minTvl, seed, chartBorrowLtvs, chartTvls, miniLayout } = _tvlCache;
+
+            // Update card
+            if (tvlMultiplierMode) {
+                document.getElementById('summaryMaxTvl').textContent = (maxTvl / seed).toFixed(1) + 'x';
+                document.getElementById('summaryMinTvl').textContent = (minTvl / seed).toFixed(1) + 'x';
+            } else {
+                document.getElementById('summaryMaxTvl').textContent = formatNum(maxTvl);
+                document.getElementById('summaryMinTvl').textContent = formatNum(minTvl);
+            }
+
+            // Update chart title
+            document.getElementById('tvlChartTitle').textContent = tvlMultiplierMode
+                ? 'TVL Multiplier by Borrow LTV' : 'Generated TVL by Borrow LTV';
+
+            // Re-render chart
+            var chartY = tvlMultiplierMode ? chartTvls.map(function(v) { return v / seed; }) : chartTvls;
+            var hover = tvlMultiplierMode
+                ? 'LTV: %{x:.1f}%<br>Multiplier: %{y:.1f}x<extra></extra>'
+                : 'LTV: %{x:.1f}%<br>TVL: $%{y:,.0f}<extra></extra>';
+            var yaxis = tvlMultiplierMode
+                ? { color: '#8a9bb5', gridcolor: 'rgba(138,155,181,0.1)', ticksuffix: 'x' }
+                : { color: '#8a9bb5', gridcolor: 'rgba(138,155,181,0.1)', tickprefix: '$', tickformat: ',.0s' };
+
+            Plotly.newPlot('tvlByLtvChart', [{
+                x: chartBorrowLtvs, y: chartY, type: 'scatter', mode: 'lines',
+                line: { color: '#9c7cf4', width: 2 },
+                fill: 'tozeroy', fillcolor: 'rgba(156,124,244,0.08)',
+                hovertemplate: hover
+            }], {
+                margin: { t: 4, r: 12, b: 32, l: 50 },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { color: '#8a9bb5', size: 10 },
+                xaxis: { title: '', color: '#8a9bb5', gridcolor: 'rgba(138,155,181,0.1)', ticksuffix: '%', dtick: 1 },
+                yaxis: yaxis
+            }, { responsive: true, displayModeBar: false });
+        }
+
+        function getParams() {
+            return {
+                stethStaking: parseFloat(document.getElementById('stethStaking').value) / 100,
+                stethLending: parseFloat(document.getElementById('stethLending').value) / 100,
+                ethBorrow: parseFloat(document.getElementById('ethBorrow').value) / 100,
+                liqLtvT: parseFloat(document.getElementById('liqLtvT').value) / 100,
+                liqLtvE: parseFloat(document.getElementById('liqLtvE').value) / 100,
+                borrowLtvE: parseFloat(document.getElementById('borrowLtvE').value) / 100,
+                betaSafe: parseFloat(document.getElementById('betaSafe').value) / 100,
+                iMin: parseFloat(document.getElementById('iMin').value) / 100,
+                iMax: parseFloat(document.getElementById('iMax').value) / 100,
+                i0: parseFloat(document.getElementById('i0').value) / 100,
+                u0: parseFloat(document.getElementById('u0').value) / 100,
+                gamma: parseFloat(document.getElementById('gamma').value),
+                clpDeposited: parseFloat(document.getElementById('clpDeposited').value.replace(/,/g, '')),
+                hfMin: parseFloat(document.getElementById('hfMin').value),
+                hfMax: parseFloat(document.getElementById('hfMax').value),
+                utilization: parseFloat(document.getElementById('utilization').value) / 100,
+            };
+        }
+
+        function updateStats() {
+            const p = getParams();
+            const totalYield = (p.stethStaking + p.stethLending) * 100;
+            const spread = totalYield - p.ethBorrow * 100;
+            const psiVal = psi(p.liqLtvT, p.betaSafe, p.liqLtvE, p.liqLtvE);
+
+            document.getElementById('psiValue').textContent = (psiVal * 100).toFixed(2) + '%';
+
+            // Calculate Twyne's effective borrow LTV
+            // Twyne borrow LTV = borrowLTV_e × liqLTV_t / (β × liqLTV_e)
+            const twyneBorrowLtv = p.borrowLtvE * p.liqLtvT / p.liqLtvE;
+
+            document.getElementById('summaryBorrowLtvTwyne').textContent = (twyneBorrowLtv * 100).toFixed(1) + '%';
+
+            // Max leverage calculations (used by other sections)
+            const aaveMaxLev = leverageFromLtv(p.borrowLtvE);
+            const twyneMaxLev = leverageFromLtv(twyneBorrowLtv);
+        }
+
+        function updateHeatmap() {
+            const p = getParams();
+            const rStake = p.stethStaking + p.stethLending;
+            const rBorrow = p.ethBorrow;
+            const psiVal = psi(p.liqLtvT, p.betaSafe, p.liqLtvE, p.liqLtvE);
+            const irU = interestRate(p.utilization, p.iMin, p.i0, p.u0, p.iMax, p.gamma);
+
+            // Generate HF values (low to high for display)
+            const nHf = 5;
+            const hfValues = [];
+            for (let i = 0; i < nHf; i++) {
+                hfValues.push(p.hfMin + (p.hfMax - p.hfMin) * i / (nHf - 1));
+            }
+
+            // Generate LTV values from Aave to Twyne
+            const ltvStart = Math.floor(p.liqLtvE * 100);
+            const ltvEnd = Math.floor(p.liqLtvT * 100);
+            const ltvValues = [];
+            for (let ltv = ltvStart; ltv <= ltvEnd; ltv++) {
+                ltvValues.push(ltv / 100);
+            }
+
+            // Compute yield grid
+            const yieldGrid = [];
+            const textGrid = [];
+            for (let i = 0; i < hfValues.length; i++) {
+                const row = [];
+                const textRow = [];
+                for (let j = 0; j < ltvValues.length; j++) {
+                    const lambdaT = ltvFromHf(ltvValues[j], hfValues[i]);
+                    const psiLtv = psi(ltvValues[j], p.betaSafe, p.liqLtvE, p.liqLtvE);
+                    const yieldVal = loopedYield(rStake, rBorrow, lambdaT, irU, psiLtv) * 100;
+                    row.push(yieldVal);
+                    textRow.push(yieldVal.toFixed(1) + '%');
+                }
+                yieldGrid.push(row);
+                textGrid.push(textRow);
+            }
+
+            const xLabels = ltvValues.map(v => (v * 100).toFixed(0));
+            const yLabels = hfValues.map(v => v.toFixed(2));
+
+            const data = [{
+                z: yieldGrid,
+                x: xLabels,
+                y: yLabels,
+                type: 'heatmap',
+                colorscale: [[0, '#1a1730'], [0.25, '#2d2252'], [0.5, '#4a3a80'], [0.75, '#7a5ec0'], [1, '#9c7cf4']],
+                showscale: true,
+                colorbar: {
+                    title: 'Yield %',
+                    titlefont: { color: '#9aa0a6' },
+                    tickfont: { color: '#9aa0a6' }
+                },
+                text: textGrid,
+                texttemplate: '%{text}',
+                textfont: { size: 11, color: '#c8d6e0' },
+                hovertemplate: 'Liq LTV: %{x}%<br>HF: %{y}<br>Yield: %{z:.1f}%<extra></extra>',
+            }];
+
+            const shapes = [];
+            const annotations = [];
+
+            const layout = {
+                xaxis: {
+                    title: 'Boosted Liquidation LTV %',
+                    color: '#9aa0a6',
+                    gridcolor: 'rgba(156,124,244,0.12)',
+                    type: 'category',
+                },
+                yaxis: {
+                    title: 'Health Factor',
+                    color: '#9aa0a6',
+                    gridcolor: 'rgba(156,124,244,0.12)',
+                    type: 'category',
+                },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                margin: { t: 10, r: 70, b: 44, l: 60 },
+                height: 240,
+                shapes: shapes,
+                annotations: annotations,
+            };
+
+            Plotly.newPlot('yieldHeatmap', data, layout, { responsive: true });
+        }
+
+        function updateKeyInsight() {
+            const p = getParams();
+
+            const psiMax = psi(p.liqLtvT, p.betaSafe, p.liqLtvE, p.liqLtvE);
+            const tvlMultiplier = psiMax > 0 ? 1 / psiMax : 0;
+
+            // Beta warning box
+            const betaWarningBox = document.getElementById('betaWarningBox');
+            if (p.betaSafe < 1.0) {
+                betaWarningBox.style.display = 'block';
+
+                const psiBetaOne = psi(p.liqLtvT, 1.0, p.liqLtvE, p.liqLtvE);
+                const multBetaOne = psiBetaOne > 0 ? 1 / psiBetaOne : 0;
+                const efficiencyLoss = ((multBetaOne - tvlMultiplier) / multBetaOne * 100).toFixed(0);
+
+                document.getElementById('betaOneMultiplier').textContent = multBetaOne.toFixed(1);
+                document.getElementById('currentBetaDisplay').textContent = (p.betaSafe * 100).toFixed(0) + '%';
+                document.getElementById('currentBetaMultiplier').textContent = tvlMultiplier.toFixed(1);
+                document.getElementById('betaEfficiencyLoss').textContent = efficiencyLoss + '% drop';
+            } else {
+                betaWarningBox.style.display = 'none';
+            }
+        }
+
+        function updateTvlTradeoffChart() {
+            const p = getParams();
+
+            // Get CLP amount from sidebar input
+            const clpAmount = parseFloat(document.getElementById('clpDeposited').value.replace(/,/g, '')) || 1000000;
+
+            // Get HF from input
+            const hf = parseFloat(document.getElementById('tradeoffHfInput').value) || 1.02;
+
+            // Update Net Yield tooltip with current HF
+            document.getElementById('netYieldHeader').setAttribute('data-tip',
+                `Annualized yield including Twyne credit cost at HF ${hf.toFixed(2)}.`);
+
+            // Rates for yield calculation
+            const rStake = p.stethStaking + p.stethLending;
+            const rBorrow = p.ethBorrow;
+            const irU = interestRate(p.utilization, p.iMin, p.i0, p.u0, p.iMax, p.gamma);
+
+            // Generate 5 evenly spaced LTV points
+            const ltvStart = p.liqLtvE + 0.005;  // Just above Aave liq LTV
+            const ltvEnd = p.liqLtvT;
+            const numPoints = tradeoffRowCount;
+
+            const dataPoints = [];
+            let maxTvl = 0;
+
+            for (let i = 0; i < numPoints; i++) {
+                const liqLtvT = ltvStart + (ltvEnd - ltvStart) * (i / (numPoints - 1));
+                const psiVal = psi(liqLtvT, p.betaSafe, p.liqLtvE, p.liqLtvE);
+
+                if (psiVal <= 0) continue;
+
+                const borrowerCollateral = clpAmount / psiVal;
+                const tvl = borrowerCollateral + clpAmount;  // borrower collateral + CLP
+
+                // Twyne borrow LTV at this liq LTV
+                const twyneBorrowLtv = p.borrowLtvE * liqLtvT / p.liqLtvE;
+                const twyneLeverage = leverageFromLtv(twyneBorrowLtv);
+                const borrowerEquity = borrowerCollateral / twyneLeverage;
+
+                // Calculate net looping yield
+                // Operating LTV = liq LTV / HF
+                const operatingLtv = liqLtvT / hf;
+                const netYield = loopedYield(rStake, rBorrow, operatingLtv, irU, psiVal);
+
+                if (tvl > maxTvl) maxTvl = tvl;
+
+                dataPoints.push({
+                    liqLtv: liqLtvT,
+                    borrowLtv: twyneBorrowLtv,
+                    tvl: tvl,
+                    borrowerEquity: borrowerEquity,
+                    netYield: netYield,
+                    psi: psiVal
+                });
+            }
+
+            const tbody = document.querySelector('#tvlTradeoffTable tbody');
+            tbody.innerHTML = '';
+
+            // Add Aave baseline row first
+            const aaveLeverage = leverageFromLtv(p.borrowLtvE);
+            const aaveOperatingLtv = p.liqLtvE / hf;
+            const aaveYield = loopedYield(rStake, rBorrow, aaveOperatingLtv, 0, 0);  // No Twyne fees (psi=0, IR=0)
+            const aaveTvl = clpAmount * aaveLeverage;  // If you loop yourself
+            const aaveEquity = clpAmount;  // Your own capital
+            const aaveYieldPct = (aaveYield * 100).toFixed(1);
+            const aaveYieldColor = aaveYield >= 0 ? 'var(--accent-green)' : 'var(--accent-orange)';
+
+            const aaveRow = document.createElement('tr');
+            aaveRow.className = 'box-single';
+            aaveRow.innerHTML = `
+                <td>—</td>
+                <td style="color: var(--text-secondary);">${aaveLeverage.toFixed(1)}x</td>
+                <td style="color: var(--text-secondary); font-weight: 600;">${aaveYieldPct}% <span style="font-size: 0.75rem;">(+0.0%)</span></td>
+                <td style="color: var(--text-secondary);">—</td>
+            `;
+            tbody.appendChild(aaveRow);
+
+            const minEquity = Math.min(...dataPoints.map(d => d.borrowerEquity));
+            const clpYield = p.utilization * irU * 100;
+            document.getElementById('topSeedAmount').textContent = formatNum(clpAmount);
+            document.getElementById('topClpYield').textContent = clpYield.toFixed(2) + '%';
+
+            // Helper: update callout with a given data point
+            function selectTradeoffRow(point, rowEl) {
+                // Clear previous selection
+                tbody.querySelectorAll('tr.selected').forEach(r => r.classList.remove('selected'));
+                if (rowEl) rowEl.classList.add('selected');
+
+                const lev = leverageFromLtv(point.borrowLtv);
+                document.getElementById('qGeneratedTvl').textContent = formatNum(point.tvl);
+                document.getElementById('qClpSeed').textContent = formatNum(clpAmount);
+                document.getElementById('qClpBaseYield').textContent = ((p.stethStaking + p.stethLending) * 100).toFixed(2) + '%';
+                document.getElementById('qClpRate').textContent = clpYield.toFixed(2) + '%';
+                document.getElementById('qBorrowerEquity').textContent = formatNum(point.borrowerEquity);
+                document.getElementById('qLeverage').textContent = lev.toFixed(1) + 'x';
+                document.getElementById('qNetYield').textContent = (point.netYield * 100).toFixed(2) + '%';
+            }
+
+            const defaultSelectedIdx = Math.floor(dataPoints.length / 2);
+            const rows = [];
+
+            dataPoints.forEach((point, idx) => {
+                const leverage = leverageFromLtv(point.borrowLtv);
+                const yieldPct = (point.netYield * 100).toFixed(1);
+                const yieldDelta = (point.netYield - aaveYield) * 100;
+                const deltaStr = yieldDelta >= 0 ? '+' + yieldDelta.toFixed(1) : yieldDelta.toFixed(1);
+
+                const row = document.createElement('tr');
+                const last = dataPoints.length - 1;
+                if (idx === 0 && last === 0) row.className = 'box-single';
+                else if (idx === 0) row.className = 'box-top';
+                else if (idx === last) row.className = 'box-bottom';
+                else row.className = 'box-mid';
+                row.innerHTML = `
+                    <td>${formatNum(point.borrowerEquity)}</td>
+                    <td style="color: var(--text-secondary);">${leverage.toFixed(1)}x</td>
+                    <td style="color: var(--text-secondary); font-weight: 600;">${yieldPct}% <span style="font-size: 0.75rem;">(${deltaStr}%)</span></td>
+                    <td style="font-weight: 600;">${formatNum(point.tvl)}<span class="row-select-icon">&#9679;</span></td>
+                `;
+                row.addEventListener('click', () => selectTradeoffRow(point, row));
+                tbody.appendChild(row);
+                rows.push(row);
+            });
+
+            // Build side labels column (1 Aave row, N Twyne rows)
+            const labelsEl = document.getElementById('tableLabels');
+            const nTwyne = dataPoints.length;
+            // Use flex proportions: 1 part Aave, N parts Twyne
+            labelsEl.innerHTML = `
+                <div class="label-cell" style="flex: 1;">
+                    <img src="icons/aave_logo_light.png" alt="Aave">
+                </div>
+                <div class="label-cell" style="flex: ${nTwyne};">
+                    <img src="icons/twyne_logo_white_full.png" alt="Twyne">
+                </div>
+            `;
+
+            // Update exec summary cards
+            if (dataPoints.length > 0) {
+                const lastPt = dataPoints[dataPoints.length - 1];
+                const firstPt = dataPoints[0];
+                const maxLeverage = leverageFromLtv(lastPt.borrowLtv);
+                const minLeverage = leverageFromLtv(firstPt.borrowLtv);
+
+                document.getElementById('summaryMaxTvl').textContent = formatNum(firstPt.tvl);
+                document.getElementById('summaryMinTvl').textContent = formatNum(lastPt.tvl);
+                document.getElementById('summaryClpDeposited').textContent = formatNum(clpAmount);
+                document.getElementById('summaryLevMin').textContent = minLeverage.toFixed(1) + 'x';
+                document.getElementById('summaryLevMax').textContent = maxLeverage.toFixed(1) + 'x';
+                document.getElementById('summaryAaveLev').textContent = aaveLeverage.toFixed(1) + 'x';
+            }
+
+            // Select mid-range row by default
+            if (dataPoints.length > 0) {
+                selectTradeoffRow(dataPoints[defaultSelectedIdx], rows[defaultSelectedIdx]);
+            }
+
+            // --- Mini charts: TVL and Leverage vs Borrow LTV ---
+            const chartPoints = 30;
+            const cLtvStart = p.liqLtvE + 0.005;
+            const cLtvEnd = p.liqLtvT;
+            const chartBorrowLtvs = [];
+            const chartTvls = [];
+            const chartLevs = [];
+            for (let i = 0; i < chartPoints; i++) {
+                const liqLtv = cLtvStart + (cLtvEnd - cLtvStart) * (i / (chartPoints - 1));
+                const psiVal = psi(liqLtv, p.betaSafe, p.liqLtvE, p.liqLtvE);
+                if (psiVal <= 0) continue;
+                const bCollateral = clpAmount / psiVal;
+                const tvl = bCollateral + clpAmount;
+                const bLtv = p.borrowLtvE * liqLtv / p.liqLtvE;
+                chartBorrowLtvs.push(bLtv * 100);
+                chartTvls.push(tvl);
+                chartLevs.push(leverageFromLtv(bLtv));
+            }
+
+            const miniLayout = {
+                margin: { t: 4, r: 12, b: 32, l: 50 },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                font: { color: '#8a9bb5', size: 10 },
+                xaxis: { title: '', color: '#8a9bb5', gridcolor: 'rgba(138,155,181,0.1)', ticksuffix: '%', dtick: 1 },
+                yaxis: { color: '#8a9bb5', gridcolor: 'rgba(138,155,181,0.1)' },
+            };
+
+            // Cache data for toggle
+            _tvlCache = {
+                maxTvl: dataPoints.length > 0 ? dataPoints[0].tvl : 0,
+                minTvl: dataPoints.length > 0 ? dataPoints[dataPoints.length - 1].tvl : 0,
+                seed: clpAmount,
+                chartBorrowLtvs: chartBorrowLtvs,
+                chartTvls: chartTvls,
+                miniLayout: miniLayout,
+            };
+
+            // Render TVL chart (respects current toggle mode)
+            const chartTvlY = tvlMultiplierMode ? chartTvls.map(v => v / clpAmount) : chartTvls;
+            const tvlHover = tvlMultiplierMode
+                ? 'LTV: %{x:.1f}%<br>Multiplier: %{y:.1f}x<extra></extra>'
+                : 'LTV: %{x:.1f}%<br>TVL: $%{y:,.0f}<extra></extra>';
+            const tvlYaxis = tvlMultiplierMode
+                ? { ...miniLayout.yaxis, ticksuffix: 'x' }
+                : { ...miniLayout.yaxis, tickprefix: '$', tickformat: ',.0s' };
+            document.getElementById('tvlChartTitle').textContent = tvlMultiplierMode
+                ? 'TVL Multiplier by Borrow LTV' : 'Generated TVL by Borrow LTV';
+            if (tvlMultiplierMode && dataPoints.length > 0) {
+                document.getElementById('summaryMaxTvl').textContent = (dataPoints[0].tvl / clpAmount).toFixed(1) + 'x';
+                document.getElementById('summaryMinTvl').textContent = (dataPoints[dataPoints.length - 1].tvl / clpAmount).toFixed(1) + 'x';
+            }
+            Plotly.newPlot('tvlByLtvChart', [{
+                x: chartBorrowLtvs, y: chartTvlY, type: 'scatter', mode: 'lines',
+                line: { color: '#9c7cf4', width: 2 },
+                fill: 'tozeroy', fillcolor: 'rgba(156,124,244,0.08)',
+                hovertemplate: tvlHover
+            }], {
+                ...miniLayout,
+                yaxis: tvlYaxis
+            }, { responsive: true, displayModeBar: false });
+
+            const levMin = Math.floor(Math.min(...chartLevs));
+            Plotly.newPlot('levByLtvChart', [{
+                x: chartBorrowLtvs, y: chartLevs, type: 'scatter', mode: 'lines',
+                line: { color: '#9c7cf4', width: 2 },
+                fill: 'tonexty', fillcolor: 'rgba(156,124,244,0.08)',
+                hovertemplate: 'LTV: %{x:.1f}%<br>Leverage: %{y:.1f}x<extra></extra>'
+            }], {
+                ...miniLayout,
+                yaxis: { ...miniLayout.yaxis, ticksuffix: 'x', rangemode: 'tozero', range: [levMin - 1, Math.ceil(Math.max(...chartLevs)) + 1] }
+            }, { responsive: true, displayModeBar: false });
+        }
+
+        function updateIrmChart() {
+            const p = getParams();
+            const psiVal = psi(p.liqLtvT, p.betaSafe, p.liqLtvE, p.liqLtvE);
+            const steps = 200;
+            const utilRange = [];
+            const siphonRate = [];
+            const clpRate = [];
+
+            for (let i = 0; i <= steps; i++) {
+                const u = i / steps;
+                utilRange.push(u * 100);
+                const ir = interestRate(u, p.iMin, p.i0, p.u0, p.iMax, p.gamma);
+                siphonRate.push(psiVal * ir * 10000);
+                clpRate.push(u * ir * 10000);
+            }
+
+            const curU = p.utilization;
+            const curIr = interestRate(curU, p.iMin, p.i0, p.u0, p.iMax, p.gamma);
+
+            const data = [
+                {
+                    x: utilRange, y: clpRate,
+                    type: 'scatter', mode: 'lines',
+                    name: 'Creditor Rate',
+                    line: { color: '#4a9bb5', width: 2 },
+                    hovertemplate: '%{y:.2f}<extra>Creditor Rate</extra>',
+                },
+                {
+                    x: utilRange, y: siphonRate,
+                    type: 'scatter', mode: 'lines',
+                    name: 'Borrower Cost',
+                    line: { color: '#e0a732', width: 2 },
+                    hovertemplate: '%{y:.2f}<extra>Borrower Cost</extra>',
+                },
+            ];
+
+            const layout = {
+                xaxis: {
+                    title: { text: 'Utilization %', font: { size: 11 } },
+                    color: '#9aa0a6', gridcolor: 'rgba(156,124,244,0.12)',
+                    range: [80, 100], dtick: 5,
+                    tickfont: { size: 10 },
+                },
+                yaxis: {
+                    title: { text: 'bps', font: { size: 11 } },
+                    color: '#9aa0a6', gridcolor: 'rgba(156,124,244,0.12)',
+                    tickfont: { size: 10 },
+                    rangemode: 'tozero',
+                },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                margin: { t: 6, r: 12, b: 36, l: 44 },
+                height: 220,
+                legend: {
+                    x: 0.02, y: 0.98,
+                    bgcolor: 'rgba(35,43,59,0.8)',
+                    font: { color: '#e8eaed', size: 10 },
+                },
+                hovermode: 'x unified',
+                shapes: [{
+                    type: 'line',
+                    x0: curU * 100, x1: curU * 100,
+                    y0: 0, y1: 1, yref: 'paper',
+                    line: { color: '#9aa0a6', width: 1, dash: 'dash' },
+                }],
+            };
+
+            document.getElementById('irmUtilDisplay').textContent = (curU * 100).toFixed(0) + '%';
+            document.getElementById('irmClpRateMain').textContent = (curU * curIr * 10000).toFixed(0) + ' bps';
+            document.getElementById('irmBorrowerRateMain').textContent = (psiVal * curIr * 10000).toFixed(0) + ' bps';
+
+            Plotly.newPlot('irmChartMain', data, layout, { responsive: true, displayModeBar: false });
+        }
+
+        let tradeoffRowCount = 5;
+
+        document.getElementById('tradeoffRowMinus').addEventListener('click', () => {
+            if (tradeoffRowCount > 2) {
+                tradeoffRowCount--;
+                document.getElementById('tradeoffRowCount').textContent = tradeoffRowCount;
+                updateTvlTradeoffChart();
+            }
+        });
+        document.getElementById('tradeoffRowPlus').addEventListener('click', () => {
+            if (tradeoffRowCount < 20) {
+                tradeoffRowCount++;
+                document.getElementById('tradeoffRowCount').textContent = tradeoffRowCount;
+                updateTvlTradeoffChart();
+            }
+        });
+
+        function updateAll() {
+            updateStats();
+            updateHeatmap();
+            updateKeyInsight();
+            updateTvlTradeoffChart();
+            updateIrmChart();
+        }
+
+        // Number formatting helper
+        function formatWithCommas(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        // CLP input formatting
+        const clpInput = document.getElementById('clpDeposited');
+        clpInput.addEventListener('focus', function() {
+            this.value = this.value.replace(/,/g, '');
+        });
+        clpInput.addEventListener('blur', function() {
+            const num = parseInt(this.value.replace(/,/g, ''), 10);
+            if (!isNaN(num)) {
+                this.value = formatWithCommas(num);
+            }
+        });
+
+        // Add event listeners to all inputs
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', updateAll);
+        });
+
+
+        // Visual warning when liqLtvT < liqLtvE (don't lock the value)
+        const liqLtvTInput = document.getElementById('liqLtvT');
+        const liqLtvEInput = document.getElementById('liqLtvE');
+        function checkLtvValidity() {
+            const tVal = parseFloat(liqLtvTInput.value);
+            const eVal = parseFloat(liqLtvEInput.value);
+            if (!isNaN(tVal) && !isNaN(eVal) && tVal < eVal) {
+                liqLtvTInput.style.borderColor = 'var(--accent-orange)';
+                liqLtvTInput.style.boxShadow = '0 0 0 1px var(--accent-orange)';
+            } else {
+                liqLtvTInput.style.borderColor = '';
+                liqLtvTInput.style.boxShadow = '';
+            }
+        }
+        liqLtvTInput.addEventListener('input', checkLtvValidity);
+        liqLtvEInput.addEventListener('input', checkLtvValidity);
+
+        // Tradeoff table HF listener
+        document.getElementById('tradeoffHfInput').addEventListener('input', updateTvlTradeoffChart);
+
+        // Initial render
+        updateAll();
+
+        // Tooltip — appended to body so grid overflow can't clip it
+        const tip = document.createElement('div');
+        tip.id = 'tip';
+        document.body.appendChild(tip);
+
+        document.addEventListener('mouseover', e => {
+            const th = e.target.closest('th[data-tip]');
+            if (!th) return;
+            tip.textContent = th.getAttribute('data-tip');
+            tip.style.opacity = '1';
+            const r = th.getBoundingClientRect();
+            tip.style.left = r.left + r.width / 2 - tip.offsetWidth / 2 + 'px';
+            tip.style.top = r.top - tip.offsetHeight - 6 + 'px';
+        });
+
+        document.addEventListener('mouseout', e => {
+            if (e.target.closest('th[data-tip]')) tip.style.opacity = '0';
+        });
+
+        // Sidebar toggle
+        const container = document.querySelector('.container');
+        function resizePlots() {
+            document.querySelectorAll('.js-plotly-plot').forEach(el => Plotly.Plots.resize(el));
+        }
+        container.addEventListener('transitionend', e => {
+            if (e.propertyName === 'grid-template-columns') resizePlots();
+        });
+        document.getElementById('sidebarToggle').addEventListener('click', () => {
+            container.classList.add('sidebar-closed');
+        });
+        document.getElementById('sidebarOpen').addEventListener('click', () => {
+            container.classList.remove('sidebar-closed');
+        });
+    </script>
+</body>
+</html>
