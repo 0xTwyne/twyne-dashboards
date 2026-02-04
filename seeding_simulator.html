@@ -546,11 +546,11 @@
             table-layout: fixed;
         }
         .scenario-table col:nth-child(1) { width: 14%; }
-        .scenario-table col:nth-child(2) { width: 12%; }
-        .scenario-table col:nth-child(3) { width: 14%; }
-        .scenario-table col:nth-child(4) { width: 14%; }
-        .scenario-table col:nth-child(5) { width: 10%; }
-        .scenario-table col:nth-child(6) { width: 14%; }
+        .scenario-table col:nth-child(2) { width: 10%; }
+        .scenario-table col:nth-child(3) { width: 22%; }
+        .scenario-table col:nth-child(4) { width: 12%; }
+        .scenario-table col:nth-child(5) { width: 8%; }
+        .scenario-table col:nth-child(6) { width: 8%; }
         .scenario-table col:nth-child(7) { width: 22%; }
         .scenario-table th {
             padding: 10px 14px;
@@ -670,7 +670,7 @@
                         <div class="input-group">
                             <label>Staking APY</label>
                             <div class="input-wrapper has-suffix">
-                                <input type="number" id="stethStaking" value="3.00" step="0.1" min="0" max="20">
+                                <input type="number" id="stethStaking" value="2.60" step="0.1" min="0" max="20">
                                 <span class="input-suffix">%</span>
                             </div>
                         </div>
@@ -831,8 +831,8 @@
                                     <th>Collateral</th>
                                     <th>Debt</th>
                                     <th>LTV</th>
+                                    <th>HF</th>
                                     <th>Net APY</th>
-                                    <th>Delta</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -854,8 +854,8 @@
                                     <th>Collateral</th>
                                     <th>Debt</th>
                                     <th>LTV</th>
+                                    <th>HF</th>
                                     <th>Net APY</th>
-                                    <th id="scenarioBDeltaHeader">Delta</th>
                                 </tr>
                             </thead>
                             <tbody></tbody>
@@ -863,9 +863,7 @@
                     </div>
                 </div>
 
-                <div style="margin-top: 24px; background: rgba(74, 155, 181, 0.06); border: 1px solid rgba(74, 155, 181, 0.2); border-radius: 10px; padding: 16px 20px; line-height: 1.7; font-size: 0.85rem; color: var(--text-secondary);">
-                    <strong style="color: var(--text-primary);">Why this matters for LRT issuers</strong><br>
-                    On Aave, <strong style="color: var(--accent-orange);">$1 of LRT becomes ~$14 in looped TVL</strong>. But most depositors don't max out their leverage, so that borrowing capacity sits unused. With Twyne, idle depositors can delegate that capacity to active loopers: the creditor earns delegation yield on top of their staking and lending returns, while the borrower gets access to leverage beyond Aave's ceiling or a larger safety buffer against liquidation. The same Aave rails, more TVL per dollar, and a direct growth multiplier for the LRT issuer.
+                <div id="creditExamplesBox" style="margin-top: 24px; background: rgba(74, 155, 181, 0.06); border: 1px solid rgba(74, 155, 181, 0.2); border-radius: 10px; padding: 16px 20px; line-height: 1.7; font-size: 0.85rem; color: var(--text-secondary);">
                 </div>
 
                 <div style="display: flex; align-items: center; gap: 16px; margin-top: 32px; margin-bottom: 16px;">
@@ -908,7 +906,7 @@
             <details style="margin-top: 40px; background: rgba(156,124,244,0.06); border: 1px solid rgba(156,124,244,0.2); border-radius: 12px;">
                 <summary style="cursor: pointer; user-select: none; display: flex; align-items: center; justify-content: space-between; padding: 16px 20px;">
                     <div>
-                        <h2 style="margin: 0; font-size: 1.3rem;">Seeding Overview</h2>
+                        <h2 style="margin: 0; font-size: 1.3rem;">Credit-LP Seeding & Supported TVL</h2>
                         <p class="description" style="margin: 4px 0 0;">TVL generation, leverage ranges, and trade-off analysis.</p>
                     </div>
                     <span style="font-size: 1rem; color: var(--text-secondary); flex-shrink: 0; margin-left: 12px;">&#9662;</span>
@@ -953,7 +951,7 @@
                 <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; width: 100%;">
                     <div style="background: rgba(156, 124, 244, 0.08); border: 1px solid rgba(156, 124, 244, 0.25); border-radius: 12px; padding: 20px;">
                         <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
-                            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-purple);">Generated TVL Range</div>
+                            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-purple);">Supported TVL Range</div>
                             <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 0.7rem; color: var(--text-secondary);">
                                 <span id="tvlToggleLabel">$</span>
                                 <div id="tvlToggle" onclick="toggleTvlMode()" style="width: 32px; height: 18px; background: var(--border-color); border-radius: 9px; position: relative; cursor: pointer; transition: background 0.2s;">
@@ -976,7 +974,7 @@
             <!-- Mini charts: TVL and Leverage vs Borrow LTV -->
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
                 <div style="background: rgba(156, 124, 244, 0.06); border: 1px solid rgba(156, 124, 244, 0.2); border-radius: 12px; padding: 16px;">
-                    <div id="tvlChartTitle" style="font-size: 0.8rem; font-weight: 600; color: var(--accent-purple); margin-bottom: 8px;">Generated TVL by Borrow LTV</div>
+                    <div id="tvlChartTitle" style="font-size: 0.8rem; font-weight: 600; color: var(--accent-purple); margin-bottom: 8px;">Supported TVL by Borrow LTV</div>
                     <div id="tvlByLtvChart" style="width: 100%; height: 180px;"></div>
                 </div>
                 <div style="background: rgba(156, 124, 244, 0.06); border: 1px solid rgba(156, 124, 244, 0.2); border-radius: 12px; padding: 16px;">
@@ -1013,7 +1011,7 @@
                                 <th style="text-align: left;" data-tip="Borrower equity needed to fill capacity at max leverage">Borrower Equity</th>
                                 <th style="text-align: left;" data-tip="Leverage multiple: 1 / (1 - Borrow LTV)">Leverage</th>
                                 <th id="netYieldHeader" style="text-align: left; overflow: visible; white-space: normal;" data-tip="Annualized yield including Twyne credit cost">Net Yield <span style="font-weight: 400; font-size: 0.7rem; text-transform: none; letter-spacing: 0; margin-left: 6px;">HF <input type="number" id="tradeoffHfInput" value="1.01" step="0.01" min="1.01" max="1.5" style="width: 46px; padding: 2px 4px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 3px; color: var(--text-primary); font-size: 0.7rem; text-align: center;"></span></th>
-                                <th style="text-align: left;" data-tip="Total looped TVL from looper collateral + creditor deposits">Generated TVL</th>
+                                <th style="text-align: left;" data-tip="Total looped TVL from looper collateral + creditor deposits">Supported TVL</th>
                             </tr>
                         </thead>
                         <tbody></tbody>
@@ -1295,7 +1293,7 @@
 
             // Update chart title
             document.getElementById('tvlChartTitle').textContent = tvlMultiplierMode
-                ? 'TVL Multiplier by Borrow LTV' : 'Generated TVL by Borrow LTV';
+                ? 'TVL Multiplier by Borrow LTV' : 'Supported TVL by Borrow LTV';
 
             // Re-render chart
             var chartY = tvlMultiplierMode ? chartTvls.map(function(v) { return v / seed; }) : chartTvls;
@@ -1678,7 +1676,7 @@
                 ? { ...miniLayout.yaxis, ticksuffix: 'x' }
                 : { ...miniLayout.yaxis, tickprefix: '$', tickformat: ',.0s' };
             document.getElementById('tvlChartTitle').textContent = tvlMultiplierMode
-                ? 'TVL Multiplier by Borrow LTV' : 'Generated TVL by Borrow LTV';
+                ? 'TVL Multiplier by Borrow LTV' : 'Supported TVL by Borrow LTV';
             if (tvlMultiplierMode && dataPoints.length > 0) {
                 document.getElementById('summaryMaxTvl').textContent = (dataPoints[0].tvl / clpAmount).toFixed(1) + 'x';
                 document.getElementById('summaryMinTvl').textContent = (dataPoints[dataPoints.length - 1].tvl / clpAmount).toFixed(1) + 'x';
@@ -1909,82 +1907,117 @@
             const irU = interestRate(p.utilization, p.iMin, p.i0, p.u0, p.iMax, p.gamma);
             const equity = parseFloat(document.getElementById('borrowerEquity').value.replace(/,/g, '')) || 1000000;
 
-            // Derive leverage from borrow LTVs
-            const aaveMaxLev = leverageFromLtv(p.borrowLtvE);
-            const twyneBorrowLtv = p.borrowLtvE * p.liqLtvT / p.liqLtvE;
-            const twyneMaxLev = leverageFromLtv(twyneBorrowLtv);
-            const aaveMaxInt = Math.floor(aaveMaxLev);
-            const twyneMaxInt = Math.floor(twyneMaxLev);
-
-            // Build unified leverage levels: Aave range + beyond-Aave range
-            const aaveLevels = [aaveMaxInt - 2, aaveMaxInt - 1, aaveMaxInt].filter(l => l >= 2);
-            const beyondLevels = [];
-            const beyondStart = aaveMaxInt + 1;
-            if (twyneMaxInt > aaveMaxInt) {
-                const range = twyneMaxInt - beyondStart;
-                const count = Math.min(4, range);
-                for (let i = 0; i < count; i++) {
-                    beyondLevels.push(Math.round(beyondStart + (range * i / Math.max(count - 1, 1))));
-                }
-                if (beyondLevels[beyondLevels.length - 1] !== twyneMaxInt) {
-                    beyondLevels.push(twyneMaxInt);
-                }
-            }
-            const allLevels = [...aaveLevels, ...beyondLevels];
-            const aaveMaxNetApy = aaveNetApy(aaveMaxInt, rSupply, rBorrow);
+            const targetHF = 1.02;
             const dash = '<span style="color:var(--text-secondary);">—</span>';
 
             // --- Scenario A: Aave Only ---
+            // Max leverage row (capped at borrowLtvE)
+            const aaveOperatingLtv = Math.min(p.liqLtvE / targetHF, p.borrowLtvE);
+            const aaveLeverage = leverageFromLtv(aaveOperatingLtv);
+            const aaveHF = p.liqLtvE / aaveOperatingLtv;
+            const posA = positionDetails(equity, aaveLeverage);
+            const netApyA = aaveNetApy(aaveLeverage, rSupply, rBorrow);
+
             const tbodyA = document.querySelector('#scenarioATable tbody');
             tbodyA.innerHTML = '';
 
-            aaveLevels.forEach(lev => {
+            // Fixed leverage rows (10x, 12x), then max leverage row
+            [10, 12].forEach(lev => {
+                const ltv = 1 - 1 / lev;
+                const hf = p.liqLtvE / ltv;
                 const pos = positionDetails(equity, lev);
-                const netApy = aaveNetApy(lev, rSupply, rBorrow);
-                const apyColor = netApy >= 0 ? 'var(--accent-green)' : 'var(--accent-orange)';
+                const apy = aaveNetApy(lev, rSupply, rBorrow);
+                const color = apy >= 0 ? 'var(--accent-green)' : 'var(--accent-orange)';
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${dash}</td>
-                    <td>${lev}x</td>
+                    <td>${lev.toFixed(1)}x</td>
                     <td>${formatNum(pos.collateral)}</td>
                     <td>${formatNum(pos.debt)}</td>
-                    <td>${(pos.ltv * 100).toFixed(1)}%</td>
-                    <td style="color:${apyColor};font-weight:600;">${(netApy * 100).toFixed(2)}%</td>
-                    <td>${dash}</td>
+                    <td>${(ltv * 100).toFixed(1)}%</td>
+                    <td>${hf.toFixed(2)}</td>
+                    <td style="font-weight:600;">${(apy * 100).toFixed(2)}%</td>
                 `;
                 tbodyA.appendChild(tr);
             });
 
+            // Max leverage row
+            const apyColorA = netApyA >= 0 ? 'var(--accent-green)' : 'var(--accent-orange)';
+            const trA = document.createElement('tr');
+            trA.innerHTML = `
+                <td>${dash}</td>
+                <td>${aaveLeverage.toFixed(1)}x</td>
+                <td>${formatNum(posA.collateral)}</td>
+                <td>${formatNum(posA.debt)}</td>
+                <td>${(posA.ltv * 100).toFixed(1)}%</td>
+                <td>${aaveHF.toFixed(2)}</td>
+                <td style="font-weight:600;">${(netApyA * 100).toFixed(2)}%</td>
+            `;
+            tbodyA.appendChild(trA);
+
             // --- Scenario B: With Twyne ---
+            // Generate rows at 1% liqLTV steps from just above liqLtvE up to liqLtvT
             const tbodyB = document.querySelector('#scenarioBTable tbody');
             tbodyB.innerHTML = '';
-            document.getElementById('scenarioBDeltaHeader').textContent = 'Delta vs Aave ' + aaveMaxInt + 'x';
+            const aaveMaxLev = leverageFromLtv(p.borrowLtvE);
+            _scenarioBeyondLevels = [];
 
-            beyondLevels.forEach(lev => {
-                const pos = positionDetails(equity, lev);
-                const levPsi = minPsiForLeverage(lev, p.borrowLtvE, p.liqLtvE, p.betaSafe);
-                const creditLpReq = pos.collateral / aaveMaxLev - equity;
-                const twyneApy = twyneNetApy(lev, rSupply, rBorrow, irU, levPsi);
-                const apyColor = twyneApy >= 0 ? 'var(--accent-green)' : 'var(--accent-orange)';
+            const liqLtvStartPct = Math.floor(p.liqLtvE * 100) + 1;
+            const liqLtvEndPct = Math.round(p.liqLtvT * 100);
 
-                const delta = twyneApy - aaveMaxNetApy;
-                const deltaClass = delta >= 0 ? 'delta-positive' : 'delta-negative';
-                const deltaStr = (delta >= 0 ? '+' : '') + (delta * 100).toFixed(2) + '%';
+            for (let liqPct = liqLtvStartPct; liqPct <= liqLtvEndPct; liqPct++) {
+                const stepLiqLtv = liqPct / 100;
+                // Maintain Aave's borrowLTV / liqLTV ratio
+                const stepBorrowLtv = p.borrowLtvE * stepLiqLtv / p.liqLtvE;
+                const stepOperatingLtv = Math.min(stepLiqLtv / targetHF, stepBorrowLtv);
+                const stepLev = leverageFromLtv(stepOperatingLtv);
+                const stepHF = stepLiqLtv / stepOperatingLtv;
+                const stepPos = positionDetails(equity, stepLev);
+                const stepPsi = minPsiForLeverage(stepLev, p.borrowLtvE, p.liqLtvE, p.betaSafe);
+                const stepCreditLpReq = stepPos.collateral / aaveMaxLev - equity;
+                const stepApy = twyneNetApy(stepLev, rSupply, rBorrow, irU, stepPsi);
+                const stepApyColor = stepApy >= 0 ? 'var(--accent-green)' : 'var(--accent-orange)';
+
+                const stepDelta = stepApy - netApyA;
+                const stepDeltaColor = stepDelta >= 0 ? 'var(--accent-green)' : 'var(--accent-orange)';
+                const stepDeltaStr = (stepDelta >= 0 ? '+' : '') + (stepDelta * 100).toFixed(2) + '%';
+                const stepCollGain = stepPos.collateral - posA.collateral;
+                const stepCollGainStr = stepCollGain > 0 ? '<span style="font-size:0.75rem;color:var(--accent-green);margin-left:4px;">(+' + formatNum(stepCollGain) + ')</span>' : '';
+                const stepDeltaInline = '<span style="font-size:0.75rem;color:' + stepDeltaColor + ';margin-left:4px;">(' + stepDeltaStr + ')</span>';
 
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
-                    <td style="color:var(--accent-blue);">${formatNum(creditLpReq)}</td>
-                    <td>${lev}x</td>
-                    <td>${formatNum(pos.collateral)}</td>
-                    <td>${formatNum(pos.debt)}</td>
-                    <td>${(pos.ltv * 100).toFixed(1)}%</td>
-                    <td style="color:${apyColor};font-weight:600;">${(twyneApy * 100).toFixed(2)}%</td>
-                    <td class="${deltaClass}">${deltaStr}</td>
+                    <td>${formatNum(stepCreditLpReq)}</td>
+                    <td>${stepLev.toFixed(1)}x</td>
+                    <td>${formatNum(stepPos.collateral)} ${stepCollGainStr}</td>
+                    <td>${formatNum(stepPos.debt)}</td>
+                    <td>${(stepPos.ltv * 100).toFixed(1)}%</td>
+                    <td>${stepHF.toFixed(2)}</td>
+                    <td style="font-weight:600;">${(stepApy * 100).toFixed(2)}% ${stepDeltaInline}</td>
                 `;
                 tbodyB.appendChild(tr);
-            });
+                _scenarioBeyondLevels.push(stepLev);
+            }
+            // --- Credit Examples callout ---
+            const aaveMaxLevLabel = aaveMaxLev.toFixed(1);
+            const twyneMaxLev = _scenarioBeyondLevels[_scenarioBeyondLevels.length - 1];
+            const twyneMidLev = _scenarioBeyondLevels[Math.floor(_scenarioBeyondLevels.length / 2)];
+            const extraTvl = equity * aaveMaxLev;
 
-            _scenarioBeyondLevels = beyondLevels;
+            document.getElementById('creditExamplesBox').innerHTML = `
+                <strong style="color: var(--text-primary);">Why this matters for LRT issuers</strong><br>
+                On Aave, <strong style="color: var(--accent-purple);">every $1 deposited can generate up to ~$${aaveMaxLevLabel} in looped TVL</strong>.
+                <br><br>
+                Most depositors don't max out their leverage, and many simply hold the asset looking for yield.
+                In both cases, Aave's utility is not fully utilized. Twyne puts it to work by letting these users earn delegation yield
+                while active loopers access even higher capital efficiency than Aave already provides.
+                <br><br>
+                One large looper can borrow all available credit and reach <strong style="color: var(--accent-purple);">${twyneMaxLev.toFixed(1)}x</strong>,
+                or many smaller loopers can each lever up to <strong style="color: var(--accent-purple);">${twyneMidLev.toFixed(1)}x</strong>.
+                Either way, the creditor's <strong style="color: var(--accent-purple);">${formatNum(equity)}</strong> is amplified into
+                <strong style="color: var(--accent-purple);">${formatNum(extraTvl)}</strong> of new TVL on the same Aave rails.
+            `;
+
             updateRateSensitivityChart();
         }
 
@@ -2031,7 +2064,7 @@
                 data.push({
                     x: steps, y: apys,
                     type: 'scatter', mode: 'lines',
-                    name: 'Twyne ' + lev + 'x',
+                    name: 'Twyne ' + lev.toFixed(1) + 'x',
                     line: { color: purples[i % purples.length], width: 2 },
                     hovertemplate: '%{y:.2f}%',
                 });
@@ -2148,7 +2181,7 @@
 
             const allTraces = [{ name: 'Aave ' + aaveLev + 'x', apys: aaveApys, color: '#ef6c00', lev: aaveLev, isAave: true }];
             _scenarioBeyondLevels.forEach((lev, i) => {
-                allTraces.push({ name: 'Twyne ' + lev + 'x', apys: data[i + 1].y, color: purples[i % purples.length], lev: lev, isAave: false });
+                allTraces.push({ name: 'Twyne ' + lev.toFixed(1) + 'x', apys: data[i + 1].y, color: purples[i % purples.length], lev: lev, isAave: false });
             });
 
             // --- Sensitivity table (by ETH borrow rate) ---
@@ -2235,7 +2268,7 @@
             ];
             beyondLevels.forEach((lev, i) => {
                 const levPsi = minPsiForLeverage(lev, p.borrowLtvE, p.liqLtvE, p.betaSafe);
-                leverageConfigs.push({ name: 'Twyne ' + lev + 'x', lev: lev, psi: levPsi, color: purples[i % purples.length], isAave: false });
+                leverageConfigs.push({ name: 'Twyne ' + lev.toFixed(1) + 'x', lev: lev, psi: levPsi, color: purples[i % purples.length], isAave: false });
             });
 
             const allTraces = [];
