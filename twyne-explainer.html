@@ -1519,7 +1519,8 @@
                     <canvas id="ltvDistChart"></canvas>
                   </div>
                   <div style="display: flex; flex-direction: column; justify-content: center; padding: 16px 24px; border-left: 1px solid var(--border);">
-                    <div style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 12px;">Delegate within Aave &mdash; or sell access to anyone outside it</div>
+                    <div style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;"><span style="color: var(--text);">V1.0</span> Delegate within Aave</div>
+                    <div style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 12px;"><span style="color: var(--text);">V1.1</span> Delegate outside of Aave</div>
                     <div style="font-size: 12px; color: var(--text-muted); line-height: 1.8;">
                       &bull; Earn Vaults<br>
                       &bull; Agentic DeFi<br>
@@ -1759,10 +1760,10 @@
     <h2 class="section-title">Capital Efficiency</h2>
 
     <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
-      A standalone 99% LTV market would be nearly impossible to bootstrap. Twyne builds on top of the underlying market's yield and liquidity &mdash; it only needs to supply the incremental credit required to bridge the gap to the target LTV.
+      A standalone 99% liquidation threshold market would be costly to bootstrap. Twyne builds on top of the underlying market's yield and liquidity &mdash; it only needs to supply the incremental credit required to bridge the gap to the target LT.
     </p>
     <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
-      Take stETH: Aave already provides ~95% LTV. Twyne only needs to bridge the last ~4% &mdash; just 4 cents per dollar of borrower collateral. That's a 25&times; capital multiplier. All borrowable liquidity from the underlying market comes for free, making new markets cheap to launch.
+      Take stETH: Aave already provides ~95% LT. Twyne only needs to bridge the last ~4% &mdash; just 4 cents per dollar of borrower collateral. That's a 25&times; capital multiplier. All borrowable liquidity from the underlying market comes for free, making new markets cheap to launch.
     </p>
 
     <!-- $1M supply → $25M borrower -->
@@ -1772,13 +1773,15 @@
         <span style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Creditor capital enables</span>
         <span style="font-size: 20px; color: var(--text-muted); margin: 0 4px;">&rarr;</span>
         <span style="font-size: 28px; font-weight: 700; color: var(--purple);">$25M</span>
-        <span style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Borrower positions</span>
+        <span style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Borrower positions at</span>
+        <span style="font-size: 28px; font-weight: 700; color: var(--purple);">99%</span>
+        <span style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Liquidation Threshold</span>
       </div>
     </div>
 
     <!-- Cost / Yield intro -->
     <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px;">
-      This capital efficiency is also reflected in the interest rate mechanics. Only a fraction of Creditor capital is needed to support each borrower &mdash; so borrowing stays cheap while Creditors earn an outsized yield on their thin tranche:
+      This capital efficiency is also reflected in the interest rate mechanics. Borrowing stays cheap while Creditors earn multiplied yield.
     </p>
 
     <!-- Cost / Yield table -->
@@ -1828,7 +1831,7 @@
       Two layers of liquidation: an internal mechanism that causes zero creditor losses, and an external fallback that is safe in most cases but carries tail risk.
     </p>
     <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
-      We stress-tested the worst case &mdash; no internal liquidations at all, every position falls back &mdash; across 1,115 Euler V2 events. Annualized creditor loss: ~0.16% at 94% max LTV, ~2% at 98%. This was volatile pairs only, and creditors are compensated for the risk. Correlated pairs with hardcoded oracles carry a fundamentally different risk profile.
+      We stress-tested the worst case &mdash; no internal liquidations at all, every position falls back &mdash; across 1,115 Euler V2 events. Annualized creditor loss: ~0.16% at 94% max LT, ~2% at 98%. Creditors are compensated for this risk through the delegation fee. Importantly, this was volatile pairs only &mdash; correlated pairs with hardcoded oracles carry a fundamentally different risk profile.
     </p>
     <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px;">
       Built on top of battle-tested Euler's EVC/EVK infrastructure ($10M+ security spend).
@@ -1848,10 +1851,10 @@
   <section class="section">
     <h2 class="section-title">What's Next</h2>
     <p style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 10px;">
-      Clearinghouses like DTCC net exposures and settle only residuals, functioning as netting layers for money and credit. DeFi followed the same arc: AMM aggregators evolved from simple pool routing into layers like CoWSwap, where orderflow is matched before touching liquidity.
+      In TradFi, clearinghouses like DTCC function as netting layers for money and credit. DeFi followed the same arc: AMM aggregators evolved from simple pool routing into layers like CoWSwap, where orderflow is matched before touching liquidity.
     </p>
     <p style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px;">
-      Lending is next. Twyne becomes the single point of entry for any lending or borrowing intent. Exposure and flows get netted. Users can opt to leverage in and out against other users. Liquidations become yield for idle depositors &mdash; and many more features to come. In the short term, we're working on:
+      Twyne becomes the single entry point for lending &mdash; user flows are netted, risks are segmented, and value is maximized. In the short term, we're working on:
     </p>
     <div style="padding-left: 16px; border-left: 2px solid var(--border-strong);">
       <div style="margin-bottom: 14px;">
