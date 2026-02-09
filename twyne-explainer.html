@@ -15,9 +15,9 @@
     --bg: #e5e5e5;
     --bg-card: #e5e5e5;
     --bg-elevated: #f5f5f5;
-    --text: #000005;
-    --text-secondary: #111118;
-    --text-muted: #1a1a28;
+    --text: #000000;
+    --text-secondary: #060610;
+    --text-muted: #0e0e1c;
     --purple: #7B2CBF;
     --purple-dim: rgba(123, 44, 191, 0.08);
     --purple-border: rgba(123, 44, 191, 0.25);
@@ -43,8 +43,8 @@
     --bg-card: #1a1a2e;
     --bg-elevated: #2a2a4a;
     --text: #ffffff;
-    --text-secondary: #eaeaf4;
-    --text-muted: #d0d0e8;
+    --text-secondary: #f4f4ff;
+    --text-muted: #e2e2f8;
     --purple: #a970e0;
     --purple-dim: rgba(169, 112, 224, 0.12);
     --purple-border: rgba(169, 112, 224, 0.35);
@@ -128,8 +128,7 @@
     justify-content: space-between;
     padding-top: 24px;
     padding-bottom: 40px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 48px;
+    margin-bottom: 24px;
   }
 
   .header-logo {
@@ -1374,7 +1373,7 @@
   /* Use-case row layout: text left, visual right */
   .uc-row {
     display: grid;
-    grid-template-columns: 1fr 0.5fr;
+    grid-template-columns: 1.2fr 0.35fr;
     column-gap: 32px;
     row-gap: 0;
     align-items: stretch;
@@ -1397,8 +1396,9 @@
     display: flex;
     align-items: stretch;
     justify-content: center;
-    height: 200px;
-    padding: 8px 0;
+    height: 180px;
+    align-self: center;
+    padding: 4px 0;
     position: relative;
   }
 
@@ -1461,7 +1461,7 @@
   </header>
 
   <!-- Overview -->
-  <section class="section" style="padding-top: 24px;">
+  <section class="section" style="padding-top: 48px;">
     <h2 class="section-title" style="margin-bottom: 14px;">Overview</h2>
     <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin: 0 0 16px;">
       Liquidity is expensive to source &mdash; meanwhile $30B in borrowing power sits idle on Aave. Lenders have idle borrowing capacity, while Borrowers are in need of it.
@@ -1505,14 +1505,14 @@
           <div class="expandable" id="ltv-chart-expand">
             <div class="expandable-header" onclick="toggleExpand('ltv-chart-expand')" style="width: 100%; display: flex; justify-content: space-between;">
               <div class="expandable-title" style="display: inline-flex; align-items: center; gap: 6px;">
-                <span>Aave Leverage Profile</span>
+                <span>Exemplary Aave Leverage Profile</span>
                 <span class="expandable-toggle">&#x25BE;</span>
               </div>
             </div>
             <div class="expandable-content">
               <div class="expandable-inner" style="padding: 0;">
                 <div style="padding: 16px 24px 0; font-size: 13px; color: var(--text-muted); line-height: 1.6;">Most Aave depositors never borrow — $12B sits at 0% LTV. Meanwhile, leveraged users cluster near the liquidation ceiling at 90–95%.</div>
-                <div style="position: relative; height: 340px;">
+                <div style="position: relative; height: 240px;">
                   <canvas id="ltvDistChart"></canvas>
                 </div>
               </div>
@@ -1529,7 +1529,7 @@
     <!-- Use Case 2: Boost Leverage -->
     <div class="uc-row">
       <div class="uc-text">
-        <div class="hero-stat" style="color: var(--purple);">50&times;</div>
+        <div class="hero-stat" style="color: var(--text-muted); text-decoration: underline;">50&times;</div>
         <div class="hero-stat-label">leverage</div>
         <p class="uc-desc" style="margin-top: 8px;">A few extra points of liquidation LTV unlock drastically more leverage.</p>
       </div>
@@ -1583,7 +1583,7 @@
     <!-- Use Case 3: Liquidation Protection -->
     <div class="uc-row">
       <div class="uc-text">
-        <div class="hero-stat" style="color: var(--purple);">94%</div>
+        <div class="hero-stat" style="color: var(--text-muted); text-decoration: underline;">94%</div>
         <div class="hero-stat-label">of liquidations saved</div>
         <p class="uc-desc" style="margin-top: 8px;">Protect against liquidations by increasing borrowing capacity. Same collateral, higher resilience.</p>
       </div>
@@ -1643,108 +1643,98 @@
   <section class="section">
     <h2 class="section-title">How It Works</h2>
 
-    <!-- Creditor -->
-    <div style="margin-bottom: 16px;">
-      <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text); margin-bottom: 6px;">Creditor</div>
-      <div style="font-size: 13px; line-height: 1.6; color: var(--text-muted);">
-        Deposits collateral into a lending market but doesn't borrow against it. Stakes it in Twyne to make the unused borrowing power available.
-      </div>
-    </div>
-
-    <!-- Borrower -->
-    <div style="margin-bottom: 24px;">
-      <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text); margin-bottom: 6px;">Borrower</div>
-      <div style="font-size: 13px; line-height: 1.6; color: var(--text-muted);">
-        Pulls the Creditor's borrowing power into their vault, combining it with their own collateral to take on more debt.
-      </div>
-    </div>
-
     <!-- Dual LTV Framework -->
-    <div>
-        <div style="margin-bottom: 10px;">
-          <span style="font-size: 12px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">Dual LTV Framework</span>
-        </div>
-        <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin: 0 0 12px 0;">Creditor collateral is deposited alongside the Borrower's, so the protocol sees one large, healthy position &mdash; always within its limits. Twyne tracks a second LTV against the Borrower's assets alone, keeping every loan overcollateralized from both views.</p>
-        <div style="display: flex; flex-direction: column; gap: 20px; max-width: 67%; margin: 0 auto; padding: 20px 0;">
+    <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+        <div style="padding: 20px 24px 24px;">
+          <div style="margin-bottom: 10px;">
+            <span style="font-size: 12px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">Dual LTV Framework</span>
+          </div>
+          <div style="display: flex; gap: 16px;">
+            <p style="flex: 1; font-size: 13px; color: var(--text-muted); line-height: 1.6; margin: 0;">Creditor collateral is deposited alongside the Borrower's, so the lending market sees one large, healthy position at a conservative LTV.</p>
+            <p style="flex: 1; font-size: 13px; color: var(--text-muted); line-height: 1.6; margin: 0;">Twyne tracks a second, higher LTV against only the Borrower's collateral.</p>
+          </div>
+          <div style="display: flex; gap: 16px; padding: 20px 0 0;">
 
-          <!-- Row 1: What Aave sees -->
-          <div style="display: grid; grid-template-columns: 96px 67px 1fr; align-items: center; gap: 28px;">
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
-              <img src="icons/aave-aave-logo.png" alt="Aave" style="width: 34px; height: 34px; border-radius: 50%;">
-              <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted); line-height: 1.2;">Aave sees</div>
-            </div>
-            <div>
-              <div style="font-size: 26px; font-weight: 700; color: var(--teal); line-height: 1;">71<span style="font-size: 17px; opacity: 0.65;">%</span></div>
-              <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted); margin-top: 1px;">LTV</div>
-            </div>
-            <div>
-              <div style="display: flex; gap: 3px; margin-bottom: 6px;">
-                <div style="width: 77%; height: 38px; position: relative; border-radius: 4px; overflow: hidden; border: 1px solid rgba(220, 80, 150, 0.35);">
+            <!-- What Aave sees -->
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                <img src="icons/aave-aave-logo.png" alt="Aave" style="width: 26px; height: 26px; border-radius: 50%;">
+                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted);">Aave sees</div>
+                <div style="font-size: 22px; font-weight: 700; color: var(--teal); line-height: 1; margin-left: 4px;">71<span style="font-size: 14px; opacity: 0.65;">%</span> <span style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted);">LTV</span></div>
+              </div>
+              <div style="display: flex; gap: 3px; margin-bottom: 4px;">
+                <div style="width: 54%; height: 24px; position: relative; border-radius: 3px; overflow: hidden; border: 1px solid rgba(220, 80, 150, 0.35);">
                   <div style="position: absolute; inset: 0; background: #dc5096; opacity: 0.15;"></div>
-                  <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 7px; font-size: 11px; font-weight: 600; color: #dc5096; letter-spacing: 0.2px;">Borrower Collateral</div>
+                  <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 6px; font-size: 9px; font-weight: 600; color: #dc5096; letter-spacing: 0.2px;">Borrower Collateral</div>
                 </div>
-                <div style="width: 23%; height: 38px; position: relative; border-radius: 4px; overflow: hidden; border: 1px solid var(--teal-border);">
+                <div style="width: 16%; height: 24px; position: relative; border-radius: 3px; overflow: hidden; border: 1px solid var(--teal-border);">
                   <div style="position: absolute; inset: 0; background: var(--teal); opacity: 0.12;"></div>
-                  <div style="position: relative; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; color: var(--teal); letter-spacing: 0.2px;">Credit</div>
+                  <div style="position: relative; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; color: var(--teal); letter-spacing: 0.2px;">Credit</div>
                 </div>
               </div>
-              <div style="position: relative; width: 71%; height: 28px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-strong);">
+              <div style="position: relative; width: 50%; height: 18px; border-radius: 3px; overflow: hidden; border: 1px solid var(--border-strong);">
                 <div style="position: absolute; inset: 0; background: var(--text-muted); opacity: 0.15;"></div>
-                <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 7px; font-size: 11px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.2px;">Debt</div>
+                <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 6px; font-size: 9px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.2px;">Debt</div>
               </div>
             </div>
-          </div>
 
-          <!-- Row 2: What Twyne sees -->
-          <div style="display: grid; grid-template-columns: 96px 67px 1fr; align-items: center; gap: 28px;">
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 5px;">
-              <img src="icons/twyne_symbol.png" alt="Twyne" class="dual-ltv-twyne-logo" style="width: 34px; height: 34px;">
-              <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted); line-height: 1.2;">Twyne sees</div>
-            </div>
-            <div>
-              <div style="font-size: 26px; font-weight: 700; color: var(--purple); line-height: 1;">92<span style="font-size: 17px; opacity: 0.65;">%</span></div>
-              <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted); margin-top: 1px;">LTV</div>
-            </div>
-            <div>
-              <div style="display: flex; gap: 3px; margin-bottom: 6px;">
-                <div style="width: 77%; height: 38px; position: relative; border-radius: 4px; overflow: hidden; border: 1px solid rgba(220, 80, 150, 0.35);">
+            <!-- What Twyne sees -->
+            <div style="flex: 1;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                <img src="icons/twyne_symbol.png" alt="Twyne" class="dual-ltv-twyne-logo" style="width: 26px; height: 26px;">
+                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted);">Twyne sees</div>
+                <div style="font-size: 22px; font-weight: 700; color: var(--purple); line-height: 1; margin-left: 4px;">92<span style="font-size: 14px; opacity: 0.65;">%</span> <span style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted);">LTV</span></div>
+              </div>
+              <div style="display: flex; gap: 3px; margin-bottom: 4px; width: 70%;">
+                <div style="width: 100%; height: 24px; position: relative; border-radius: 3px; overflow: hidden; border: 1px solid rgba(220, 80, 150, 0.35);">
                   <div style="position: absolute; inset: 0; background: #dc5096; opacity: 0.15;"></div>
-                  <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 7px; font-size: 11px; font-weight: 600; color: #dc5096; letter-spacing: 0.2px;">Borrower Collateral</div>
+                  <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 6px; font-size: 9px; font-weight: 600; color: #dc5096; letter-spacing: 0.2px;">Borrower Collateral</div>
                 </div>
               </div>
-              <div style="position: relative; width: 71%; height: 28px; border-radius: 4px; overflow: hidden; border: 1px solid var(--border-strong);">
+              <div style="position: relative; width: 64%; height: 18px; border-radius: 3px; overflow: hidden; border: 1px solid var(--border-strong);">
                 <div style="position: absolute; inset: 0; background: var(--text-muted); opacity: 0.15;"></div>
-                <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 7px; font-size: 11px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.2px;">Debt</div>
+                <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 6px; font-size: 9px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.2px;">Debt</div>
               </div>
             </div>
-          </div>
 
+          </div>
+          <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin: 16px 0 0 0;">Overcollateralized from both perspectives &mdash; protocol invariants enforce this at all times, and internal liquidators sanitize positions before they ever reach the underlying market.</p>
         </div>
-        <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin: 8px 0 0 0;">Every position stays overcollateralized. Twyne liquidators sanitize unhealthy positions before they ever reach the underlying protocol, keeping creditors protected at both layers.</p>
-      </div>
 
-      <!-- The Token Flow -->
-      <div style="border-top: 1px solid var(--border); padding: 4px 0 0; margin-top: 20px;">
-        <div class="expandable" id="token-flow-expand">
-          <div class="expandable-header" onclick="toggleExpand('token-flow-expand')" style="width: 100%; display: flex; align-items: center; gap: 10px;">
-            <div class="expandable-title" style="display: inline-flex; align-items: center; gap: 6px;">
-              <span>The Token Flow</span>
-              <span class="expandable-toggle">&#x25BE;</span>
+        <!-- The Token Flow -->
+        <div style="border-top: 1px solid var(--border); padding: 4px 24px 4px;">
+          <div class="expandable" id="token-flow-expand">
+            <div class="expandable-header" onclick="toggleExpand('token-flow-expand')" style="width: 100%; display: flex; align-items: center; gap: 10px;">
+              <div class="expandable-title" style="display: inline-flex; align-items: center; gap: 6px;">
+                <span>The Token Flow</span>
+                <span class="expandable-toggle">&#x25BE;</span>
+              </div>
+              <button id="replay-diagram-btn" style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border: 1px solid var(--purple-border); border-radius: 14px; background: rgba(123, 44, 191, 0.08); color: var(--purple); font-size: 10px; font-weight: 600; cursor: pointer; transition: opacity 0.2s, background 0.2s;" onmouseenter="this.style.background='rgba(123, 44, 191, 0.15)'" onmouseleave="this.style.background='rgba(123, 44, 191, 0.08)'" onclick="event.stopPropagation()">
+                <svg width="8" height="10" viewBox="0 0 8 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L7 5L1 9V1Z" fill="currentColor"/></svg>
+                Play
+              </button>
             </div>
-            <button id="replay-diagram-btn" style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border: 1px solid var(--purple-border); border-radius: 14px; background: rgba(123, 44, 191, 0.08); color: var(--purple); font-size: 10px; font-weight: 600; cursor: pointer; transition: opacity 0.2s, background 0.2s;" onmouseenter="this.style.background='rgba(123, 44, 191, 0.15)'" onmouseleave="this.style.background='rgba(123, 44, 191, 0.08)'" onclick="event.stopPropagation()">
-              <svg width="8" height="10" viewBox="0 0 8 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L7 5L1 9V1Z" fill="currentColor"/></svg>
-              Play
-            </button>
-          </div>
-          <div class="expandable-content">
-            <div class="expandable-inner" style="padding: 0 0 8px 0;">
-              <!-- Animated diagram -->
-              <iframe
-                id="twyne-diagram-iframe"
-                src="animations/twyne_diagram.html?embed=1"
-                style="width: 100%; height: 420px; border: none; display: block;"
-                title="Twyne Protocol Diagram"
-              ></iframe>
+            <div class="expandable-content">
+              <div class="expandable-inner" style="padding: 0 0 8px 0;">
+                <!-- Creditor / Borrower explanation -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; padding: 16px 0 24px;">
+                  <div>
+                    <h4 style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Creditor</h4>
+                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Deposits collateral into a lending market but doesn't borrow against it. Stakes it in Twyne to make the unused borrowing power available.</p>
+                  </div>
+                  <div>
+                    <h4 style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Borrower</h4>
+                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Pulls the Creditor's borrowing power into their vault, combining it with their own collateral to take on more debt.</p>
+                  </div>
+                </div>
+                <!-- Animated diagram -->
+                <iframe
+                  id="twyne-diagram-iframe"
+                  src="animations/twyne_diagram.html?embed=1"
+                  style="width: 100%; height: 420px; border: none; display: block;"
+                  title="Twyne Protocol Diagram"
+                ></iframe>
+              </div>
             </div>
           </div>
         </div>
@@ -1752,38 +1742,93 @@
 
   </section>
 
+  <!-- Capital Efficiency -->
+  <section class="section">
+    <h2 class="section-title">Capital Efficiency</h2>
+
+    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
+      A standalone 99% LTV market would be nearly impossible to bootstrap. Twyne builds on top of the underlying market's yield and liquidity &mdash; it only needs to supply the incremental credit required to bridge the gap to the target LTV.
+    </p>
+    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
+      Take stETH: Aave already provides ~95% LTV. Twyne only needs to bridge the last ~4% &mdash; just 4 cents per dollar of borrower collateral. That's a 25x capital multiplier: $1M in Creditor capital unlocks $25M in borrower positions at leverage levels no standalone market could support.
+    </p>
+
+    <!-- $1M supply → $25M borrower -->
+    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; margin-bottom: 24px;">
+      <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px;">
+        <span style="font-size: 28px; font-weight: 700; color: var(--teal);">$1M</span>
+        <span style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Creditor capital enables</span>
+        <span style="font-size: 20px; color: var(--text-muted); margin: 0 4px;">&rarr;</span>
+        <span style="font-size: 28px; font-weight: 700; color: var(--purple);">$25M</span>
+        <span style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Borrower positions</span>
+      </div>
+    </div>
+
+    <!-- Cost / Yield intro -->
+    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px;">
+      This capital efficiency flows directly into rates. Only a fraction of Creditor capital is needed to support each borrower &mdash; so borrowing stays cheap while Creditors earn an outsized yield on their thin tranche:
+    </p>
+
+    <!-- Cost / Yield table -->
+    <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 24px;">
+      <!-- Header -->
+      <div style="display: grid; grid-template-columns: 1.2fr 0.6fr 1fr 1fr 0.8fr; gap: 0; padding: 10px 20px; border-bottom: 1px solid var(--border);">
+        <div style="font-size: 10px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;"></div>
+        <div style="font-size: 10px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">Multiplier</div>
+        <div style="font-size: 10px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">Creditor Yield</div>
+        <div style="font-size: 10px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">Borrower Cost</div>
+        <div style="font-size: 10px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">LiqLTV Boost</div>
+      </div>
+      <!-- LRT row -->
+      <div style="display: grid; grid-template-columns: 1.2fr 0.6fr 1fr 1fr 0.8fr; gap: 0; padding: 14px 20px; align-items: center; border-bottom: 1px solid var(--border);">
+        <div>
+          <div style="font-size: 12px; font-weight: 600; color: var(--text);">LRT Carry Trades</div>
+          <div style="font-size: 10px; color: var(--text-muted);">eETH/WETH &middot; e-mode</div>
+        </div>
+        <div style="font-size: 18px; font-weight: 700; color: var(--text);">25x</div>
+        <div style="font-size: 18px; font-weight: 700; color: var(--teal);">~1.2%<span style="font-size: 10px; font-weight: 500; color: var(--text-muted);"> /yr</span></div>
+        <div style="font-size: 18px; font-weight: 700; color: var(--purple);">~0.05%<span style="font-size: 10px; font-weight: 500; color: var(--text-muted);"> /yr</span></div>
+        <div style="font-size: 14px; font-weight: 600; color: var(--text);">95% &rarr; 99%</div>
+      </div>
+      <!-- Volatile row -->
+      <div style="display: grid; grid-template-columns: 1.2fr 0.6fr 1fr 1fr 0.8fr; gap: 0; padding: 14px 20px; align-items: center;">
+        <div>
+          <div style="font-size: 12px; font-weight: 600; color: var(--text);">Volatile Pairs</div>
+          <div style="font-size: 10px; color: var(--text-muted);">ETH/USDC, WBTC/USDC</div>
+        </div>
+        <div style="font-size: 18px; font-weight: 700; color: var(--text);">8.5&times;</div>
+        <div style="font-size: 18px; font-weight: 700; color: var(--teal);">~7.7%<span style="font-size: 10px; font-weight: 500; color: var(--text-muted);"> /yr</span></div>
+        <div style="font-size: 18px; font-weight: 700; color: var(--purple);">~1%<span style="font-size: 10px; font-weight: 500; color: var(--text-muted);"> /yr</span></div>
+        <div style="font-size: 14px; font-weight: 600; color: var(--text);">85% &rarr; 95%</div>
+      </div>
+    </div>
+    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0 0 24px;">
+      For context, external liquidation penalties run 5&ndash;10%. At the ~1% annual siphoning rate, one day of Twyne costs ~0.003% &mdash; roughly 1,800x cheaper than a 5% liquidation penalty. Unlike a penalty, it's paid gradually with no forced selling.
+    </p>
+
+  </section>
+
   <!-- Risk & Security -->
   <section class="section">
     <h2 class="section-title">Risk &amp; Security</h2>
 
-    <!-- Credit Risk -->
-    <div style="margin-bottom: 24px;">
-      <h3 style="font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Credit Risk</h3>
-      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
-        Two layers of liquidation: an internal mechanism that causes zero creditor losses, and an external fallback that is safe in most cases but carries tail risk.
-      </p>
-      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
-        Stress-testing the worst case &mdash; no internal liquidations, every position falls back &mdash; across 1,115 Euler V2 events, annualized creditor loss was ~0.16% at 94% max LTV and ~2% at 98%. Volatile pairs only; correlated pairs with hardcoded oracles carry different risk profile.
-      </p>
-      <div style="display: flex; gap: 24px; font-size: 11px;">
-        <a href="https://github.com/0xTwyne/papers/blob/main/Twyne_V1_Whitepaper.pdf" target="_blank" style="color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">Whitepaper</a>
-        <a href="https://x.com/twynexyz/status/1963651851125231839" target="_blank" style="color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">CLP Loss Analysis</a>
-      </div>
-    </div>
-
-    <!-- Smart Contract Risk -->
-    <div>
-      <h3 style="font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Smart Contract Risk</h3>
-      <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
-        Built on top of battle-tested Euler's EVC/EVK infrastructure ($10M+ security spend).
-        Audited by <a href="https://yaudit.dev" target="_blank" style="color: var(--purple);">yAudit</a> &amp; <a href="https://seceureka.com" target="_blank" style="color: var(--purple);">SecEureka</a>.
-        Fuzzed by <a href="https://enigmadark.com" target="_blank" style="color: var(--purple);">Enigma Dark</a>.
-        $50k bug bounty via <a href="https://immunefi.com/bug-bounty/twyne/information/" target="_blank" style="color: var(--purple);">Immunefi</a>.
-      </p>
-      <div style="display: flex; gap: 24px; font-size: 11px;">
-        <a href="https://twyne.gitbook.io/twyne/resources/security" target="_blank" style="color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">Audit Reports</a>
-        <a href="https://twyne.gitbook.io/twyne/" target="_blank" style="color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">Documentation</a>
-      </div>
+    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
+      Two layers of liquidation: an internal mechanism that causes zero creditor losses, and an external fallback that is safe in most cases but carries tail risk.
+    </p>
+    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
+      Stress-testing the worst case &mdash; no internal liquidations, every position falls back &mdash; across 1,115 Euler V2 events, annualized creditor loss was ~0.16% at 94% max LTV and ~2% at 98%. Volatile pairs only; correlated pairs with hardcoded oracles carry different risk profile.
+    </p>
+    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px;">
+      Built on top of battle-tested Euler's EVC/EVK infrastructure ($10M+ security spend).
+      Audited by <a href="https://yaudit.dev" target="_blank" style="color: var(--text-muted); text-decoration: underline;">yAudit</a> &amp; <a href="https://seceureka.com" target="_blank" style="color: var(--text-muted); text-decoration: underline;">SecEureka</a>.
+      Fuzzed by <a href="https://enigmadark.com" target="_blank" style="color: var(--text-muted); text-decoration: underline;">Enigma Dark</a>.
+      $50k bug bounty via <a href="https://immunefi.com/bug-bounty/twyne/information/" target="_blank" style="color: var(--text-muted); text-decoration: underline;">Immunefi</a>.
+    </p>
+    <div style="display: flex; gap: 24px; font-size: 11px;">
+      <a href="https://twyne.gitbook.io/twyne/" target="_blank" style="color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">Documentation</a>
+      <a href="https://twyne.gitbook.io/twyne/resources/security" target="_blank" style="color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">Audit Reports</a>
+      <a href="https://github.com/0xTwyne/papers/blob/main/Twyne_V1_Whitepaper.pdf" target="_blank" style="color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">Whitepaper</a>
+      <a href="https://x.com/twynexyz/status/1963651851125231839" target="_blank" style="color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">CLP Loss Analysis</a>
     </div>
   </section>
 
@@ -1794,18 +1839,18 @@
       Clearinghouses like DTCC net exposures and settle only residuals, functioning as netting layers for money and credit. DeFi followed the same arc: AMM aggregators evolved from simple pool routing into layers like CoWSwap, where orderflow is matched before touching liquidity.
     </p>
     <p style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px;">
-      Lending is now on the same trajectory. Twyne aggregates lending markets through credit delegation &mdash; risk-segregated by design. In the short term, we will launch:
+      Lending is next. Twyne becomes the single point of entry for any lending or borrowing intent. Exposure and flows get netted. Users can opt to leverage in and out against other users. Liquidations become yield for idle depositors &mdash; and many more features to come. In the short term, we're working on:
     </p>
-    <ul class="sec-list" style="grid-template-columns: 1fr; row-gap: 0;">
-      <li class="sec-item">
-        <span class="sec-marker">Extend Credit Lines</span>
-        <span class="sec-desc">Credit delegation routes borrowing power on Aave to any asset. More uniquely, it unlocks time-delayed operations: non-atomic liquidations, RWA settlement, cross-market netting.</span>
-      </li>
-      <li class="sec-item" style="border-bottom: none;">
-        <span class="sec-marker">Risk Tranching</span>
-        <span class="sec-desc">Twyne vaults can stack on top of each other. A second Twyne layer can push LTV from 95% to 98%, and a third even higher and additionally opt in to liquidate the position &mdash; each layer taking on only its own slice of risk. This unlocks the full leverage spectrum without concentrating exposure.</span>
-      </li>
-    </ul>
+    <div style="padding-left: 16px; border-left: 2px solid var(--border-strong);">
+      <div style="margin-bottom: 14px;">
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; color: var(--text);">Extend Credit Lines</span>
+        <p style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 4px 0 0;">Credit delegation routes borrowing power on Aave to any asset. More uniquely, it unlocks time-delayed operations: non-atomic liquidations, RWA settlement, cross-market netting.</p>
+      </div>
+      <div>
+        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; color: var(--text);">Risk Tranching</span>
+        <p style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 4px 0 0;">Twyne vaults can stack on top of each other. A second Twyne layer can push LTV from 95% to 98%, and a third even higher and additionally opt in to liquidate the position &mdash; each layer taking on only its own slice of risk. This unlocks the full leverage spectrum without concentrating exposure.</p>
+      </div>
+    </div>
   </section>
 
   <!-- Team -->
@@ -1815,15 +1860,15 @@
     <!-- Background & research -->
     <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-top: 20px;">
       The team is well-positioned to build a risk layer on top of existing lending markets. Before Twyne, they ran 0xsidequest — a white-glove risk advisory (think Chaos Labs / Gauntlet) — modeling risks in DeFi lending, CDP stablecoins, and DEX liquidity. Published research includes
-      <a href="https://arxiv.org/abs/2212.07306" target="_blank" style="color: var(--purple);">Toxic Liquidation Spirals</a>,
-      <a href="https://arxiv.org/abs/2211.08870" target="_blank" style="color: var(--purple);">Multi-asset DeFi Lending Models</a>, and
-      <a href="https://mirror.xyz/0x69063cA6E3530a255317e0Bd7aeDb4BF35fb74B1/VQ6bMTeSbbFb9eXMqFzCkN5WW_Ed7h-qUce74TGbwCo" target="_blank" style="color: var(--purple);">RAI Fork Parameters</a>.
+      <a href="https://arxiv.org/abs/2212.07306" target="_blank" style="color: var(--text-muted); text-decoration: underline;">Toxic Liquidation Spirals</a>,
+      <a href="https://arxiv.org/abs/2211.08870" target="_blank" style="color: var(--text-muted); text-decoration: underline;">Multi-asset DeFi Lending Models</a>, and
+      <a href="https://mirror.xyz/0x69063cA6E3530a255317e0Bd7aeDb4BF35fb74B1/VQ6bMTeSbbFb9eXMqFzCkN5WW_Ed7h-qUce74TGbwCo" target="_blank" style="color: var(--text-muted); text-decoration: underline;">RAI Fork Parameters</a>.
     </p>
 
     <div style="margin-top: 28px;">
       <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Previously At</div>
       <div class="backers">
-        Spearbit<span class="sep">&middot;</span>Ethereum Foundation<span class="sep">&middot;</span>Gnosis<span class="sep">&middot;</span>Polygon<span class="sep">&middot;</span>Giza<span class="sep">&middot;</span>Liquity<span class="sep">&middot;</span>NYU<span class="sep">&middot;</span>Oxford
+        Spearbit<span class="sep">&middot;</span>Ethereum Foundation<span class="sep">&middot;</span>Gnosis<span class="sep">&middot;</span>Polygon<span class="sep">&middot;</span>Giza<span class="sep">&middot;</span>Liquity<span class="sep">&middot;</span>New York University<span class="sep">&middot;</span>University of Oxford
       </div>
     </div>
   </section>
