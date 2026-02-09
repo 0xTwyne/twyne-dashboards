@@ -15,9 +15,9 @@
     --bg: #e5e5e5;
     --bg-card: #e5e5e5;
     --bg-elevated: #f5f5f5;
-    --text: #1a1a2e;
-    --text-secondary: #555566;
-    --text-muted: #606075;
+    --text: #000005;
+    --text-secondary: #111118;
+    --text-muted: #1a1a28;
     --purple: #7B2CBF;
     --purple-dim: rgba(123, 44, 191, 0.08);
     --purple-border: rgba(123, 44, 191, 0.25);
@@ -30,8 +30,8 @@
     --coral: #c75050;
     --coral-dim: rgba(199, 80, 80, 0.1);
     --coral-border: rgba(199, 80, 80, 0.3);
-    --border: rgba(0, 0, 0, 0.06);
-    --border-strong: rgba(0, 0, 0, 0.1);
+    --border: rgba(0, 0, 0, 0.12);
+    --border-strong: rgba(0, 0, 0, 0.18);
     --radius: 6px;
     --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
@@ -42,9 +42,9 @@
     --bg: #1a1a2e;
     --bg-card: #1a1a2e;
     --bg-elevated: #2a2a4a;
-    --text: #e8e8f0;
-    --text-secondary: #a0a0b8;
-    --text-muted: #707088;
+    --text: #ffffff;
+    --text-secondary: #eaeaf4;
+    --text-muted: #d0d0e8;
     --purple: #a970e0;
     --purple-dim: rgba(169, 112, 224, 0.12);
     --purple-border: rgba(169, 112, 224, 0.35);
@@ -57,8 +57,8 @@
     --coral: #e07070;
     --coral-dim: rgba(224, 112, 112, 0.12);
     --coral-border: rgba(224, 112, 112, 0.35);
-    --border: rgba(255, 255, 255, 0.08);
-    --border-strong: rgba(255, 255, 255, 0.15);
+    --border: rgba(255, 255, 255, 0.14);
+    --border-strong: rgba(255, 255, 255, 0.22);
     --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.4);
   }
@@ -117,6 +117,7 @@
     max-width: 880px;
     margin: 0 auto;
     padding: 48px 32px 64px;
+    zoom: 1.12;
   }
 
   /* ── Header ── */
@@ -829,19 +830,16 @@
 
   .sec-item {
     padding: 14px 0;
-    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: baseline;
     gap: 16px;
   }
 
-  .sec-item:nth-last-child(-n+2) { border-bottom: none; }
-
   .sec-marker {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
     font-weight: 600;
-    color: var(--purple);
+    color: var(--text);
     white-space: nowrap;
     min-width: 130px;
     flex-shrink: 0;
@@ -1376,10 +1374,11 @@
   /* Use-case row layout: text left, visual right */
   .uc-row {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 32px;
+    grid-template-columns: 1fr 0.5fr;
+    column-gap: 32px;
+    row-gap: 0;
     align-items: stretch;
-    padding: 20px 24px;
+    padding: 20px 24px 4px;
     margin-top: 16px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -1540,7 +1539,7 @@
         </div>
       </div>
       <!-- Expandable: Looping Yield Calculator -->
-      <div style="border-top: 1px solid var(--border); margin: 0 -24px; padding: 4px 24px 4px; grid-column: 1 / -1;">
+      <div style="border-top: 1px solid var(--border); margin: 0 -24px -4px; padding: 4px 24px 4px; grid-column: 1 / -1;">
         <div class="expandable" id="boost-leverage-sim">
           <div class="expandable-header" onclick="toggleExpand('boost-leverage-sim')" style="width: 100%; display: flex; justify-content: space-between;">
             <div class="expandable-title" style="display: inline-flex; align-items: center; gap: 6px;">
@@ -1594,7 +1593,7 @@
         </div>
       </div>
       <!-- Expandable: Liquidation Protection Analysis -->
-      <div style="border-top: 1px solid var(--border); margin: 0 -24px; padding: 4px 24px 4px; grid-column: 1 / -1;">
+      <div style="border-top: 1px solid var(--border); margin: 0 -24px -4px; padding: 4px 24px 4px; grid-column: 1 / -1;">
         <div class="expandable" id="liq-analysis">
           <div class="expandable-header" onclick="toggleExpand('liq-analysis')" style="width: 100%; display: flex; justify-content: space-between;">
             <div class="expandable-title" style="display: inline-flex; align-items: center; gap: 6px;">
@@ -1795,7 +1794,7 @@
       Clearinghouses like DTCC net exposures and settle only residuals, functioning as netting layers for money and credit. DeFi followed the same arc: AMM aggregators evolved from simple pool routing into layers like CoWSwap, where orderflow is matched before touching liquidity.
     </p>
     <p style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px;">
-      Lending is now on the same trajectory. Twyne aggregates users to allow secondary loan agreements, growing with its network and use cases. In the short term, we will launch:
+      Lending is now on the same trajectory. Twyne aggregates lending markets through credit delegation &mdash; risk-segregated by design. In the short term, we will launch:
     </p>
     <ul class="sec-list" style="grid-template-columns: 1fr; row-gap: 0;">
       <li class="sec-item">
@@ -2039,17 +2038,7 @@
       });
       html += '</tbody>';
 
-      // Credit cost footer row inside same table
-      html += '<tfoot><tr style="border-top: 2px solid var(--border-strong);">';
-      html += '<th style="font-size: 9px; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px; text-align: right; padding-right: 16px;">Credit Cost</th>';
-      ltvValues.forEach((ltv, i) => {
-        const psiVal = (ltv / 100) / (betaSafe * lambdaE) - 1;
-        const cost = psiVal * (clpYield / utilization) * 100;
-        const cls = i === 1 ? ' class="col-sep"' : '';
-        html += '<td' + cls + ' style="font-size: 11px; color: var(--text-muted); font-weight: 500;">' + cost.toFixed(2) + '%</td>';
-      });
-      html += '</tr></tfoot></table>';
-      html += '<div style="font-family: \'IBM Plex Mono\', monospace; font-size: 11px; color: var(--text-muted); line-height: 1.5; margin-top: 10px; padding: 0 2px;">Credit cost is already deducted from the APY above. Twyne only needs a fraction of additional collateral to boost each incremental point of Liq LTV, keeping the cost low even at high leverage.</div>';
+      html += '</tbody></table>';
 
       container.innerHTML = html;
     }
@@ -2397,8 +2386,7 @@
     // Initialize on load
     (function() {
       const saved = localStorage.getItem('twyne-dark-mode');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const isDark = saved ? saved === 'dark' : prefersDark;
+      const isDark = saved === 'dark';
       if (isDark) {
         document.documentElement.classList.add('dark');
         updateToggleIcon(true);
