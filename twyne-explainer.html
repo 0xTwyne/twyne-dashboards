@@ -3082,23 +3082,23 @@
       for (let d = 0; d <= N; d++) {
         days.push(d);
         const t = d / N;
-        // Health curve dips below Aave's 1.0 but stays above Twyne's 0.86
-        const hf = 1.01 + 0.12 * Math.cos(t * Math.PI * 2 - 0.15);
+        // Health curve dips below Aave's 1.0 but stays above Twyne's 0.72
+        const hf = 1.01 + 0.20 * Math.cos(t * Math.PI * 2 - 0.15);
         hfData.push(hf);
 
         // Aave liq drops to Twyne level mid-chart, recovers after blue line recovers
         let aave = 1.0;
         if (t > 0.20 && t <= 0.40) {
           const s = (t - 0.20) / 0.20;
-          aave = 1.0 - 0.14 * (0.5 - 0.5 * Math.cos(s * Math.PI));
+          aave = 1.0 - 0.28 * (0.5 - 0.5 * Math.cos(s * Math.PI));
         } else if (t > 0.40 && t <= 0.65) {
-          aave = 0.86;
+          aave = 0.72;
         } else if (t > 0.65 && t <= 0.85) {
           const s = (t - 0.65) / 0.20;
-          aave = 0.86 + 0.14 * (0.5 - 0.5 * Math.cos(s * Math.PI));
+          aave = 0.72 + 0.28 * (0.5 - 0.5 * Math.cos(s * Math.PI));
         }
         aaveData.push(aave);
-        twyneData.push(0.86);
+        twyneData.push(0.72);
       }
 
       const chart = new Chart(ctx, {
@@ -3109,9 +3109,9 @@
             {
               label: 'Health Factor',
               data: hfData,
-              borderColor: isDark ? 'rgba(180,180,190,0.8)' : 'rgba(90,90,100,0.8)',
+              borderColor: isDark ? 'rgba(200,200,210,0.6)' : 'rgba(150,150,160,0.6)',
               backgroundColor: 'transparent',
-              borderWidth: 2.5,
+              borderWidth: 2.0,
               pointRadius: 0,
               tension: 0.35,
               order: 1,
@@ -3153,7 +3153,7 @@
           },
           scales: {
             x: { display: false },
-            y: { display: false, min: 0.78, max: 1.20 }
+            y: { display: false, min: 0.62, max: 1.25 }
           }
         },
         plugins: [{
