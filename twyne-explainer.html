@@ -846,7 +846,7 @@
 
   .sec-desc {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 13px;
+    font-size: 12px;
     color: var(--text-muted);
     line-height: 1.6;
   }
@@ -1412,7 +1412,7 @@
 
   .uc-row .uc-desc {
     padding: 0;
-    font-size: 13px;
+    font-size: 12px;
     line-height: 1.6;
     color: var(--text-secondary);
   }
@@ -1463,10 +1463,10 @@
   <!-- Overview -->
   <section class="section" style="padding-top: 48px;">
     <h2 class="section-title" style="margin-bottom: 14px;">Overview</h2>
-    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin: 0 0 16px;">
+    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0 0 16px;">
       Liquidity is expensive to source &mdash; meanwhile $30B in borrowing power sits idle on Aave. Lenders have idle borrowing capacity, while Borrowers are in need of it.
     </p>
-    <p style="font-size: 13px; color: var(--text-muted); margin: 0 0 14px;">Twyne connects the two, creating a marketplace for credit.</p>
+    <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 14px;">Twyne connects the two, creating a marketplace for credit.</p>
     <div>
       <div class="why-solution-card">
         <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px;">Credit Delegation</div>
@@ -1511,8 +1511,8 @@
             </div>
             <div class="expandable-content">
               <div class="expandable-inner" style="padding: 0;">
-                <div style="padding: 16px 24px 0; font-size: 13px; color: var(--text-muted); line-height: 1.6;">Most Aave depositors never borrow — $12B sits at 0% LTV. Meanwhile, leveraged users cluster near the liquidation ceiling at 90–95%.</div>
-                <div style="position: relative; height: 240px;">
+                <div style="padding: 16px 24px 0; font-size: 12px; color: var(--text-muted); line-height: 1.6;">Most Aave depositors never borrow — $12B sits at 0% LTV. Meanwhile, leveraged users cluster near the liquidation ceiling at 90–95%.</div>
+                <div style="position: relative; height: 240px; padding: 16px 48px 12px;">
                   <canvas id="ltvDistChart"></canvas>
                 </div>
               </div>
@@ -1549,28 +1549,27 @@
           </div>
           <div class="expandable-content">
             <div class="expandable-inner" style="padding: 0;">
-          <!-- Rate inputs -->
-          <div style="padding: 20px 24px; background: var(--bg-card); border-bottom: 1px solid var(--border); display: flex; gap: 16px; align-items: center; flex-wrap: wrap; font-size: 11px; color: var(--text-muted);">
-            <label style="display: flex; align-items: center; gap: 6px;">
-              Staking Yield
-              <input type="number" id="inputStakeRate" value="3.00" step="0.05" min="0" max="20" style="width: 62px; padding: 3px 6px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-elevated); color: var(--text-primary); font-size: 11px; text-align: right;">
-              <span style="color: var(--text-muted);">%</span>
-            </label>
-            <label style="display: flex; align-items: center; gap: 6px;">
-              Borrow Cost
-              <input type="number" id="inputBorrowRate" value="2.00" step="0.05" min="0" max="20" style="width: 62px; padding: 3px 6px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-elevated); color: var(--text-primary); font-size: 11px; text-align: right;">
-              <span style="color: var(--text-muted);">%</span>
-            </label>
-            <label style="display: flex; align-items: center; gap: 6px;">
-              Creditor Yield
-              <input type="number" id="inputClpYield" value="1.31" step="0.05" min="0" max="20" style="width: 62px; padding: 3px 6px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-elevated); color: var(--text-primary); font-size: 11px; text-align: right;">
-              <span style="color: var(--text-muted);">%</span>
-            </label>
-          </div>
-
           <!-- Yield Table -->
           <div style="padding: 20px 24px; background: var(--bg-card); border-bottom: 1px solid var(--border);">
-            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">Each cell shows <strong style="color: var(--text);">net looping APY</strong> at different leverage levels. Aave caps out at 95% Liq LTV. Twyne pushes up to 99%. Yields depend on the rates above.</div>
+            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px;">Each cell shows <strong style="color: var(--text);">net looping APY</strong> at different leverage levels. Aave caps out at 95% Liq LTV. Twyne pushes up to 99%.</div>
+            <!-- Rate inputs -->
+            <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; font-size: 11px; color: var(--text-muted); margin-bottom: 20px;">
+              <label style="display: flex; align-items: center; gap: 6px;">
+                Staking Yield
+                <input type="number" id="inputStakeRate" value="3.00" step="0.05" min="0" max="20" style="width: 62px; padding: 3px 6px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-elevated); color: var(--text-primary); font-size: 11px; text-align: right;">
+                <span style="color: var(--text-muted);">%</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px;">
+                Borrow Cost
+                <input type="number" id="inputBorrowRate" value="2.00" step="0.05" min="0" max="20" style="width: 62px; padding: 3px 6px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-elevated); color: var(--text-primary); font-size: 11px; text-align: right;">
+                <span style="color: var(--text-muted);">%</span>
+              </label>
+              <label style="display: flex; align-items: center; gap: 6px;">
+                Creditor Yield
+                <input type="number" id="inputClpYield" value="1.31" step="0.05" min="0" max="20" style="width: 62px; padding: 3px 6px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-elevated); color: var(--text-primary); font-size: 11px; text-align: right;">
+                <span style="color: var(--text-muted);">%</span>
+              </label>
+            </div>
             <div id="yieldHeatmap"></div>
           </div>
 
@@ -1605,8 +1604,8 @@
             <div class="expandable-inner" style="padding: 0;">
           <!-- Explainer + stats -->
           <div style="padding: 20px 24px; background: var(--bg-card); border-bottom: 1px solid var(--border);">
-            <div style="font-size: 13px; line-height: 1.6; color: var(--text-muted); margin-bottom: 16px;">
-              We took 1,115 positions that were liquidated on Euler V2 and simulated what happens with Twyne's higher buffer &mdash; do they survive, and do they stay healthy over the next 30 days?
+            <div style="font-size: 12px; line-height: 1.6; color: var(--text-muted); margin-bottom: 16px;">
+              We took positions that were liquidated in WETH-USDC markets on Aave and simulated what happens with Twyne's higher buffer &mdash; do they survive, and do they stay healthy over the next 30 days?
             </div>
             <div style="margin-bottom: 16px;">
               <a href="https://x.com/twynexyz/status/1942950529304310186" target="_blank" style="font-size: 11px; color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">Full analysis &rarr;</a>
@@ -1649,14 +1648,10 @@
           <div style="margin-bottom: 10px;">
             <span style="font-size: 12px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">Dual LTV Framework</span>
           </div>
-          <div style="display: flex; gap: 16px;">
-            <p style="flex: 1; font-size: 13px; color: var(--text-muted); line-height: 1.6; margin: 0;">Creditor collateral is deposited alongside the Borrower's, so the lending market sees one large, healthy position at a conservative LTV.</p>
-            <p style="flex: 1; font-size: 13px; color: var(--text-muted); line-height: 1.6; margin: 0;">Twyne tracks a second, higher LTV against only the Borrower's collateral.</p>
-          </div>
-          <div style="display: flex; gap: 16px; padding: 20px 0 0;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
 
             <!-- What Aave sees -->
-            <div style="flex: 1;">
+            <div>
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
                 <img src="icons/aave-aave-logo.png" alt="Aave" style="width: 26px; height: 26px; border-radius: 50%;">
                 <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted);">Aave sees</div>
@@ -1679,7 +1674,7 @@
             </div>
 
             <!-- What Twyne sees -->
-            <div style="flex: 1;">
+            <div>
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
                 <img src="icons/twyne_symbol.png" alt="Twyne" class="dual-ltv-twyne-logo" style="width: 26px; height: 26px;">
                 <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted);">Twyne sees</div>
@@ -1698,7 +1693,11 @@
             </div>
 
           </div>
-          <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin: 16px 0 0 0;">Overcollateralized from both perspectives &mdash; protocol invariants enforce this at all times, and internal liquidators sanitize positions before they ever reach the underlying market.</p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 24px 0 0;">
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Creditor collateral is deposited alongside the Borrower's, so the lending market sees one large, healthy position at a conservative LTV.</p>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Twyne tracks a second, higher LTV against only the Borrower's collateral.</p>
+          </div>
+          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 16px 0 0 0;">Overcollateralized from both perspectives &mdash; protocol invariants enforce this at all times, and internal liquidators sanitize positions before they ever reach the underlying market.</p>
         </div>
 
         <!-- The Token Flow -->
@@ -1746,11 +1745,11 @@
   <section class="section">
     <h2 class="section-title">Capital Efficiency</h2>
 
-    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
+    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
       A standalone 99% LTV market would be nearly impossible to bootstrap. Twyne builds on top of the underlying market's yield and liquidity &mdash; it only needs to supply the incremental credit required to bridge the gap to the target LTV.
     </p>
-    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
-      Take stETH: Aave already provides ~95% LTV. Twyne only needs to bridge the last ~4% &mdash; just 4 cents per dollar of borrower collateral. That's a 25x capital multiplier: $1M in Creditor capital unlocks $25M in borrower positions at leverage levels no standalone market could support.
+    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
+      Take stETH: Aave already provides ~95% LTV. Twyne only needs to bridge the last ~4% &mdash; just 4 cents per dollar of borrower collateral. That's a 25&times; capital multiplier.
     </p>
 
     <!-- $1M supply → $25M borrower -->
@@ -1765,7 +1764,7 @@
     </div>
 
     <!-- Cost / Yield intro -->
-    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px;">
+    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px;">
       This capital efficiency flows directly into rates. Only a fraction of Creditor capital is needed to support each borrower &mdash; so borrowing stays cheap while Creditors earn an outsized yield on their thin tranche:
     </p>
 
@@ -1812,13 +1811,13 @@
   <section class="section">
     <h2 class="section-title">Risk &amp; Security</h2>
 
-    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
+    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
       Two layers of liquidation: an internal mechanism that causes zero creditor losses, and an external fallback that is safe in most cases but carries tail risk.
     </p>
-    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
-      Stress-testing the worst case &mdash; no internal liquidations, every position falls back &mdash; across 1,115 Euler V2 events, annualized creditor loss was ~0.16% at 94% max LTV and ~2% at 98%. Volatile pairs only; correlated pairs with hardcoded oracles carry different risk profile.
+    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
+      We stress-tested the worst case &mdash; no internal liquidations at all, every position falls back &mdash; across 1,115 Euler V2 events. Annualized creditor loss: ~0.16% at 94% max LTV, ~2% at 98%. This was volatile pairs only, and creditors are compensated for the risk. Correlated pairs with hardcoded oracles carry a fundamentally different risk profile.
     </p>
-    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px;">
+    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px;">
       Built on top of battle-tested Euler's EVC/EVK infrastructure ($10M+ security spend).
       Audited by <a href="https://yaudit.dev" target="_blank" style="color: var(--text-muted); text-decoration: underline;">yAudit</a> &amp; <a href="https://seceureka.com" target="_blank" style="color: var(--text-muted); text-decoration: underline;">SecEureka</a>.
       Fuzzed by <a href="https://enigmadark.com" target="_blank" style="color: var(--text-muted); text-decoration: underline;">Enigma Dark</a>.
@@ -1835,10 +1834,10 @@
   <!-- What's Next -->
   <section class="section">
     <h2 class="section-title">What's Next</h2>
-    <p style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 10px;">
+    <p style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 10px;">
       Clearinghouses like DTCC net exposures and settle only residuals, functioning as netting layers for money and credit. DeFi followed the same arc: AMM aggregators evolved from simple pool routing into layers like CoWSwap, where orderflow is matched before touching liquidity.
     </p>
-    <p style="font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px;">
+    <p style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px;">
       Lending is next. Twyne becomes the single point of entry for any lending or borrowing intent. Exposure and flows get netted. Users can opt to leverage in and out against other users. Liquidations become yield for idle depositors &mdash; and many more features to come. In the short term, we're working on:
     </p>
     <div style="padding-left: 16px; border-left: 2px solid var(--border-strong);">
@@ -1858,7 +1857,7 @@
     <h2 class="section-title">The Team</h2>
 
     <!-- Background & research -->
-    <p style="font-size: 13px; color: var(--text-muted); line-height: 1.6; margin-top: 20px;">
+    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-top: 20px;">
       The team is well-positioned to build a risk layer on top of existing lending markets. Before Twyne, they ran 0xsidequest — a white-glove risk advisory (think Chaos Labs / Gauntlet) — modeling risks in DeFi lending, CDP stablecoins, and DEX liquidity. Published research includes
       <a href="https://arxiv.org/abs/2212.07306" target="_blank" style="color: var(--text-muted); text-decoration: underline;">Toxic Liquidation Spirals</a>,
       <a href="https://arxiv.org/abs/2211.08870" target="_blank" style="color: var(--text-muted); text-decoration: underline;">Multi-asset DeFi Lending Models</a>, and
