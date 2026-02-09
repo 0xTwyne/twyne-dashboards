@@ -127,8 +127,8 @@
     align-items: center;
     justify-content: space-between;
     padding-top: 24px;
-    padding-bottom: 40px;
-    margin-bottom: 24px;
+    padding-bottom: 16px;
+    margin-bottom: 0;
   }
 
   .header-logo {
@@ -956,21 +956,12 @@
     padding: 8px 0;
     cursor: pointer;
     user-select: none;
-    border-bottom: 1px solid transparent;
-    transition: border-color 0.2s;
-  }
-
-  .expandable-header:hover {
-    border-bottom-color: var(--purple);
+    transition: color 0.2s;
   }
 
   .expandable-header:hover .expandable-title,
   .expandable-header:hover .expandable-toggle {
     color: var(--purple);
-  }
-
-  .expandable.open .expandable-header {
-    border-bottom-color: var(--purple);
   }
 
   .expandable-title {
@@ -1379,7 +1370,7 @@
     column-gap: 32px;
     row-gap: 0;
     align-items: stretch;
-    padding: 20px 24px 4px;
+    padding: 20px 36px 4px;
     margin-top: 16px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
@@ -1463,12 +1454,11 @@
   </header>
 
   <!-- Overview -->
-  <section class="section" style="padding-top: 48px;">
+  <section class="section" style="padding-top: 16px;">
     <h2 class="section-title" style="margin-bottom: 14px;">Overview</h2>
     <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0 0 16px;">
-      Liquidity is expensive to source &mdash; meanwhile $30B in borrowing power sits idle on Aave. Lenders have idle borrowing capacity, while Borrowers are in need of it.
+      Liquidity is expensive to source &mdash; meanwhile $30B in borrowing power sits idle on Aave. Twyne turns that idle capacity into a marketplace, connecting lenders who don&rsquo;t use it with borrowers who need it.
     </p>
-    <p style="font-size: 12px; color: var(--text-muted); margin: 0 0 14px;">Twyne connects the two, creating a marketplace for credit.</p>
     <div>
       <div class="why-solution-card">
         <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px;">Credit Delegation</div>
@@ -1507,7 +1497,7 @@
           <div class="expandable" id="ltv-chart-expand">
             <div class="expandable-header" onclick="toggleExpand('ltv-chart-expand')" style="width: 100%; display: flex; justify-content: space-between;">
               <div class="expandable-title" style="display: inline-flex; align-items: center; gap: 6px;">
-                <span>Exemplary Aave Leverage Profile</span>
+                <span>Aave Leverage Profile</span>
                 <span class="expandable-toggle">&#x25BE;</span>
               </div>
             </div>
@@ -1519,7 +1509,7 @@
                     <canvas id="ltvDistChart"></canvas>
                   </div>
                   <div style="display: flex; flex-direction: column; justify-content: center; padding: 16px 24px; border-left: 1px solid var(--border);">
-                    <div style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;"><span style="color: var(--text);">V1.0</span> Delegate within Aave</div>
+                    <div style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;"><span style="color: var(--text);">V1.0</span> Delegate within Aave <span style="font-size: 9px; font-weight: 600; color: var(--teal); background: var(--teal-dim); border: 1px solid var(--teal-border); border-radius: 10px; padding: 1px 8px; text-transform: uppercase; letter-spacing: 0.3px;">Live</span></div>
                     <div style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 12px;"><span style="color: var(--text);">V1.1</span> Delegate outside of Aave</div>
                     <div style="font-size: 12px; color: var(--text-muted); line-height: 1.8;">
                       &bull; Earn Vaults<br>
@@ -1662,6 +1652,7 @@
           <div style="margin-bottom: 10px;">
             <span style="font-size: 12px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">One Position, Two LTVs</span>
           </div>
+          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0 0 20px;">Under the hood, Twyne is just bookkeeping &mdash; one position on Aave, two views of who owns what.</p>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
 
             <!-- What Aave sees -->
@@ -1694,24 +1685,24 @@
                 <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted);">Twyne sees</div>
                 <div style="font-size: 22px; font-weight: 700; color: var(--purple); line-height: 1; margin-left: 4px;">92<span style="font-size: 14px; opacity: 0.65;">%</span> <span style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted);">LTV</span></div>
               </div>
-              <div style="display: flex; gap: 3px; margin-bottom: 4px; width: 70%;">
-                <div style="width: 100%; height: 24px; position: relative; border-radius: 3px; overflow: hidden; border: 1px solid rgba(220, 80, 150, 0.35);">
+              <div style="display: flex; gap: 3px; margin-bottom: 4px;">
+                <div style="width: 54%; height: 24px; position: relative; border-radius: 3px; overflow: hidden; border: 1px solid rgba(220, 80, 150, 0.35);">
                   <div style="position: absolute; inset: 0; background: #dc5096; opacity: 0.15;"></div>
                   <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 6px; font-size: 9px; font-weight: 600; color: #dc5096; letter-spacing: 0.2px;">Borrower Collateral</div>
                 </div>
               </div>
-              <div style="position: relative; width: 64%; height: 18px; border-radius: 3px; overflow: hidden; border: 1px solid var(--border-strong);">
+              <div style="position: relative; width: 50%; height: 18px; border-radius: 3px; overflow: hidden; border: 1px solid var(--border-strong);">
                 <div style="position: absolute; inset: 0; background: var(--text-muted); opacity: 0.15;"></div>
                 <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 6px; font-size: 9px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.2px;">Debt</div>
               </div>
             </div>
 
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 24px 0 0;">
-            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Creditor collateral is deposited alongside the Borrower's, so the lending market sees one large, healthy position.</p>
-            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Twyne tracks a second, higher LTV against only the Borrower's collateral.</p>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 20px 0 0;">
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Aave sees healthy composite position.</p>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Twyne tracks the borrower's real LTV separately.</p>
           </div>
-          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 16px 0 0 0;">Overcollateralized from both perspectives. Users don't have to think about it &mdash; invariants enforce it automatically, and liquidators clean up any position that drifts out of line.</p>
+          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 16px 0 0 0;">Overcollateralized from both perspectives. Users don't have to think about it &mdash; invariants enforce it automatically. Liquidators clean up positions if health worsens.</p>
         </div>
 
         <!-- The Token Flow -->
@@ -1760,10 +1751,10 @@
     <h2 class="section-title">Capital Efficiency</h2>
 
     <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
-      A standalone 99% liquidation threshold market would be costly to bootstrap. Twyne builds on top of the underlying market's yield and liquidity &mdash; it only needs to supply the incremental credit required to bridge the gap to the target LT.
+      A standalone 99% liquidation threshold market would be costly to bootstrap. Twyne builds on top of the underlying market&rsquo;s liquidity &mdash; it only needs to supply the incremental credit required to bridge the gap to the target LT.
     </p>
     <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
-      Take stETH: Aave already provides ~95% LT. Twyne only needs to bridge the last ~4% &mdash; just 4 cents per dollar of borrower collateral. That's a 25&times; capital multiplier. All borrowable liquidity from the underlying market comes for free, making new markets cheap to launch.
+      Take stETH: Aave already provides ~95% LT. Twyne only needs to bridge the last ~4% &mdash; just 4 cents per dollar of borrower collateral. That's a 25x capital multiplier. All borrowable liquidity from the underlying market comes for free. This recomposes underlying protocol infrastructure into a new primitive &mdash; bootstrapping risk-segmented markets at a fraction of the cost.
     </p>
 
     <!-- $1M supply → $25M borrower -->
@@ -1831,7 +1822,7 @@
       Two layers of liquidation: an internal mechanism that causes zero creditor losses, and an external fallback that is safe in most cases but carries tail risk.
     </p>
     <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
-      We stress-tested the worst case &mdash; no internal liquidations at all, every position falls back &mdash; across 1,115 Euler V2 events. Annualized creditor loss: ~0.16% at 94% max LT, ~2% at 98%. Creditors are compensated for this risk through the delegation fee. Importantly, this was volatile pairs only &mdash; correlated pairs with hardcoded oracles carry a fundamentally different risk profile.
+      We stress-tested the worst case &mdash; assuming no internal liquidations fire and every position falls back to external liquidation. Annualized creditor loss: ~0.16% at 94% max LT. Creditors are compensated for this risk through the delegation fee. Importantly, this was volatile pairs only &mdash; correlated pairs with hardcoded oracles carry a fundamentally different risk profile.
     </p>
     <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px;">
       Built on top of battle-tested Euler's EVC/EVK infrastructure ($10M+ security spend).
@@ -1859,11 +1850,7 @@
     <div style="padding-left: 16px; border-left: 2px solid var(--border-strong);">
       <div style="margin-bottom: 14px;">
         <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; color: var(--text);">Extend Credit Lines</span>
-        <p style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 4px 0 0;">Credit delegation routes borrowing power on Aave to any asset. More uniquely, it unlocks time-delayed operations: non-atomic liquidations, RWA settlement, cross-market netting.</p>
-      </div>
-      <div>
-        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; color: var(--text);">Risk Tranching</span>
-        <p style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 4px 0 0;">Twyne vaults can stack on top of each other. A second Twyne layer can push LTV from 95% to 98%, and a third even higher and additionally opt in to liquidate the position &mdash; each layer taking on only its own slice of risk. This unlocks the full leverage spectrum without concentrating exposure.</p>
+        <p style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 4px 0 0;">Credit delegation routes borrowing power on Aave to any asset. Yield-bearing stablecoins can permissionlessly onboard to Aave. On top of that, and more uniquely, it unlocks time-delayed operations: Redemption Markets, RWA settlement, cross-lending market netting.</p>
       </div>
     </div>
   </section>
@@ -2342,7 +2329,7 @@
       });
     }
 
-    new Chart(ctx, {
+    const hfChartInstance = new Chart(ctx, {
       type: 'line',
       data: { datasets },
       options: {
@@ -2395,6 +2382,22 @@
         }
       }]
     });
+
+    // Update HF chart colors on dark mode toggle
+    const hfObserver = new MutationObserver(() => {
+      const isDark = document.documentElement.classList.contains('dark');
+      const textSec = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim();
+      const textMut = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim();
+      const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
+      hfChartInstance.options.scales.x.title.color = textSec;
+      hfChartInstance.options.scales.x.ticks.color = textMut;
+      hfChartInstance.options.scales.x.grid.color = gridColor;
+      hfChartInstance.options.scales.y.title.color = textSec;
+      hfChartInstance.options.scales.y.ticks.color = textMut;
+      hfChartInstance.options.scales.y.grid.color = gridColor;
+      hfChartInstance.update('none');
+    });
+    hfObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
   }
 
   if (stakingRateEl && borrowRateEl && clpYieldEl) updateTable();

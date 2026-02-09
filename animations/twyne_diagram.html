@@ -10,9 +10,9 @@
     /* ===== CSS Variables for Theming ===== */
     :root {
       /* Dark theme (default) */
-      --bg-gradient-1: #0c1210;
-      --bg-gradient-2: #111916;
-      --bg-gradient-3: #0a0f0d;
+      --bg-gradient-1: #1a1a2e;
+      --bg-gradient-2: #1a1a2e;
+      --bg-gradient-3: #1a1a2e;
       --text-primary: #e2e8f0;
       --text-secondary: #cbd5e1;
       --text-muted: #64748b;
@@ -50,9 +50,9 @@
     }
 
     [data-theme="light"] {
-      --bg-gradient-1: #f8fafb;
-      --bg-gradient-2: #f1f5f4;
-      --bg-gradient-3: #e8eeec;
+      --bg-gradient-1: #e5e5e5;
+      --bg-gradient-2: #e5e5e5;
+      --bg-gradient-3: #e5e5e5;
       --text-primary: #1e293b;
       --text-secondary: #475569;
       --text-muted: #64748b;
@@ -290,10 +290,10 @@
   <style>
     .embed-mode .header { display: none !important; }
     html.embed-mode, html.embed-mode body {
-      background: #ececec !important;
+      background: #e5e5e5 !important;
     }
     html.embed-mode[data-theme="dark"], html.embed-mode[data-theme="dark"] body {
-      background: #242440 !important;
+      background: #1a1a2e !important;
     }
     html.embed-mode body {
       padding: 0 !important;
@@ -727,7 +727,7 @@
       },
       'aave': {
         title: 'AAVE',
-        text: 'Base lending protocol with asset pools. All deposits and borrows happen here. Twyne uses AAVE\'s credit delegation.',
+        text: 'Base lending protocol with asset pools. All deposits and borrows happen here.',
         color: '#a78bfa'
       },
       'lending-pool': {
