@@ -1619,7 +1619,7 @@
           <!-- Explainer + stats -->
           <div style="padding: 20px 24px; background: var(--bg-card); border-bottom: 1px solid var(--border);">
             <div style="font-size: 12px; line-height: 1.6; color: var(--text-muted); margin-bottom: 16px;">
-              We took positions that were liquidated in WETH-USDC markets on Aave and simulated what happens with Twyne's higher buffer &mdash; do they survive, and do they stay healthy over the next 30 days?
+              We took positions that were liquidated in WETH-USDC markets on Aave and simulated what happens with Twyne's higher buffer. Each line starts from that position's own liquidation day &mdash; day 0 is when Aave would have liquidated, and the chart shows how it would have played out over the next 30 days.
             </div>
             <div style="margin-bottom: 16px;">
               <a href="https://x.com/twynexyz/status/1942950529304310186" target="_blank" style="font-size: 11px; color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">Full analysis &rarr;</a>
@@ -1637,7 +1637,7 @@
           </div>
 
           <!-- Chart -->
-          <div style="padding: 20px 24px; background: var(--bg-card); opacity: 0.2;">
+          <div style="padding: 20px 24px; background: var(--bg-card);">
             <div class="chart-container" style="background: var(--bg-card); border: none;">
               <canvas id="hfChart"></canvas>
             </div>
@@ -1708,10 +1708,10 @@
 
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 24px 0 0;">
-            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Creditor collateral is deposited alongside the Borrower's, so the lending market sees one large, healthy position at a conservative LTV.</p>
+            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Creditor collateral is deposited alongside the Borrower's, so the lending market sees one large, healthy position.</p>
             <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Twyne tracks a second, higher LTV against only the Borrower's collateral.</p>
           </div>
-          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 16px 0 0 0;">Overcollateralized from both perspectives &mdash; protocol invariants enforce this at all times, and internal liquidators sanitize positions before they ever reach the underlying market.</p>
+          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 16px 0 0 0;">Overcollateralized from both perspectives. Users don't have to think about it &mdash; invariants enforce it automatically, and liquidators clean up any position that drifts out of line.</p>
         </div>
 
         <!-- The Token Flow -->
@@ -1854,7 +1854,7 @@
       In TradFi, clearinghouses like DTCC function as netting layers for money and credit. DeFi followed the same arc: AMM aggregators evolved from simple pool routing into layers like CoWSwap, where orderflow is matched before touching liquidity.
     </p>
     <p style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px;">
-      Twyne becomes the single entry point for lending &mdash; user flows are netted, risks are segmented, and value is maximized. In the short term, we're working on:
+      Twyne becomes the single entry point for lending &mdash; user flows are netted, risks are segmented and turned into opportunities. In the short term, we're working on:
     </p>
     <div style="padding-left: 16px; border-left: 2px solid var(--border-strong);">
       <div style="margin-bottom: 14px;">
