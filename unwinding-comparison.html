@@ -482,7 +482,7 @@
         .chart-wrapper { position: relative; height: 300px; }
         .chart-pair {
             display: grid;
-            grid-template-columns: 1fr 2fr;
+            grid-template-columns: 2fr 1fr;
             gap: 16px;
             margin-bottom: 24px;
         }
@@ -1092,7 +1092,7 @@
     </div>
     <div class="param-card">
         <div class="param-label">Unstaking Days</div>
-        <input type="range" id="unstakeDaysSlider" min="1" max="14" step="1" value="14" oninput="update()">
+        <input type="range" id="unstakeDaysSlider" min="1" max="14" step="1" value="3" oninput="update()">
         <div class="leverage-row">
             <div class="param-value"><span id="unstakeDaysDisplay">14</span>d</div>
             <div class="leverage-ticks">1d &mdash; 14d</div>
@@ -1115,15 +1115,15 @@
     </div>
 </div>
 <div class="chart-pair" style="align-items: stretch;">
-    <div class="chart-section" style="display:flex; flex-direction:column;">
-        <div class="section-title" style="margin-bottom:8px;">Total Unwinding Time</div>
-        <div id="unwindTimeBars" style="flex:1; display:flex; align-items:flex-end; justify-content:center;"></div>
-    </div>
     <div class="chart-section" style="display:flex; flex-direction:column; position:relative;">
         <div class="section-title">Cumulative Debt Repaid &amp; Exposure Reduction</div>
         <div class="chart-wrapper" style="height:200px;"><canvas id="debtRedChart"></canvas></div>
         <div class="chart-wrapper" style="height:150px; margin-top:12px;"><canvas id="exposureChart"></canvas></div>
         <button class="x-axis-toggle" id="xAxisToggle" onclick="toggleXAxis()">Show Days</button>
+    </div>
+    <div class="chart-section" style="display:flex; flex-direction:column;">
+        <div class="section-title" style="margin-bottom:8px;">Total Unwinding Time</div>
+        <div id="unwindTimeBars" style="flex:1; display:flex; align-items:flex-end; justify-content:center;"></div>
     </div>
 </div>
 
@@ -1152,8 +1152,12 @@
 <hr class="section-divider">
 
 <!-- ═══════ Parallel Unstaking & Deleverage Comparison ═══════ -->
-<div class="section-title">Parallel Unstaking</div>
-<div style="font-family:var(--font-mono); font-size:0.7rem; color:var(--text-muted); line-height:1.6; margin-bottom:16px;">
+<details style="margin-bottom:24px;">
+<summary style="cursor:pointer; list-style:none; display:inline-flex; align-items:center; gap:10px; padding:10px 20px; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; transition:background 0.15s;">
+    <span style="font-family:var(--font-mono); font-size:1.3rem; font-weight:800; color:var(--text);">Parallel Unstaking</span>
+    <span style="font-size:0.65rem; color:var(--text-muted); font-family:var(--font-mono);">&#9660;</span>
+</summary>
+<div style="font-family:var(--font-mono); font-size:0.7rem; color:var(--text-muted); line-height:1.6; margin:12px 0 16px;">
     Restaked tokens (eETH, rsETH) require sequential unstaking through multiple layers.
     Twyne creditors can front ETH while unstaking happens in the background, letting borrowers exit days earlier.
 </div>
@@ -1242,6 +1246,8 @@
     <div class="section-title">eETH Deleverage Time</div>
     <div class="delever-scenarios" id="deleverScenarios"></div>
 </div>
+
+</details>
 
 <script>
 /* ─── State ─── */
@@ -1543,22 +1549,24 @@ function buildUnwindTimeBars(stA, stT, unstakeDays) {
     const saved      = aaveDays - twyneDays;
     const savedPct   = aaveDays > 0 ? Math.round((saved / aaveDays) * 100) : 0;
 
-    const barH = 160;
+    const barH = 260;
     const col = (label, sub, steps, days, cls) => {
         const pct = Math.max((days / maxDays) * 100, 6);
         const h = Math.round((pct / 100) * barH);
-        return `<div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-            <div style="color:var(--${cls}); font-family:var(--font-mono); font-weight:700; font-size:1.3rem;">${days}<span style="font-size:0.8rem;">d</span></div>
+        return `<div style="display:flex; flex-direction:column; align-items:center; width:120px;">
+            <div style="flex:1;"></div>
+            <div style="color:var(--${cls}); font-family:var(--font-mono); font-weight:700; font-size:1.3rem; margin-bottom:4px;">${days}<span style="font-size:0.8rem;">d</span></div>
             <div class="delever-bar--${cls}" style="width:64px; height:${h}px; border-radius:6px 6px 0 0;"></div>
-            <div style="color:var(--${cls}); font-family:var(--font-mono); font-size:0.78rem; font-weight:600; margin-top:4px;">${label}</div>
+            <div style="color:var(--${cls}); font-family:var(--font-mono); font-size:0.78rem; font-weight:600; margin-top:6px;">${label}</div>
             <div style="color:var(--text-muted); font-family:var(--font-mono); font-size:0.65rem;">${sub}</div>
         </div>`;
     };
 
     const pl = (n) => n !== 1 ? 's' : '';
+    const totalH = barH + 70; /* bar + label + sub */
 
     el.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; gap:0;">
-        <div style="display:flex; align-items:flex-end; gap:24px;">
+        <div style="display:flex; align-items:stretch; gap:24px; height:${totalH}px;">
             ${col('Aave', stA.length + ' step' + pl(stA.length) + ' &times; ' + unstakeDays + 'd', stA.length, aaveDays, 'coral')}
             ${col('Twyne', stT.length + ' step' + pl(stT.length) + ' &times; ' + unstakeDays + 'd', stT.length, twyneDays, 'purple')}
         </div>
@@ -1717,9 +1725,7 @@ function buildDeleverComparison(L, dep, aLTV, tLTV) {
             ? `<span class="delever-saving">&minus;${saving}%</span>`
             : '';
 
-        const detailHtml = (!s.skipDetail && s.steps)
-            ? renderStepDetail(s.steps, s.ltv, s.cls)
-            : '';
+        const detailHtml = '';
 
         if (s.instant) {
             return `<div class="delever-row">
@@ -1752,7 +1758,7 @@ function toggleDark() {
 
 /* ─── Init ─── */
 (function() {
-    if (localStorage.getItem('theme') === 'dark') {
+    if (localStorage.getItem('theme') !== 'light') {
         document.documentElement.classList.add('dark');
         document.getElementById('darkIcon').innerHTML  = '&#9788;';
         document.getElementById('darkLabel').textContent = 'Light';
