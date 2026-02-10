@@ -113,6 +113,8 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  html { overflow-x: clip; }
+
   body {
     max-width: 880px;
     margin: 0 auto;
@@ -1432,10 +1434,278 @@
   .hero-stat { font-size: 36px; font-weight: 700; line-height: 1; }
   .hero-stat-label { font-size: 12px; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
 
-  @media (max-width: 640px) {
+  /* ── Tablet: stack two-column grids before full mobile ── */
+  @media (max-width: 800px) {
+    .mob-ltv-grid {
+      grid-template-columns: 1fr !important;
+    }
+    .mob-delegate-box {
+      border-left: none !important;
+      border-top: 1px solid var(--border) !important;
+    }
     .uc-row, .uc-row.flipped {
       grid-template-columns: 1fr;
       direction: ltr;
+    }
+    .uc-row .uc-visual {
+      height: 180px;
+    }
+    /* Reduce negative margins for narrower card padding */
+    .mob-neg-expand {
+      margin-left: -24px !important;
+      margin-right: -24px !important;
+      padding-left: 24px !important;
+      padding-right: 24px !important;
+    }
+  }
+
+  /* ── Mobile responsive ── */
+  @media (max-width: 680px) {
+    /* ── Layer 0 & 1: Root + Body constraints ── */
+    html {
+      overflow-x: clip !important;
+      -webkit-text-size-adjust: 100%;
+    }
+    body {
+      zoom: 1 !important;
+      padding: 24px 16px 48px !important;
+      max-width: 100vw !important;
+      overflow-x: clip !important;
+      min-width: 0 !important;
+    }
+
+    /* ── Layer 2: Section-level contain: inline-size ── */
+    .section,
+    .why-solution-card,
+    .uc-row,
+    .expandable,
+    .mob-card-inner {
+      contain: inline-size;
+    }
+
+    /* ── Layer 3: Kill min-width: auto on flex/grid children ── */
+    .why-flow > *, .mob-ltv-grid > *, .mob-dual-ltv > *,
+    .mob-dual-captions > *, .mob-token-flow > *, .mob-hero-row > *,
+    .uc-row > *, .user-cards > *, .stats-row > *, .sec-list > *,
+    .why-solution-card > *, .section > *, .expandable-content > * {
+      min-width: 0;
+    }
+
+    /* ── Layer 4: Split expandable overflow axes ── */
+    .expandable-content {
+      overflow-y: hidden !important;
+      overflow-x: clip !important;
+    }
+
+    /* ── Layer 5: Wide content scroll containers ── */
+    #yieldHeatmap {
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch;
+      max-width: 100% !important;
+    }
+    .mob-table-wrap {
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch;
+      max-width: calc(100vw - 32px) !important;
+    }
+    .mob-table-wrap > div {
+      min-width: 540px;
+    }
+    .mob-card-inner {
+      overflow-x: auto !important;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* ── Layer 6: Proportional padding reduction ── */
+    .why-solution-card {
+      padding: 20px 16px 0 !important;
+    }
+    .mob-card-inner {
+      padding-left: 12px !important;
+      padding-right: 12px !important;
+    }
+    .uc-row {
+      padding: 16px 12px 4px !important;
+    }
+
+    /* ── Layer 7: Negative margin math ── */
+    .why-solution-card > .mob-neg-expand {
+      margin-left: -16px !important;
+      margin-right: -16px !important;
+      padding-left: 16px !important;
+      padding-right: 16px !important;
+    }
+    .uc-row > .mob-neg-expand {
+      margin-left: -12px !important;
+      margin-right: -12px !important;
+      padding-left: 12px !important;
+      padding-right: 12px !important;
+    }
+
+    /* ── Stacking rules ── */
+    .mob-ltv-grid {
+      grid-template-columns: 1fr !important;
+    }
+    .mob-delegate-box {
+      border-left: none !important;
+      border-top: 1px solid var(--border) !important;
+      padding: 16px 16px !important;
+    }
+    .mob-stats-grid {
+      grid-template-columns: 1fr 1fr !important;
+    }
+    .mob-dual-ltv {
+      grid-template-columns: 1fr !important;
+      gap: 20px !important;
+    }
+    .mob-dual-captions {
+      grid-template-columns: 1fr !important;
+      gap: 8px !important;
+      padding: 12px 0 0 !important;
+    }
+    .mob-token-flow {
+      grid-template-columns: 1fr !important;
+      gap: 20px !important;
+    }
+    .mob-hero-row {
+      flex-wrap: wrap !important;
+      gap: 4px 8px !important;
+    }
+    .mob-links-row {
+      flex-wrap: wrap !important;
+      gap: 12px 24px !important;
+    }
+
+    /* ── Yield table: compact ── */
+    .yield-table {
+      font-size: 11px !important;
+    }
+    .yield-table th, .yield-table td {
+      padding: 5px 4px !important;
+    }
+    .yield-table thead .axis-label {
+      padding-right: 4px !important;
+    }
+    .yield-table tbody th {
+      padding-right: 4px !important;
+    }
+
+    /* ── Use-case visuals ── */
+    .uc-row .uc-visual {
+      height: 140px !important;
+      min-height: 120px;
+    }
+
+    /* ── Expandable sections: tighter ── */
+    .expandable-header {
+      padding: 10px 12px !important;
+    }
+    .expandable-inner {
+      padding: 0 0 8px 0 !important;
+    }
+
+    /* ── Flow diagram: compact ── */
+    .why-flow {
+      gap: 0 !important;
+    }
+    .why-arrows-mid {
+      min-width: auto !important;
+      padding: 0 4px !important;
+    }
+    .why-persona {
+      min-width: auto !important;
+    }
+    .why-persona-icon {
+      width: 44px !important;
+      height: 44px !important;
+    }
+    .why-arrow-line svg {
+      width: 50px !important;
+    }
+
+    /* ── Hero stats ── */
+    .hero-stat {
+      font-size: 28px !important;
+    }
+
+    /* ── Sections ── */
+    .section {
+      margin-bottom: 24px !important;
+    }
+    .section-title {
+      font-size: 11px !important;
+      overflow: hidden !important;
+    }
+
+    /* ── Iframe: reduce height ── */
+    #twyne-diagram-iframe {
+      height: 320px !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    body { padding: 16px 12px 40px !important; }
+
+    /* Solution card + uc-row: tighter padding */
+    .why-solution-card {
+      padding: 16px 12px 0 !important;
+    }
+    .uc-row {
+      padding: 12px 8px 4px !important;
+    }
+
+    /* Matching neg-expand margins */
+    .why-solution-card > .mob-neg-expand {
+      margin-left: -12px !important;
+      margin-right: -12px !important;
+      padding-left: 12px !important;
+      padding-right: 12px !important;
+    }
+    .uc-row > .mob-neg-expand {
+      margin-left: -8px !important;
+      margin-right: -8px !important;
+      padding-left: 8px !important;
+      padding-right: 8px !important;
+    }
+
+    /* mob-card-inner: tighter */
+    .mob-card-inner {
+      padding-left: 8px !important;
+      padding-right: 8px !important;
+    }
+
+    /* Table wrapper: tighter to edges */
+    .mob-table-wrap {
+      max-width: calc(100vw - 24px) !important;
+    }
+
+    /* Flow diagram: stack vertically */
+    .why-flow {
+      flex-direction: column !important;
+      gap: 12px !important;
+    }
+    .why-arrows-mid {
+      min-width: auto !important;
+      padding: 0 !important;
+      flex-direction: row !important;
+      gap: 16px !important;
+    }
+    .why-arrow-line svg {
+      transform: rotate(90deg);
+      width: 60px !important;
+    }
+
+    /* Smaller hero text */
+    .mob-hero-row span[style*="font-size: 28px"] {
+      font-size: 20px !important;
+    }
+    .mob-hero-row span[style*="font-size: 20px"] {
+      font-size: 16px !important;
+    }
+
+    /* Iframe: smallest */
+    #twyne-diagram-iframe {
+      height: 280px !important;
     }
   }
 
@@ -1493,7 +1763,7 @@
           </div>
         </div>
         <!-- Aave Leverage Profile -->
-        <div style="border-top: 1px solid var(--border); margin: 0 -36px; padding: 4px 36px 4px;">
+        <div class="mob-neg-expand" style="border-top: 1px solid var(--border); margin: 0 -36px; padding: 4px 36px 4px;">
           <div class="expandable" id="ltv-chart-expand">
             <div class="expandable-header" onclick="toggleExpand('ltv-chart-expand')" style="width: 100%; display: flex; justify-content: space-between;">
               <div class="expandable-title" style="display: inline-flex; align-items: center; gap: 6px;">
@@ -1503,12 +1773,12 @@
             </div>
             <div class="expandable-content">
               <div class="expandable-inner" style="padding: 0;">
-                <div style="padding: 16px 24px 0; font-size: 12px; color: var(--text-muted); line-height: 1.6;">Most Aave depositors never borrow &mdash; $12B sits at 0% LTV. Meanwhile, borrowers who need higher leverage are capped by the protocol's LTV ceiling, and many assets never get listed on Aave at all due to its governance process.</div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; align-items: center;">
+                <div class="mob-card-inner" style="padding: 16px 24px 0; font-size: 12px; color: var(--text-muted); line-height: 1.6;">Most Aave depositors never borrow &mdash; $12B sits at 0% LTV. Meanwhile, borrowers who need higher leverage are capped by the protocol's LTV ceiling, and many assets never get listed on Aave at all due to its governance process.</div>
+                <div class="mob-ltv-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; align-items: center;">
                   <div style="position: relative; height: 240px; padding: 16px 12px 12px 12px;">
                     <canvas id="ltvDistChart"></canvas>
                   </div>
-                  <div style="display: flex; flex-direction: column; justify-content: center; padding: 16px 24px; border-left: 1px solid var(--border);">
+                  <div class="mob-delegate-box" style="display: flex; flex-direction: column; justify-content: center; padding: 16px 24px; border-left: 1px solid var(--border);">
                     <div style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;"><span style="color: var(--text);">V1.0</span> Delegate within Aave <span style="font-size: 9px; font-weight: 600; color: var(--teal); background: var(--teal-dim); border: 1px solid var(--teal-border); border-radius: 10px; padding: 1px 8px; text-transform: uppercase; letter-spacing: 0.3px;">Live</span></div>
                     <div style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 12px;"><span style="color: var(--text);">V1.1</span> Delegate outside of Aave</div>
                     <div style="font-size: 12px; color: var(--text-muted); line-height: 1.8;">
@@ -1543,7 +1813,7 @@
         </div>
       </div>
       <!-- Expandable: Looping Yield Calculator -->
-      <div style="border-top: 1px solid var(--border); margin: 0 -36px -4px; padding: 4px 36px 4px; grid-column: 1 / -1;">
+      <div class="mob-neg-expand" style="border-top: 1px solid var(--border); margin: 0 -36px -4px; padding: 4px 36px 4px; grid-column: 1 / -1;">
         <div class="expandable" id="boost-leverage-sim">
           <div class="expandable-header" onclick="toggleExpand('boost-leverage-sim')" style="width: 100%; display: flex; justify-content: space-between;">
             <div class="expandable-title" style="display: inline-flex; align-items: center; gap: 6px;">
@@ -1554,7 +1824,7 @@
           <div class="expandable-content">
             <div class="expandable-inner" style="padding: 0;">
           <!-- Yield Table -->
-          <div style="padding: 20px 24px; background: var(--bg-card); border-bottom: 1px solid var(--border);">
+          <div class="mob-card-inner" style="padding: 20px 24px; background: var(--bg-card); border-bottom: 1px solid var(--border);">
             <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px;">Each cell shows <strong style="color: var(--text);">net looping APY</strong> at different leverage levels. Aave caps out at 95% Liq LTV. Twyne pushes up to 99%.</div>
             <!-- Rate inputs -->
             <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; font-size: 11px; color: var(--text-muted); margin-bottom: 20px;">
@@ -1596,7 +1866,7 @@
         </div>
       </div>
       <!-- Expandable: Liquidation Protection Analysis -->
-      <div style="border-top: 1px solid var(--border); margin: 0 -36px -4px; padding: 4px 36px 4px; grid-column: 1 / -1;">
+      <div class="mob-neg-expand" style="border-top: 1px solid var(--border); margin: 0 -36px -4px; padding: 4px 36px 4px; grid-column: 1 / -1;">
         <div class="expandable" id="liq-analysis">
           <div class="expandable-header" onclick="toggleExpand('liq-analysis')" style="width: 100%; display: flex; justify-content: space-between;">
             <div class="expandable-title" style="display: inline-flex; align-items: center; gap: 6px;">
@@ -1607,14 +1877,14 @@
           <div class="expandable-content">
             <div class="expandable-inner" style="padding: 0;">
           <!-- Explainer + stats -->
-          <div style="padding: 20px 24px; background: var(--bg-card); border-bottom: 1px solid var(--border);">
+          <div class="mob-card-inner" style="padding: 20px 24px; background: var(--bg-card); border-bottom: 1px solid var(--border);">
             <div style="font-size: 12px; line-height: 1.6; color: var(--text-muted); margin-bottom: 16px;">
               We took positions that were liquidated in WETH-USDC markets on Aave and simulated what happens with Twyne's higher buffer. Each line starts from that position's own liquidation day &mdash; day 0 is when Aave would have liquidated, and the chart shows how it would have played out over the next 30 days.
             </div>
             <div style="margin-bottom: 16px;">
               <a href="https://x.com/twynexyz/status/1942950529304310186" target="_blank" style="font-size: 11px; color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">Full analysis &rarr;</a>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+            <div class="mob-stats-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
               <div>
                 <div style="font-size: 24px; font-weight: 600; color: var(--blue);">94%</div>
                 <div style="font-size: 12px; color: var(--text-muted);">Would have survived</div>
@@ -1627,7 +1897,7 @@
           </div>
 
           <!-- Chart -->
-          <div style="padding: 20px 24px; background: var(--bg-card);">
+          <div class="mob-card-inner" style="padding: 20px 24px; background: var(--bg-card);">
             <div class="chart-container" style="background: var(--bg-card); border: none;">
               <canvas id="hfChart"></canvas>
             </div>
@@ -1648,12 +1918,12 @@
 
     <!-- One Position, Two LTVs -->
     <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
-        <div style="padding: 20px 24px 24px;">
+        <div class="mob-card-inner" style="padding: 20px 24px 24px;">
           <div style="margin-bottom: 10px;">
             <span style="font-size: 12px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">One Position, Two LTVs</span>
           </div>
           <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0 0 20px;">Under the hood, Twyne is just bookkeeping &mdash; one position on Aave, two views of who owns what.</p>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+          <div class="mob-dual-ltv" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
 
             <!-- What Aave sees -->
             <div>
@@ -1698,7 +1968,7 @@
             </div>
 
           </div>
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 20px 0 0;">
+          <div class="mob-dual-captions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 20px 0 0;">
             <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Aave sees healthy composite position.</p>
             <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Twyne tracks the borrower's real LTV separately.</p>
           </div>
@@ -1706,7 +1976,7 @@
         </div>
 
         <!-- The Token Flow -->
-        <div style="border-top: 1px solid var(--border); padding: 4px 24px 4px;">
+        <div class="mob-card-inner" style="border-top: 1px solid var(--border); padding: 4px 24px 4px;">
           <div class="expandable" id="token-flow-expand">
             <div class="expandable-header" onclick="toggleExpand('token-flow-expand')" style="width: 100%; display: flex; align-items: center; gap: 10px;">
               <div class="expandable-title" style="display: inline-flex; align-items: center; gap: 6px;">
@@ -1721,7 +1991,7 @@
             <div class="expandable-content">
               <div class="expandable-inner" style="padding: 0 0 8px 0;">
                 <!-- Creditor / Borrower explanation -->
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; padding: 16px 0 24px;">
+                <div class="mob-token-flow" style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; padding: 16px 0 24px;">
                   <div>
                     <h4 style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Creditor</h4>
                     <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Deposits collateral into a lending market but doesn't borrow against it. Stakes it in Twyne to make the unused borrowing power available.</p>
@@ -1758,8 +2028,8 @@
     </p>
 
     <!-- $1M supply → $25M borrower -->
-    <div style="border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; margin-bottom: 24px;">
-      <div style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px;">
+    <div class="mob-card-inner" style="border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; margin-bottom: 24px;">
+      <div class="mob-hero-row" style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px;">
         <span style="font-size: 28px; font-weight: 700; color: var(--teal);">$1M</span>
         <span style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Creditor capital enables</span>
         <span style="font-size: 20px; color: var(--text-muted); margin: 0 4px;">&rarr;</span>
@@ -1776,7 +2046,7 @@
     </p>
 
     <!-- Cost / Yield table -->
-    <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 24px;">
+    <div class="mob-table-wrap" style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 24px;">
       <!-- Header -->
       <div style="display: grid; grid-template-columns: 1.2fr 0.6fr 1fr 1fr 0.8fr; gap: 0; padding: 10px 20px; border-bottom: 1px solid var(--border);">
         <div style="font-size: 10px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;"></div>
@@ -1830,7 +2100,7 @@
       Fuzzed by <a href="https://enigmadark.com" target="_blank" style="color: var(--text-muted); text-decoration: underline;">Enigma Dark</a>.
       $50k bug bounty via <a href="https://immunefi.com/bug-bounty/twyne/information/" target="_blank" style="color: var(--text-muted); text-decoration: underline;">Immunefi</a>.
     </p>
-    <div style="display: flex; gap: 24px; font-size: 11px;">
+    <div class="mob-links-row" style="display: flex; gap: 24px; font-size: 11px;">
       <a href="https://twyne.gitbook.io/twyne/" target="_blank" style="color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">Documentation</a>
       <a href="https://twyne.gitbook.io/twyne/resources/security" target="_blank" style="color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">Audit Reports</a>
       <a href="https://github.com/0xTwyne/papers/blob/main/Twyne_V1_Whitepaper.pdf" target="_blank" style="color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">Whitepaper</a>
@@ -2851,6 +3121,8 @@
     }
 
     // ---- Chart 2: Boost Leverage ----
+    const isMobileChart = window.innerWidth <= 680;
+
     function initLeverageChart() {
       const ctx = document.getElementById('ucLeverageChart');
       if (!ctx) return;
@@ -2926,7 +3198,7 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          layout: { padding: { top: 6, right: 20, bottom: 18, left: 8 } },
+          layout: { padding: isMobileChart ? { top: 4, right: 14, bottom: 14, left: 4 } : { top: 6, right: 20, bottom: 18, left: 8 } },
           interaction: { mode: 'index', intersect: false },
           plugins: {
             legend: { display: false },
@@ -2948,7 +3220,7 @@
           },
           scales: {
             x: { display: false },
-            y: { display: false, suggestedMax: 60 }
+            y: { display: false, suggestedMax: isMobileChart ? 55 : 60 }
           }
         },
         plugins: [{
@@ -2981,7 +3253,7 @@
             // Label badge
             const aLabel = '14x';
             const aSub = 'Aave';
-            g.font = "700 13px 'IBM Plex Mono', monospace";
+            g.font = isMobileChart ? "700 11px 'IBM Plex Mono', monospace" : "700 13px 'IBM Plex Mono', monospace";
             g.fillStyle = isDark ? 'rgba(160, 160, 184, 0.7)' : 'rgba(90, 90, 110, 0.7)';
             g.textAlign = 'center';
             g.fillText(aLabel, ax, ay - 20);
@@ -3024,7 +3296,7 @@
             g.lineWidth = 1;
             g.stroke();
             // Label
-            g.font = "700 15px 'IBM Plex Mono', monospace";
+            g.font = isMobileChart ? "700 12px 'IBM Plex Mono', monospace" : "700 15px 'IBM Plex Mono', monospace";
             g.fillStyle = c.purple;
             g.textAlign = 'right';
             g.fillText('50x', tx - 14, ty - 4);
@@ -3052,12 +3324,14 @@
             g.letterSpacing = '0.5px';
             g.fillStyle = labelColor;
             g.textAlign = 'center';
-            g.fillText('LIQ LTV', (xScale.left + xScale.right) / 2, yScale.bottom + 14);
-            g.save();
-            g.translate(xScale.right + 12, (yScale.top + yScale.bottom) / 2);
-            g.rotate(Math.PI / 2);
-            g.fillText('LEVERAGE', 0, 0);
-            g.restore();
+            g.fillText('LIQ LTV', (xScale.left + xScale.right) / 2, yScale.bottom + 12);
+            if (!isMobileChart) {
+              g.save();
+              g.translate(xScale.right + 12, (yScale.top + yScale.bottom) / 2);
+              g.rotate(Math.PI / 2);
+              g.fillText('LEVERAGE', 0, 0);
+              g.restore();
+            }
             g.restore();
           }
         }]
@@ -3146,7 +3420,7 @@
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          layout: { padding: { top: 24 } },
+          layout: { padding: isMobileChart ? { top: 16 } : { top: 24 } },
           plugins: {
             legend: { display: false },
             tooltip: { enabled: false },
@@ -3170,7 +3444,7 @@
             const right = xScale.right;
 
             // Threshold labels
-            g.font = "600 9px 'IBM Plex Mono', monospace";
+            g.font = isMobileChart ? "600 8px 'IBM Plex Mono', monospace" : "600 9px 'IBM Plex Mono', monospace";
             g.textAlign = 'left';
 
             g.fillStyle = c.coral;
@@ -3180,7 +3454,7 @@
             // "Loan Health" label on the left, aligned with the blue line start
             g.globalAlpha = 0.7;
             g.fillStyle = isDark ? 'rgba(255,255,255,0.8)' : 'rgba(20,20,30,0.7)';
-            g.font = "600 9px 'IBM Plex Mono', monospace";
+            g.font = isMobileChart ? "600 8px 'IBM Plex Mono', monospace" : "600 9px 'IBM Plex Mono', monospace";
             g.textAlign = 'left';
             const hfStartY = yScale.getPixelForValue(chart.data.datasets[0].data[0]);
             g.fillText('Loan Health', left + 4, hfStartY - 8);
@@ -3190,7 +3464,7 @@
             const aaveMidX = xScale.getPixelForValue(aaveMidIdx);
             const aaveMidVal = chart.data.datasets[1].data[aaveMidIdx];
             const aaveMidY = yScale.getPixelForValue(aaveMidVal);
-            g.font = "600 9px 'IBM Plex Mono', monospace";
+            g.font = isMobileChart ? "600 8px 'IBM Plex Mono', monospace" : "600 9px 'IBM Plex Mono', monospace";
             g.fillStyle = c.purple;
             g.globalAlpha = 0.6;
             g.textAlign = 'center';

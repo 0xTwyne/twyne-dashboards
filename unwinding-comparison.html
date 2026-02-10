@@ -1,0 +1,1764 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unwinding Leveraged Positions — Aave vs Twyne</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #e5e5e5;
+            --bg-card: #f5f5f5;
+            --bg-elevated: #ffffff;
+            --text: #1a1a2e;
+            --text-secondary: #4a4a6a;
+            --text-muted: #6a6a8a;
+
+            --purple: #7B2CBF;
+            --purple-dim: rgba(123, 44, 191, 0.08);
+            --purple-border: rgba(123, 44, 191, 0.25);
+
+            --coral: #c75050;
+            --coral-dim: rgba(199, 80, 80, 0.08);
+            --coral-border: rgba(199, 80, 80, 0.25);
+
+            --teal: #0fa67f;
+            --teal-dim: rgba(15, 166, 127, 0.08);
+            --teal-border: rgba(15, 166, 127, 0.25);
+
+            --amber: #c78a20;
+            --amber-dim: rgba(199, 138, 32, 0.08);
+            --amber-border: rgba(199, 138, 32, 0.25);
+
+            --border: rgba(0, 0, 0, 0.10);
+            --border-strong: rgba(0, 0, 0, 0.18);
+
+            --radius: 6px;
+            --radius-lg: 12px;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+            --font-mono: 'IBM Plex Mono', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        html.dark {
+            --bg: #1a1a2e;
+            --bg-card: #242444;
+            --bg-elevated: #2a2a4a;
+            --text: #e8eaed;
+            --text-secondary: #b0b4c0;
+            --text-muted: #8a8ea0;
+
+            --purple: #a970e0;
+            --purple-dim: rgba(169, 112, 224, 0.12);
+            --purple-border: rgba(169, 112, 224, 0.35);
+
+            --coral: #e07050;
+            --coral-dim: rgba(224, 112, 80, 0.12);
+            --coral-border: rgba(224, 112, 80, 0.35);
+
+            --teal: #2fd4aa;
+            --teal-dim: rgba(47, 212, 170, 0.12);
+            --teal-border: rgba(47, 212, 170, 0.35);
+
+            --amber: #e0a732;
+            --amber-dim: rgba(224, 167, 50, 0.12);
+            --amber-border: rgba(224, 167, 50, 0.35);
+
+            --border: rgba(255, 255, 255, 0.08);
+            --border-strong: rgba(255, 255, 255, 0.15);
+
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-sans);
+            padding: 32px 48px 64px;
+            max-width: 1100px;
+            margin: 0 auto;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* ── Header ── */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 28px;
+        }
+        .header h1 {
+            font-family: var(--font-mono);
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            max-width: 680px;
+            line-height: 1.55;
+        }
+        .dark-toggle {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            transition: all 0.2s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .dark-toggle:hover { color: var(--text-secondary); border-color: var(--border-strong); }
+
+        /* ── Explainer ── */
+        .explainer {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+        .explainer-title {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+        .flow {
+            display: flex;
+            align-items: center;
+            gap: 0;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+        .flow-step {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            font-weight: 600;
+            padding: 6px 14px;
+            border-radius: 6px;
+            white-space: nowrap;
+        }
+        .flow-step--action {
+            background: var(--purple-dim);
+            border: 1px solid var(--purple-border);
+            color: var(--purple);
+        }
+        .flow-arrow {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            padding: 0 8px;
+        }
+        .flow-repeat {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: var(--coral);
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: var(--coral-dim);
+            border: 1px solid var(--coral-border);
+        }
+        .explainer-note {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            line-height: 1.55;
+            margin-top: 10px;
+        }
+        .explainer-note strong { color: var(--text); }
+
+        /* ── Section ── */
+        .section-title {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+        .section-divider {
+            border: none;
+            border-top: 1px solid var(--border-strong);
+            margin: 32px 0 24px;
+        }
+
+        /* ── Parameters ── */
+        .params-row {
+            display: grid;
+            grid-template-columns: 2fr 1.2fr 1fr 1fr;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+        .param-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            box-shadow: var(--shadow);
+        }
+        .param-label {
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .param-card input[type="range"] {
+            width: 100%;
+            margin: 4px 0 2px;
+            accent-color: var(--purple);
+        }
+        input[type="range"] { accent-color: var(--purple); }
+        .leverage-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .param-value {
+            font-family: var(--font-mono);
+            font-size: 1.15rem;
+            font-weight: 600;
+        }
+        .leverage-ticks {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+        .param-card input[type="number"] {
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            font-weight: 500;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            padding: 6px 10px;
+            width: 100%;
+            -moz-appearance: textfield;
+        }
+        .param-card input[type="number"]::-webkit-outer-spin-button,
+        .param-card input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none; margin: 0;
+        }
+        .param-card input[type="number"]:focus {
+            outline: none;
+            border-color: var(--purple-border);
+        }
+        .param-unit {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .input-suffix-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .input-suffix-wrap input { padding-right: 28px; }
+        .input-suffix {
+            position: absolute;
+            right: 10px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+        .ltv-toggle {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+        .ltv-btn {
+            flex: 1;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 500;
+            padding: 8px 10px;
+            border-radius: var(--radius);
+            border: 1.5px solid var(--border);
+            background: var(--bg-card);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .ltv-btn:hover { border-color: var(--purple-border); color: var(--text-secondary); }
+        .ltv-btn--active {
+            border-color: var(--purple);
+            background: var(--purple-dim);
+            color: var(--purple);
+            font-weight: 600;
+        }
+        .ltv-btn-val {
+            display: block;
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+        .ltv-btn--active .ltv-btn-val { color: var(--purple); }
+        .ltv-btn { position: relative; }
+        .ltv-badge {
+            position: absolute;
+            right: 4px;
+            bottom: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.5rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 1px 5px;
+            border-radius: 3px;
+            line-height: 1.4;
+        }
+        .ltv-badge--live {
+            background: var(--teal);
+            color: var(--bg);
+        }
+        .ltv-badge--soon {
+            background: var(--text-muted);
+            color: var(--bg);
+            opacity: 0.7;
+        }
+
+        /* ── Stat Cards ── */
+        .stats-row {
+            display: grid;
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+        .stats-4 { grid-template-columns: repeat(3, 1fr); }
+        .stats-3 { grid-template-columns: repeat(3, 1fr); }
+        .stat-box {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 18px 22px;
+            box-shadow: var(--shadow);
+            transition: box-shadow 0.2s;
+        }
+        .stat-box:hover { box-shadow: var(--shadow-hover); }
+        .stat-box .stat-label {
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .stat-box .stat-value {
+            font-family: var(--font-mono);
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+        .stat-box .stat-detail {
+            font-family: var(--font-mono);
+            font-size: 0.76rem;
+            color: var(--text-muted);
+        }
+        .stat-box--coral  .stat-value { color: var(--coral); }
+        .stat-box--coral  { border-color: var(--coral-border); background: var(--coral-dim); }
+        .stat-box--purple .stat-value { color: var(--purple); }
+        .stat-box--purple { border-color: var(--purple-border); background: var(--purple-dim); }
+        .stat-box--teal   .stat-value { color: var(--teal); }
+        .stat-box--teal   { border-color: var(--teal-border); background: var(--teal-dim); }
+        .stat-box--amber  .stat-value { color: var(--amber); }
+        .stat-box--amber  { border-color: var(--amber-border); background: var(--amber-dim); }
+
+        /* ── Waterfall Side-by-Side ── */
+        .waterfall-wrap {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .waterfall-col {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 18px 20px;
+            box-shadow: var(--shadow);
+        }
+        .waterfall-header {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 14px;
+        }
+        .waterfall-header--coral { color: var(--coral); }
+        .waterfall-header--purple { color: var(--purple); }
+        .wf-step {
+            display: grid;
+            grid-template-columns: 38px 1fr 68px;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 6px;
+        }
+        .wf-num {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-align: right;
+        }
+        .wf-bar-track {
+            height: 22px;
+            background: var(--bg-card);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+        .wf-bar {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s;
+            min-width: 2px;
+        }
+        .wf-bar--coral {
+            background: linear-gradient(90deg, rgba(199,80,80,0.15), rgba(199,80,80,0.4));
+            border-right: 2px solid var(--coral);
+        }
+        .wf-bar--purple {
+            background: linear-gradient(90deg, rgba(123,44,191,0.15), rgba(123,44,191,0.4));
+            border-right: 2px solid var(--purple);
+        }
+        html.dark .wf-bar--coral {
+            background: linear-gradient(90deg, rgba(224,112,80,0.15), rgba(224,112,80,0.4));
+            border-right-color: var(--coral);
+        }
+        html.dark .wf-bar--purple {
+            background: linear-gradient(90deg, rgba(169,112,224,0.15), rgba(169,112,224,0.4));
+            border-right-color: var(--purple);
+        }
+        .wf-val {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        .wf-val--coral { color: var(--coral); }
+        .wf-val--purple { color: var(--purple); }
+        .wf-summary {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+        }
+        .wf-summary-label { color: var(--text-muted); }
+        .wf-summary-val { font-weight: 600; }
+
+        /* ── Chart ── */
+        .chart-section {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+        }
+        .chart-wrapper { position: relative; height: 300px; }
+        .chart-pair {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .chart-pair .chart-section { margin-bottom: 0; }
+
+        /* ── Table ── */
+        .table-section {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            padding: 10px 16px;
+            text-align: right;
+            border-bottom: 1px solid var(--border-strong);
+        }
+        th:first-child { text-align: left; }
+        td {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            font-weight: 500;
+            padding: 8px 16px;
+            text-align: right;
+            border-bottom: 1px solid var(--border);
+            font-variant-numeric: tabular-nums;
+        }
+        td:first-child { text-align: left; font-weight: 600; }
+        tr:hover td { background: var(--purple-dim); }
+        tr.active td { background: var(--purple-dim); }
+        .td-coral  { color: var(--coral); }
+        .td-purple { color: var(--purple); }
+        .td-teal   { color: var(--teal); }
+
+        /* ── Footer ── */
+        .note {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+        .note code {
+            background: var(--bg-card);
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 0.68rem;
+        }
+
+        /* ── Cost Section ── */
+        .cost-params {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+        .cost-compare {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .cost-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 22px 24px;
+            box-shadow: var(--shadow);
+        }
+        .cost-card--coral  { border-color: var(--coral-border); }
+        .cost-card--purple { border-color: var(--purple-border); }
+        .cost-card-header {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+        .cost-card--coral  .cost-card-header { color: var(--coral); }
+        .cost-card--purple .cost-card-header { color: var(--purple); }
+        .cost-card-header .cost-deposit {
+            font-size: 0.68rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            text-transform: none;
+            letter-spacing: 0;
+        }
+        .cost-line {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 7px 0;
+            border-bottom: 1px solid var(--border);
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+        }
+        .cost-line:last-child { border-bottom: none; }
+        .cost-line-label { color: var(--text-secondary); font-size: 0.75rem; }
+        .cost-line-value { font-weight: 600; font-variant-numeric: tabular-nums; }
+        .cost-line--total {
+            border-top: 2px solid var(--border-strong);
+            border-bottom: none;
+            margin-top: 4px;
+            padding-top: 12px;
+        }
+        .cost-line--total .cost-line-label { color: var(--text); font-weight: 600; }
+        .cost-card--coral  .cost-line--total .cost-line-value { font-size: 1rem; color: var(--coral); }
+        .cost-card--purple .cost-line--total .cost-line-value { font-size: 1rem; color: var(--purple); }
+        .cost-bps {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            text-align: right;
+            margin-top: 6px;
+        }
+
+        /* ── Timeline ── */
+        .timeline-section {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+        .timeline-header {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 12px;
+            margin-bottom: 6px;
+        }
+        .timeline-col-label {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+        }
+        .timeline-days-header {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            color: var(--text-muted);
+        }
+        .timeline-row {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .timeline-label {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+        .timeline-track {
+            height: 28px;
+            background: var(--bg-card);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        .timeline-bar {
+            height: 100%;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            font-weight: 600;
+            color: #fff;
+            transition: width 0.4s;
+        }
+        .timeline-bar--steth  { background: linear-gradient(90deg, rgba(123,44,191,0.3), rgba(123,44,191,0.7)); }
+        .timeline-bar--reth   { background: linear-gradient(90deg, rgba(15,166,127,0.3), rgba(15,166,127,0.7)); }
+        .timeline-bar--eeth   { background: linear-gradient(90deg, rgba(199,138,32,0.3), rgba(199,138,32,0.7)); }
+        .timeline-bar--netting { background: linear-gradient(90deg, rgba(123,44,191,0.5), rgba(15,166,127,0.5)); border: 1.5px dashed var(--teal); }
+        html.dark .timeline-bar--steth  { background: linear-gradient(90deg, rgba(169,112,224,0.3), rgba(169,112,224,0.7)); }
+        html.dark .timeline-bar--reth   { background: linear-gradient(90deg, rgba(47,212,170,0.3), rgba(47,212,170,0.7)); }
+        html.dark .timeline-bar--eeth   { background: linear-gradient(90deg, rgba(224,167,50,0.3), rgba(224,167,50,0.7)); }
+        .timeline-eth-marker {
+            position: absolute;
+            top: 0; bottom: 0;
+            border-left: 2px dashed var(--teal);
+            opacity: 0.7;
+        }
+        .timeline-eth-label {
+            position: absolute;
+            top: -14px;
+            font-family: var(--font-mono);
+            font-size: 0.58rem;
+            color: var(--teal);
+            white-space: nowrap;
+            transform: translateX(-50%);
+        }
+        .timeline-legend {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-muted);
+        }
+        .timeline-legend-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            margin-right: 6px;
+            vertical-align: middle;
+        }
+
+        /* ── Deleverage Comparison ── */
+        .delever-section {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow);
+        }
+        .delever-row {
+            display: grid;
+            grid-template-columns: 220px 1fr 80px;
+            gap: 14px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .delever-label {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            font-weight: 500;
+            line-height: 1.4;
+        }
+        .delever-label small {
+            display: block;
+            font-size: 0.65rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        .delever-track {
+            height: 32px;
+            background: var(--bg-card);
+            border-radius: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        .delever-bar {
+            height: 100%;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding-left: 10px;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #fff;
+            transition: width 0.4s;
+            min-width: 2px;
+        }
+        .delever-bar--coral  { background: linear-gradient(90deg, rgba(199,80,80,0.25), rgba(199,80,80,0.65)); border-right: 2px solid var(--coral); }
+        .delever-bar--purple { background: linear-gradient(90deg, rgba(123,44,191,0.25), rgba(123,44,191,0.65)); border-right: 2px solid var(--purple); }
+        .delever-bar--teal   { background: linear-gradient(90deg, rgba(15,166,127,0.25), rgba(15,166,127,0.65)); border-right: 2px solid var(--teal); }
+        html.dark .delever-bar--coral  { background: linear-gradient(90deg, rgba(224,112,80,0.2), rgba(224,112,80,0.6)); border-right-color: var(--coral); }
+        html.dark .delever-bar--purple { background: linear-gradient(90deg, rgba(169,112,224,0.2), rgba(169,112,224,0.6)); border-right-color: var(--purple); }
+        html.dark .delever-bar--teal   { background: linear-gradient(90deg, rgba(47,212,170,0.2), rgba(47,212,170,0.6)); border-right-color: var(--teal); }
+        .delever-days {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        .delever-days--coral  { color: var(--coral); }
+        .delever-days--purple { color: var(--purple); }
+        .delever-days--teal   { color: var(--teal); }
+        .delever-divider {
+            border: none;
+            border-top: 1px dashed var(--border);
+            margin: 12px 0;
+        }
+        .delever-instant {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            height: 32px;
+            display: flex;
+            align-items: center;
+        }
+        .delever-explainer {
+            font-size: 0.82rem;
+            line-height: 1.55;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            padding: 12px 16px;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+        .delever-explainer strong { color: var(--text); }
+
+        /* ── Netting Infographic ── */
+        .netting-pair {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .netting-infographic {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 28px 36px 24px;
+        }
+        .netting-title {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+        .netting-subtitle {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+        }
+        .netting-axis {
+            position: relative;
+            height: 24px;
+            margin-left: 68px;
+            margin-right: 8px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 8px;
+        }
+        .netting-axis span {
+            position: absolute;
+            bottom: 5px;
+            transform: translateX(-50%);
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            color: var(--text-muted);
+        }
+        .netting-lane {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 20px 0;
+            padding-right: 8px;
+        }
+        .netting-lane-label {
+            width: 56px;
+            flex-shrink: 0;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            font-weight: 600;
+            line-height: 1.3;
+            text-align: right;
+        }
+        .netting-lane-track {
+            flex: 1;
+            position: relative;
+            height: 36px;
+        }
+        .netting-bar {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .netting-bar-text {
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            font-weight: 500;
+            color: var(--bg);
+            white-space: nowrap;
+            padding: 0 6px;
+        }
+        .netting-bar--saved {
+            background: repeating-linear-gradient(-45deg, transparent, transparent 3px, var(--teal-dim) 3px, var(--teal-dim) 6px);
+            border: 1.5px dashed var(--teal);
+            border-radius: 0 4px 4px 0;
+            border-left: none;
+        }
+        .netting-bar--saved .netting-bar-text { color: var(--teal); font-weight: 600; }
+        .netting-bar--wait {
+            background: repeating-linear-gradient(-45deg, transparent, transparent 3px, var(--purple-dim) 3px, var(--purple-dim) 6px);
+            border: 1px dashed var(--purple-border);
+            border-radius: 0 4px 4px 0;
+            border-left: none;
+        }
+        .netting-bar--idle {
+            background: repeating-linear-gradient(-45deg, transparent, transparent 3px, rgba(128,128,128,0.06) 3px, rgba(128,128,128,0.06) 6px);
+            border: 1px dashed var(--border);
+            border-radius: 4px;
+        }
+        .netting-marker {
+            position: absolute;
+            top: -4px;
+            bottom: -4px;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 2;
+        }
+        .netting-marker-line {
+            width: 1.5px;
+            flex: 1;
+            background: var(--teal);
+            opacity: 0.5;
+        }
+        .netting-marker-tag {
+            font-family: var(--font-mono);
+            font-size: 0.58rem;
+            font-weight: 600;
+            color: var(--bg);
+            background: var(--teal);
+            padding: 2px 8px;
+            border-radius: 3px;
+            white-space: nowrap;
+            position: absolute;
+            top: -20px;
+        }
+        .netting-marker-tag--below {
+            top: auto;
+            bottom: -20px;
+        }
+        .netting-result {
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            text-align: center;
+            margin-top: 16px;
+        }
+        .netting-result--sub {
+            font-size: 0.68rem;
+            color: var(--purple);
+            margin-top: 4px;
+        }
+
+        .delever-saving {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--teal);
+            margin-left: 6px;
+            opacity: 0.85;
+        }
+
+        /* ── Step Detail (collapsible per-scenario) ── */
+        .delever-detail {
+            margin: -4px 0 8px;
+        }
+        .delever-detail summary {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 2px 0 4px;
+            user-select: none;
+        }
+        .delever-detail summary:hover { color: var(--text-secondary); }
+        .delever-detail[open] summary { margin-bottom: 6px; }
+        .delever-steps-wrap {
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+        }
+        .delever-steps-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            line-height: 1.5;
+        }
+        .delever-steps-table th {
+            position: sticky; top: 0;
+            background: var(--bg-elevated);
+            color: var(--text-muted);
+            font-weight: 500;
+            text-align: right;
+            padding: 4px 8px;
+            border-bottom: 1px solid var(--border-strong);
+            white-space: nowrap;
+        }
+        .delever-steps-table th:first-child,
+        .delever-steps-table td:first-child { text-align: center; width: 28px; }
+        .delever-steps-table th:last-child,
+        .delever-steps-table td:last-child { text-align: left; padding-left: 6px; }
+        .delever-steps-table td {
+            padding: 3px 8px;
+            text-align: right;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+        }
+        .delever-steps-table tfoot td {
+            font-weight: 600;
+            color: var(--text);
+            border-top: 1px solid var(--border-strong);
+            border-bottom: none;
+        }
+        .step-bar-cell { width: 80px; padding: 3px 6px !important; }
+        .step-bar {
+            display: flex;
+            height: 10px;
+            border-radius: 3px;
+            overflow: hidden;
+            background: var(--border);
+        }
+        .step-bar-locked {
+            background: var(--text-muted);
+            opacity: 0.35;
+        }
+        .step-bar-free--coral  { background: var(--coral); }
+        .step-bar-free--purple { background: var(--purple); }
+        .step-bar-free--teal   { background: var(--teal); }
+        td.step-highlight { color: var(--text); font-weight: 600; }
+
+        .x-axis-toggle {
+            position: absolute;
+            right: 12px;
+            bottom: 10px;
+            font-family: var(--font-mono);
+            font-size: 0.58rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 3px 8px;
+            cursor: pointer;
+            z-index: 3;
+            transition: color 0.15s, border-color 0.15s;
+        }
+        .x-axis-toggle:hover {
+            color: var(--purple);
+            border-color: var(--purple-border);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            body { padding: 20px 20px 48px; }
+            .params-row { grid-template-columns: 1fr 1fr; }
+            .stats-4 { grid-template-columns: 1fr 1fr; }
+            .waterfall-wrap { grid-template-columns: 1fr; }
+            .cost-compare { grid-template-columns: 1fr; }
+            .cost-params { grid-template-columns: 1fr 1fr; }
+            .chart-pair { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 600px) {
+            .params-row { grid-template-columns: 1fr; }
+            .stats-4, .stats-3 { grid-template-columns: 1fr; }
+            .cost-params { grid-template-columns: 1fr; }
+            .delever-steps-table { font-size: 0.6rem; }
+            .delever-steps-table th,
+            .delever-steps-table td { padding: 2px 4px; }
+            .step-bar-cell { width: 50px; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div>
+        <h1>Unwinding Leveraged Positions</h1>
+        <div class="subtitle">
+            Leveraged stakers exit by <strong>unlooping</strong>: withdraw collateral &rarr; unstake to ETH &rarr; repay debt &rarr; repeat.
+            Higher LTV = bigger withdrawals per step = fewer loops to fully exit.
+        </div>
+    </div>
+    <button class="dark-toggle" onclick="toggleDark()">
+        <span id="darkIcon">&#9790;</span>
+        <span id="darkLabel">Dark</span>
+    </button>
+</div>
+
+<!-- Parameters -->
+<div class="params-row">
+    <div class="param-card">
+        <div class="param-label">Leverage</div>
+        <input type="range" id="leverageSlider" min="1.5" max="13" step="0.1" value="10.0" oninput="update()">
+        <div class="leverage-row">
+            <div class="param-value"><span id="leverageDisplay">10.0</span>x</div>
+            <div class="leverage-ticks" id="leverageTicks">1.5x &mdash; 13x</div>
+        </div>
+    </div>
+    <div class="param-card">
+        <div class="param-label">Unstaking Days</div>
+        <input type="range" id="unstakeDaysSlider" min="1" max="14" step="1" value="14" oninput="update()">
+        <div class="leverage-row">
+            <div class="param-value"><span id="unstakeDaysDisplay">14</span>d</div>
+            <div class="leverage-ticks">1d &mdash; 14d</div>
+        </div>
+    </div>
+    <div class="param-card">
+        <div class="param-label">Aave Borrow LTV</div>
+        <div class="input-suffix-wrap">
+            <input type="number" id="aaveLTV" value="93" min="50" max="99" step="0.5" oninput="update()">
+            <span class="input-suffix">%</span>
+        </div>
+    </div>
+    <div class="param-card">
+        <div class="param-label">Twyne Borrow LTV</div>
+        <input type="hidden" id="twyneLTV" value="97">
+        <div class="ltv-toggle">
+            <button class="ltv-btn ltv-btn--active" id="btnOvercol" onclick="setTwyneLTV(97)">Overcollateralized <span class="ltv-btn-val">97%</span><span class="ltv-badge ltv-badge--live">live</span></button>
+            <button class="ltv-btn" id="btnUndercol" onclick="setTwyneLTV(200)">Undercollateralized <span class="ltv-btn-val">200%</span><span class="ltv-badge ltv-badge--soon">soon</span></button>
+        </div>
+    </div>
+</div>
+<div class="chart-pair" style="align-items: stretch;">
+    <div class="chart-section" style="display:flex; flex-direction:column;">
+        <div class="section-title" style="margin-bottom:8px;">Total Unwinding Time</div>
+        <div id="unwindTimeBars" style="flex:1; display:flex; align-items:flex-end; justify-content:center;"></div>
+    </div>
+    <div class="chart-section" style="display:flex; flex-direction:column; position:relative;">
+        <div class="section-title">Cumulative Debt Repaid &amp; Exposure Reduction</div>
+        <div class="chart-wrapper" style="height:200px;"><canvas id="debtRedChart"></canvas></div>
+        <div class="chart-wrapper" style="height:150px; margin-top:12px;"><canvas id="exposureChart"></canvas></div>
+        <button class="x-axis-toggle" id="xAxisToggle" onclick="toggleXAxis()">Show Days</button>
+    </div>
+</div>
+
+<hr class="section-divider">
+
+<!-- Step-by-step waterfall -->
+<div class="section-title">Step-by-Step Breakdown</div>
+<div class="waterfall-wrap">
+    <div class="waterfall-col">
+        <div class="waterfall-header waterfall-header--coral">Aave &mdash; Unwind Steps</div>
+        <div id="wfAave"></div>
+    </div>
+    <div class="waterfall-col">
+        <div class="waterfall-header waterfall-header--purple">Twyne &mdash; Unwind Steps</div>
+        <div id="wfTwyne"></div>
+    </div>
+</div>
+
+<div class="note">
+    <strong>Each unloop step:</strong> withdraw max collateral &rarr; unstake / swap to ETH &rarr; repay debt.
+    Capped at <code>W = C &minus; B / LTV</code> per step.<br>
+    Twyne&rsquo;s credit delegation expands the effective balance sheet, allowing larger withdrawals per step.
+    Creditors who stay in the loop earn spread by facilitating faster unwinds when others need to exit.
+</div>
+
+<hr class="section-divider">
+
+<!-- ═══════ Parallel Unstaking & Deleverage Comparison ═══════ -->
+<div class="section-title">Parallel Unstaking</div>
+<div style="font-family:var(--font-mono); font-size:0.7rem; color:var(--text-muted); line-height:1.6; margin-bottom:16px;">
+    Restaked tokens (eETH, rsETH) require sequential unstaking through multiple layers.
+    Twyne creditors can front ETH while unstaking happens in the background, letting borrowers exit days earlier.
+</div>
+
+<div class="timeline-section" id="timelineSection" style="margin-bottom:32px;">
+    <div class="timeline-header">
+        <div class="timeline-col-label">Asset</div>
+        <div class="timeline-days-header" id="timelineDaysHeader"></div>
+    </div>
+    <div id="timelineBars"></div>
+    <div class="timeline-legend" id="timelineLegend"></div>
+</div>
+
+<!-- Netting Infographic: Combined -->
+<div class="netting-infographic">
+
+    <!-- Shared axis -->
+    <div class="netting-axis">
+        <span style="left:0%">0</span><span style="left:23%">3d</span><span style="left:54%">7d</span><span style="left:77%">10d</span><span style="left:100%; transform:translateX(-100%)">13d</span>
+    </div>
+
+    <!-- STATUS QUO -->
+    <div style="font-family:var(--font-mono); font-weight:700; font-size:0.78rem; color:var(--coral); margin-bottom:6px;">Status Quo: Sequential Unstaking</div>
+    <div class="netting-lane">
+        <div class="netting-lane-label" style="color:var(--amber)">eETH<br>Holder</div>
+        <div class="netting-lane-track">
+            <div class="netting-bar" style="left:0; width:77%; background:var(--amber); opacity:0.6; border-radius:4px 0 0 4px;">
+                <span class="netting-bar-text">eETH &rarr; stETH ~10d</span>
+            </div>
+            <div class="netting-bar" style="left:77%; width:23%; background:var(--purple); opacity:0.5; border-radius:0 4px 4px 0;">
+                <span class="netting-bar-text">stETH &rarr; ETH ~3d</span>
+            </div>
+        </div>
+    </div>
+    <div class="netting-result" style="color:var(--coral); margin-bottom:20px;">
+        Exit on <strong>day 13</strong>
+    </div>
+
+    <!-- WITH NETTING -->
+    <div style="font-family:var(--font-mono); font-weight:700; font-size:0.78rem; color:var(--teal); margin-bottom:6px;">With Netting <span style="font-weight:400; font-size:0.65rem; color:var(--text-muted);">&mdash; both unstake in parallel, Creditor fronts ETH and gets stETH back from eETH unstaking</span></div>
+    <div class="netting-lane">
+        <div class="netting-lane-label" style="color:var(--purple)">stETH<br>Creditor</div>
+        <div class="netting-lane-track">
+            <div class="netting-bar" style="left:0; width:23%; background:var(--purple); opacity:0.6; border-radius:4px;">
+                <span class="netting-bar-text" style="font-size:0.6rem;">unstake ~3d</span>
+            </div>
+            <div class="netting-marker" style="left:23%;">
+                <div class="netting-marker-line"></div>
+                <div class="netting-marker-tag netting-marker-tag--below" style="background:var(--purple);">ETH &rarr; holder &darr;</div>
+            </div>
+            <div class="netting-marker" style="left:77%;">
+                <div class="netting-marker-line"></div>
+                <div class="netting-marker-tag netting-marker-tag--below" style="background:var(--teal);">stETH back &check;</div>
+            </div>
+        </div>
+    </div>
+    <div class="netting-lane">
+        <div class="netting-lane-label" style="color:var(--amber)">eETH<br>Holder</div>
+        <div class="netting-lane-track">
+            <div class="netting-bar" style="left:0; width:77%; background:var(--amber); opacity:0.6; border-radius:4px;">
+                <span class="netting-bar-text">eETH unstaking ~10d</span>
+            </div>
+        </div>
+    </div>
+    <div class="netting-lane" style="margin-top:4px;">
+        <div class="netting-lane-label" style="color:var(--teal); font-size:0.6rem;">Time<br>Saved</div>
+        <div class="netting-lane-track">
+            <div class="netting-bar" style="left:0; width:23%; background:var(--teal); opacity:0.5; border-radius:4px 0 0 4px;">
+                <span class="netting-bar-text" style="font-size:0.55rem;">exit</span>
+            </div>
+            <div class="netting-bar netting-bar--saved" style="left:23%; width:77%;">
+                <span class="netting-bar-text">10 days saved</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary -->
+    <div style="margin-top:16px; padding:12px 16px; background:rgba(255,255,255,0.03); border-left:3px solid var(--teal); border-radius:0 6px 6px 0; font-family:var(--font-mono); font-size:0.7rem; line-height:1.9; color:var(--text-muted);">
+        <div><span style="color:var(--teal); font-weight:600;">Holder exits on day 3</span> &mdash; <strong style="color:var(--text);">10 days saved</strong></div>
+        <div><span style="color:var(--purple);">Creditor charges interest</span> for the ~10d eETH unstaking period &mdash; at <strong style="color:var(--text);">3% APR</strong>, 10d costs <strong style="color:var(--text);">0.08%</strong> of fronted capital</div>
+    </div>
+
+</div>
+
+<div class="delever-section" style="margin-top:24px;">
+    <div class="section-title">eETH Deleverage Time</div>
+    <div class="delever-scenarios" id="deleverScenarios"></div>
+</div>
+
+<script>
+/* ─── State ─── */
+let debtRedChartObj = null;
+let exposureChartObj = null;
+let xAxisMode = 'steps'; // 'steps' or 'days'
+
+function toggleXAxis() {
+    xAxisMode = xAxisMode === 'steps' ? 'days' : 'steps';
+    const btn = document.getElementById('xAxisToggle');
+    btn.textContent = xAxisMode === 'steps' ? 'Show Days' : 'Show Steps';
+    update();
+}
+
+function params() {
+    return {
+        L:    parseFloat(document.getElementById('leverageSlider').value),
+        dep:  10,
+        aLTV: parseFloat(document.getElementById('aaveLTV').value) / 100,
+        tLTV: parseFloat(document.getElementById('twyneLTV').value) / 100,
+        unstakeDays: parseInt(document.getElementById('unstakeDaysSlider').value),
+    };
+}
+
+function f(v, d) { return v.toFixed(d === undefined ? 2 : d); }
+
+function setTwyneLTV(val) {
+    document.getElementById('twyneLTV').value = val;
+    document.getElementById('btnOvercol').classList.toggle('ltv-btn--active', val === 97);
+    document.getElementById('btnUndercol').classList.toggle('ltv-btn--active', val === 200);
+    update();
+}
+
+/*
+ * Simulate full unloop: returns array of { C, B, W } per step.
+ * W is how much stETH is withdrawn and unstaked to repay debt.
+ */
+function simUnloop(L, deposit, ltv) {
+    let C = L * deposit;
+    let B = (L - 1) * deposit;
+    const steps = [];
+    while (B > 0.0001 && steps.length < 500) {
+        const Wmax = C - B / ltv;
+        if (Wmax <= 0) break;
+        const W = Math.min(Wmax, B);          // final step: only swap what's owed
+        const isFinal = Wmax >= B;
+        steps.push({ C: +C.toFixed(6), B: +B.toFixed(6), W: +W.toFixed(6), final: isFinal });
+        C -= Wmax;                             // collateral reduces by full withdrawal
+        B -= W;                                // debt reduces by repaid amount
+        if (isFinal) break;
+    }
+    return steps;
+}
+
+/* ─── Main Update ─── */
+function update() {
+    /* dynamic leverage range based on Aave LTV */
+    const aLTVRaw = parseFloat(document.getElementById('aaveLTV').value) / 100;
+    const maxLev = Math.floor((1 / (1 - aLTVRaw)) * 10) / 10;  // round down to 0.1
+    const slider = document.getElementById('leverageSlider');
+    slider.max = maxLev;
+    if (parseFloat(slider.value) > maxLev) slider.value = maxLev;
+    document.getElementById('leverageTicks').textContent = '1.5x \u2014 ' + f(maxLev, 1) + 'x';
+
+    const { L, dep, aLTV, tLTV, unstakeDays } = params();
+
+    document.getElementById('leverageDisplay').textContent = f(L, 1);
+    document.getElementById('unstakeDaysDisplay').textContent = unstakeDays;
+
+    const stA = simUnloop(L, dep, aLTV);
+    const stT = simUnloop(L, dep, tLTV);
+
+    /* charts + waterfall */
+    buildDebtRedChart(stA, stT, unstakeDays);
+    buildExposureChart(stA, stT, unstakeDays);
+    buildUnwindTimeBars(stA, stT, unstakeDays);
+    buildWaterfall('wfAave',  stA, 'coral',  dep);
+    buildWaterfall('wfTwyne', stT, 'purple', dep);
+
+    /* ── Multi-LST timeline ── */
+    buildTimeline();
+    buildDeleverComparison(L, dep, aLTV, tLTV);
+
+    /* ── eETH deleverage comparison ── */
+
+}
+
+/* ─── Waterfall ─── */
+function buildWaterfall(id, steps, color, deposit) {
+    const el = document.getElementById(id);
+    el.innerHTML = '';
+    if (!steps.length) return;
+
+    const totalDebt = steps[0].B;
+    const maxW = Math.max(...steps.map(s => s.W));
+
+    steps.forEach((s, i) => {
+        const pct = maxW > 0 ? (s.W / maxW) * 100 : 0;
+        const row = document.createElement('div');
+        row.className = 'wf-step';
+        row.innerHTML =
+            `<div class="wf-num">${i + 1}.</div>` +
+            `<div class="wf-bar-track"><div class="wf-bar wf-bar--${color}" style="width:${pct}%"></div></div>` +
+            `<div class="wf-val wf-val--${color}">${f(s.W)} ETH</div>`;
+        el.appendChild(row);
+    });
+
+    /* summary */
+    const totalSwapped = steps.reduce((s, x) => s + x.W, 0);
+    const sum = document.createElement('div');
+    sum.className = 'wf-summary';
+    sum.innerHTML =
+        `<span class="wf-summary-label">Total unstaked</span>` +
+        `<span class="wf-summary-val">${f(totalSwapped)} stETH in ${steps.length} steps</span>`;
+    el.appendChild(sum);
+}
+
+/* ─── Shared subplot helpers ─── */
+function _subplotColors() {
+    const cs = getComputedStyle(document.documentElement);
+    return {
+        coral:  cs.getPropertyValue('--coral').trim(),
+        purple: cs.getPropertyValue('--purple').trim(),
+        amber:  cs.getPropertyValue('--amber').trim(),
+        muted:  cs.getPropertyValue('--text-muted').trim(),
+        grid:   cs.getPropertyValue('--border').trim(),
+    };
+}
+function _cumPct(steps) {
+    if (!steps.length) return [0];
+    const totalDebt = steps[0].B;
+    let repaid = 0;
+    const pts = [0];
+    steps.forEach(s => { repaid += s.W; pts.push(Math.min((repaid / totalDebt) * 100, 100)); });
+    return pts;
+}
+function _subplotData(stA, stT, unstakeDays) {
+    const aaveCum  = _cumPct(stA);
+    const twyneCum = _cumPct(stT);
+    const maxLen   = Math.max(aaveCum.length, twyneCum.length);
+    while (aaveCum.length < maxLen) aaveCum.push(100);
+    while (twyneCum.length < maxLen) twyneCum.push(100);
+    const diff   = aaveCum.map((a, i) => +((100 - a) - (100 - twyneCum[i])).toFixed(2));
+    const labels = xAxisMode === 'days'
+        ? Array.from({ length: maxLen }, (_, i) => i * unstakeDays)
+        : Array.from({ length: maxLen }, (_, i) => i);
+    return { aaveCum, twyneCum, diff, labels };
+}
+const FONT = "'IBM Plex Mono',monospace";
+
+/* ─── Subplot 1: Cumulative Debt Repaid (top — no x-axis labels) ─── */
+function buildDebtRedChart(stA, stT, unstakeDays) {
+    const COL = _subplotColors();
+    const { aaveCum, twyneCum, labels } = _subplotData(stA, stT, unstakeDays);
+
+    if (debtRedChartObj) debtRedChartObj.destroy();
+    debtRedChartObj = new Chart(document.getElementById('debtRedChart'), {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [
+                {
+                    label: 'Twyne',
+                    data: twyneCum,
+                    borderColor: COL.purple,
+                    backgroundColor: COL.purple + '18',
+                    borderWidth: 2.5,
+                    pointRadius: 3,
+                    pointBackgroundColor: COL.purple,
+                    tension: 0.3,
+                    fill: true,
+                },
+                {
+                    label: 'Aave',
+                    data: aaveCum,
+                    borderColor: COL.coral,
+                    backgroundColor: COL.coral + '18',
+                    borderWidth: 2.5,
+                    pointRadius: 3,
+                    pointBackgroundColor: COL.coral,
+                    tension: 0.3,
+                    fill: true,
+                },
+            ],
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            layout: { padding: { bottom: 0 } },
+            plugins: {
+                legend: {
+                    labels: { font: { family: FONT, size: 10 }, color: COL.muted, boxWidth: 14 },
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(26,26,46,0.94)',
+                    titleFont: { family: FONT, size: 12 },
+                    bodyFont:  { family: FONT, size: 11 },
+                    padding: 12,
+                    callbacks: {
+                        title: (items) => xAxisMode === 'days' ? 'Day ' + items[0].label : 'After step ' + items[0].label,
+                        label: (i) => ' ' + i.dataset.label + ': ' + i.parsed.y.toFixed(1) + '% repaid',
+                    },
+                },
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { display: false },
+                    title: { display: false },
+                },
+                y: {
+                    min: 0, max: 115,
+                    grid: { color: COL.grid, drawBorder: false },
+                    title: { display: true, text: 'Debt Repaid', font: { family: FONT, size: 11 }, color: COL.muted },
+                    ticks: {
+                        font: { family: FONT, size: 10 }, color: COL.muted,
+                        stepSize: 20,
+                        callback: v => [0, 20, 60, 100].includes(v) ? v + '%' : '',
+                    },
+                },
+            },
+        },
+    });
+}
+
+/* ─── Subplot 2: Exposure Reduction via Twyne (bottom — shows shared x-axis) ─── */
+function buildExposureChart(stA, stT, unstakeDays) {
+    const COL = _subplotColors();
+    const { diff, labels } = _subplotData(stA, stT, unstakeDays);
+
+    /* nice round max: snap to next 10 */
+    const peak = Math.max(...diff, 1);
+    const yMax = Math.ceil(peak / 10) * 10;
+    /* 2-3 ticks: 0, mid, max */
+    const mid = Math.round(yMax / 2);
+
+    if (exposureChartObj) exposureChartObj.destroy();
+    exposureChartObj = new Chart(document.getElementById('exposureChart'), {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Less exposure (Twyne)',
+                data: diff,
+                backgroundColor: COL.amber + '60',
+                borderColor: COL.amber,
+                borderWidth: 1,
+                borderRadius: 3,
+            }],
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            layout: { padding: { top: 0 } },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(26,26,46,0.94)',
+                    titleFont: { family: FONT, size: 12 },
+                    bodyFont:  { family: FONT, size: 11 },
+                    padding: 12,
+                    callbacks: {
+                        title: (items) => xAxisMode === 'days' ? 'Day ' + items[0].label : 'After step ' + items[0].label,
+                        label: (i) => {
+                            const v = i.parsed.y;
+                            if (v === 0) return ' No difference';
+                            return ' Twyne has ' + v.toFixed(1) + '% less debt remaining';
+                        },
+                    },
+                },
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    title: { display: true, text: xAxisMode === 'days' ? 'Days' : 'Unwind Step', font: { family: FONT, size: 11 }, color: COL.muted },
+                    ticks: { font: { family: FONT, size: 10 }, color: COL.muted },
+                },
+                y: {
+                    min: 0, max: yMax,
+                    grid: { color: COL.grid, drawBorder: false },
+                    title: { display: true, text: 'Twyne Advantage', font: { family: FONT, size: 11 }, color: COL.muted },
+                    ticks: {
+                        font: { family: FONT, size: 10 }, color: COL.muted,
+                        stepSize: mid,
+                        callback: v => [0, mid, yMax].includes(v) ? v + '%' : '',
+                    },
+                },
+            },
+        },
+    });
+}
+
+/* ─── Debt Repaid over Time (calendar days) ─── */
+function buildUnwindTimeBars(stA, stT, unstakeDays) {
+    const el = document.getElementById('unwindTimeBars');
+    const aaveDays   = stA.length * unstakeDays;
+    const twyneDays  = stT.length * unstakeDays;
+    const maxDays    = Math.max(aaveDays, twyneDays, 1);
+    const saved      = aaveDays - twyneDays;
+    const savedPct   = aaveDays > 0 ? Math.round((saved / aaveDays) * 100) : 0;
+
+    const barH = 160;
+    const col = (label, sub, steps, days, cls) => {
+        const pct = Math.max((days / maxDays) * 100, 6);
+        const h = Math.round((pct / 100) * barH);
+        return `<div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+            <div style="color:var(--${cls}); font-family:var(--font-mono); font-weight:700; font-size:1.3rem;">${days}<span style="font-size:0.8rem;">d</span></div>
+            <div class="delever-bar--${cls}" style="width:64px; height:${h}px; border-radius:6px 6px 0 0;"></div>
+            <div style="color:var(--${cls}); font-family:var(--font-mono); font-size:0.78rem; font-weight:600; margin-top:4px;">${label}</div>
+            <div style="color:var(--text-muted); font-family:var(--font-mono); font-size:0.65rem;">${sub}</div>
+        </div>`;
+    };
+
+    const pl = (n) => n !== 1 ? 's' : '';
+
+    el.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; gap:0;">
+        <div style="display:flex; align-items:flex-end; gap:24px;">
+            ${col('Aave', stA.length + ' step' + pl(stA.length) + ' &times; ' + unstakeDays + 'd', stA.length, aaveDays, 'coral')}
+            ${col('Twyne', stT.length + ' step' + pl(stT.length) + ' &times; ' + unstakeDays + 'd', stT.length, twyneDays, 'purple')}
+        </div>
+        ${saved > 0 ? `<div style="margin-top:12px; padding:4px 14px; border-radius:20px; background:var(--teal-dim); border:1px solid var(--teal-border); font-family:var(--font-mono); font-size:0.78rem; color:var(--teal); font-weight:600;">
+            &minus;${saved}d &nbsp;(${savedPct}% faster)
+        </div>` : ''}
+    </div>`;
+}
+
+/* ─── Multi-LST Timeline ─── */
+function buildTimeline() {
+    const maxDays = 14;
+    const assets = [
+        { name: 'stETH',  days: 3,  cls: 'steth',  color: 'var(--purple)' },
+        { name: 'rsETH',  days: 9,  cls: 'reth',    color: 'var(--teal)' },
+        { name: 'eETH',   days: 10, cls: 'eeth',    color: 'var(--amber)' },
+    ];
+
+    /* days header */
+    const hdr = document.getElementById('timelineDaysHeader');
+    hdr.innerHTML = '';
+    for (let d = 0; d <= maxDays; d += 2) {
+        const s = document.createElement('span');
+        s.textContent = d === 0 ? 'Now' : d + 'd';
+        hdr.appendChild(s);
+    }
+
+    /* bars */
+    const barsEl = document.getElementById('timelineBars');
+    barsEl.innerHTML = '';
+
+    assets.forEach(a => {
+        const row = document.createElement('div');
+        row.className = 'timeline-row';
+
+        const pct = (a.days / maxDays) * 100;
+        row.innerHTML =
+            `<div class="timeline-label" style="color:${a.color}">${a.name}</div>` +
+            `<div class="timeline-track">` +
+                `<div class="timeline-bar timeline-bar--${a.cls}" style="width:${pct}%">${a.days}d</div>` +
+            `</div>`;
+        barsEl.appendChild(row);
+    });
+
+    /* legend */
+    const legend = document.getElementById('timelineLegend');
+    legend.innerHTML =
+        `<span><span class="timeline-legend-dot" style="background:var(--purple)"></span>stETH (Lido) ~3 days</span>` +
+        `<span><span class="timeline-legend-dot" style="background:var(--teal)"></span>rsETH (Kelp) ~7-10 days</span>` +
+        `<span><span class="timeline-legend-dot" style="background:var(--amber)"></span>eETH (EtherFi) ~10 days</span>`;
+}
+
+/* ─── Per-Step Collateral Detail ─── */
+function renderStepDetail(steps, ltv, cls) {
+    const fe = (v) => v.toFixed(4);
+    const totalW = steps.reduce((s, r) => s + r.W, 0);
+    const rows = steps.map((r, i) => {
+        const locked = r.B / ltv;
+        const free = r.C - locked;
+        const lockedPct = (locked / r.C) * 100;
+        const freePct = 100 - lockedPct;
+        const afterDebt = Math.max(r.B - r.W, 0);
+        return `<tr>
+            <td>${i + 1}</td>
+            <td>${fe(r.C)}</td>
+            <td>${fe(r.B)}</td>
+            <td>${fe(locked)}</td>
+            <td class="step-highlight">${fe(r.W)}</td>
+            <td>${fe(afterDebt)}</td>
+            <td class="step-bar-cell"><div class="step-bar">` +
+                `<div class="step-bar-locked" style="width:${lockedPct.toFixed(1)}%"></div>` +
+                `<div class="step-bar-free--${cls}" style="width:${freePct.toFixed(1)}%"></div>` +
+            `</div></td>
+        </tr>`;
+    }).join('');
+
+    return `<details class="delever-detail">
+        <summary>Show per-step collateral breakdown</summary>
+        <div class="delever-steps-wrap">
+        <table class="delever-steps-table">
+            <thead><tr>
+                <th>#</th><th>Collateral</th><th>Debt</th>
+                <th>Locked (B/LTV)</th><th>Unstake&rarr;Repay</th>
+                <th>Debt After</th><th>C&nbsp;split</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+            <tfoot><tr>
+                <td></td><td></td><td></td><td></td>
+                <td class="step-highlight">${fe(totalW)} total</td>
+                <td></td><td></td>
+            </tr></tfoot>
+        </table>
+        </div>
+    </details>`;
+}
+
+/* ─── eETH Deleverage Comparison ─── */
+function buildDeleverComparison(L, dep, aLTV, tLTV) {
+    const el = document.getElementById('deleverScenarios');
+    const eethDays = 10;
+    const stethDays = 3;
+
+    const aaveStepsArr  = simUnloop(L, dep, aLTV);
+    const twyneStepsArr = simUnloop(L, dep, tLTV);
+
+    const aaveSteps  = aaveStepsArr.length;
+    const twyneSteps = twyneStepsArr.length;
+
+    const aaveUnstakeDays = aaveSteps * eethDays;
+
+    const pl = (n) => n !== 1 ? 's' : '';
+    const tLabel = 'Twyne ' + f(tLTV * 100, 0) + '%';
+
+    const scenarios = [
+        {
+            label: 'Aave + AMM swap',
+            detail: aaveSteps + ' step' + pl(aaveSteps) + ' &times; instant swap',
+            days: 0, instant: true,
+            note: 'Instant but costs slippage + fees on every step',
+            cls: 'coral',
+            steps: aaveStepsArr, ltv: aLTV,
+        },
+        {
+            label: 'Aave + eETH unstaking',
+            detail: aaveSteps + ' step' + pl(aaveSteps) + ' &times; ' + eethDays + 'd each',
+            days: aaveUnstakeDays,
+            cls: 'coral',
+            steps: aaveStepsArr, ltv: aLTV, skipDetail: true,
+        },
+        { divider: true },
+        {
+            label: tLabel + ' + eETH unstaking',
+            detail: twyneSteps + ' step' + pl(twyneSteps) + ' &times; ' + eethDays + 'd each',
+            days: twyneSteps * eethDays,
+            cls: 'purple',
+            steps: twyneStepsArr, ltv: tLTV,
+        },
+        {
+            label: tLabel + ' + netting',
+            detail: twyneSteps + ' step' + pl(twyneSteps) + ' &times; ' + stethDays + 'd (stETH creditor bridges)',
+            days: twyneSteps * stethDays,
+            cls: 'teal',
+            steps: twyneStepsArr, ltv: tLTV, skipDetail: true,
+        },
+    ];
+
+    const maxDays = Math.max(...scenarios.filter(s => !s.divider && !s.instant).map(s => s.days), 1);
+
+    el.innerHTML = scenarios.map(s => {
+        if (s.divider) return '<hr class="delever-divider">';
+
+        const saving = (!s.instant && aaveUnstakeDays > 0)
+            ? Math.round((1 - s.days / aaveUnstakeDays) * 100)
+            : 0;
+        const savingHtml = saving > 0
+            ? `<span class="delever-saving">&minus;${saving}%</span>`
+            : '';
+
+        const detailHtml = (!s.skipDetail && s.steps)
+            ? renderStepDetail(s.steps, s.ltv, s.cls)
+            : '';
+
+        if (s.instant) {
+            return `<div class="delever-row">
+                <div class="delever-label" style="color:var(--${s.cls})">${s.label}<small>${s.detail}</small></div>
+                <div class="delever-instant">${s.note}</div>
+                <div class="delever-days delever-days--${s.cls}">~0d</div>
+            </div>${detailHtml}`;
+        }
+
+        const pct = Math.max((s.days / maxDays) * 100, 2);
+        return `<div class="delever-row">
+            <div class="delever-label" style="color:var(--${s.cls})">${s.label}<small>${s.detail}</small></div>
+            <div class="delever-track">
+                <div class="delever-bar delever-bar--${s.cls}" style="width:${pct}%"></div>
+            </div>
+            <div class="delever-days delever-days--${s.cls}">${s.days}d${savingHtml}</div>
+        </div>${detailHtml}`;
+    }).join('');
+}
+
+/* ─── Dark Mode ─── */
+function toggleDark() {
+    document.documentElement.classList.toggle('dark');
+    const dk = document.documentElement.classList.contains('dark');
+    localStorage.setItem('theme', dk ? 'dark' : 'light');
+    document.getElementById('darkIcon').innerHTML  = dk ? '&#9788;' : '&#9790;';
+    document.getElementById('darkLabel').textContent = dk ? 'Light' : 'Dark';
+    update();
+}
+
+/* ─── Init ─── */
+(function() {
+    if (localStorage.getItem('theme') === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.getElementById('darkIcon').innerHTML  = '&#9788;';
+        document.getElementById('darkLabel').textContent = 'Light';
+    }
+    update();
+})();
+</script>
+</body>
+</html>
