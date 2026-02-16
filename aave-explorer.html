@@ -768,6 +768,22 @@ async function tryRpc() {
     throw new Error('All RPC endpoints failed');
 }
 
+/* ═══════ Try a contract call across all RPCs ═══════ */
+async function tryCallAcrossRpcs(fnName) {
+    for (const url of RPC_ENDPOINTS) {
+        try {
+            const p = new ethers.JsonRpcProvider(url);
+            const c = new ethers.Contract(UI_POOL_DATA_PROVIDER, UI_POOL_ABI, p);
+            const result = await c[fnName](POOL_ADDRESSES_PROVIDER);
+            console.log(`${fnName} succeeded on ${url}`);
+            return { result, url };
+        } catch (e) {
+            console.warn(`${fnName} failed on ${url}:`, e.message);
+        }
+    }
+    return null;
+}
+
 /* ═══════ Bitmap Decoder ═══════ */
 function decodeBitmap(bitmap, reserves) {
     const assets = [];
@@ -923,59 +939,44 @@ function reconstructEmodesFromReserves(rawReserves) {
     return Object.values(emodeMap);
 }
 
-/* ═══════ Try getEModes across all RPCs ═══════ */
-async function tryGetEModes() {
-    for (const url of RPC_ENDPOINTS) {
-        try {
-            const p = new ethers.JsonRpcProvider(url);
-            const c = new ethers.Contract(UI_POOL_DATA_PROVIDER, UI_POOL_ABI, p);
-            const result = await c.getEModes(POOL_ADDRESSES_PROVIDER);
-            console.log('getEModes succeeded on', url);
-            return result;
-        } catch (e) {
-            console.warn('getEModes failed on', url, e.message);
-        }
-    }
-    return null;
-}
-
 /* ═══════ Data Fetch ═══════ */
 async function fetchData() {
     const statusEl = document.getElementById('connStatus');
     const errorEl = document.getElementById('errorBanner');
     errorEl.classList.remove('error-banner--visible');
+    errorEl.style.background = '';
+    errorEl.style.borderColor = '';
+    errorEl.style.color = '';
 
     statusEl.innerHTML = '<span class="dot dot--loading"></span> Connecting...';
 
     try {
+        // Step 0: Find a working RPC (lightweight check)
         const { provider, url, block } = await tryRpc();
         _provider = provider;
 
-        statusEl.innerHTML = `<span class="dot dot--loading"></span> ${url.replace('https://', '')}<br>Block ${block.toLocaleString()} &middot; Loading data...`;
+        statusEl.innerHTML = `<span class="dot dot--loading"></span> ${url.replace('https://', '')}<br>Block ${block.toLocaleString()} &middot; Fetching reserves...`;
 
-        const contract = new ethers.Contract(UI_POOL_DATA_PROVIDER, UI_POOL_ABI, provider);
+        // Step 1: Fetch reserves — try each RPC since this is a heavy call
+        const reservesCall = await tryCallAcrossRpcs('getReservesData');
+        if (!reservesCall) {
+            throw new Error('getReservesData failed on all RPC endpoints. Free RPCs may be rate-limiting large calls. Try refreshing in a moment.');
+        }
 
-        // Step 1: Fetch reserves (reliable)
-        const reservesResult = await contract.getReservesData(POOL_ADDRESSES_PROVIDER);
-        const [rawReserves, baseCurrency] = reservesResult;
+        const [rawReserves, baseCurrency] = reservesCall.result;
         _rawReserves = rawReserves;
         _baseCurrency = baseCurrency;
         _parsedReserves = parseReserves(rawReserves, baseCurrency);
 
-        // Step 2: Try getEModes across all RPCs (may fail on some endpoints)
-        let emodesResult = null;
+        statusEl.innerHTML = `<span class="dot dot--loading"></span> ${reservesCall.url.replace('https://', '')}<br>Block ${block.toLocaleString()} &middot; Fetching E-modes...`;
+
+        // Step 2: Fetch E-modes — try each RPC independently
         let emodesFallback = false;
+        const emodesCall = await tryCallAcrossRpcs('getEModes');
 
-        try {
-            emodesResult = await contract.getEModes(POOL_ADDRESSES_PROVIDER);
-        } catch (e) {
-            console.warn('getEModes failed on primary RPC, trying others...', e.message);
-            emodesResult = await tryGetEModes();
-        }
-
-        if (emodesResult) {
-            _rawEmodes = emodesResult;
-            _parsedEmodes = parseEmodes(emodesResult, _parsedReserves);
+        if (emodesCall) {
+            _rawEmodes = emodesCall.result;
+            _parsedEmodes = parseEmodes(emodesCall.result, _parsedReserves);
         } else {
             // Fallback: reconstruct from per-reserve E-mode fields
             emodesFallback = true;
@@ -986,6 +987,7 @@ async function fetchData() {
         }
 
         // Store for console inspection
+        const rpcUsed = reservesCall.url;
         window._aaveData = {
             reserves: _parsedReserves,
             emodes: _parsedEmodes,
@@ -996,22 +998,22 @@ async function fetchData() {
                 networkBaseTokenPriceDecimals: Number(baseCurrency.networkBaseTokenPriceDecimals),
             },
             rawReserves: rawReserves,
-            rawEmodes: emodesResult || _rawEmodes,
+            rawEmodes: emodesCall ? emodesCall.result : _rawEmodes,
             emodesFallback,
             block,
-            rpcUrl: url,
+            rpcUrl: rpcUsed,
             fetchedAt: new Date().toISOString(),
         };
 
         const now = new Date();
-        let statusHtml = `<span class="dot dot--ok"></span> ${url.replace('https://', '')}<br>Block ${block.toLocaleString()} &middot; ${now.toLocaleTimeString()}`;
+        let statusHtml = `<span class="dot dot--ok"></span> ${rpcUsed.replace('https://', '')}<br>Block ${block.toLocaleString()} &middot; ${now.toLocaleTimeString()}`;
         if (emodesFallback) {
             statusHtml += '<br><span style="color:var(--amber);">E-modes: fallback (no bitmap data)</span>';
         }
         statusEl.innerHTML = statusHtml;
 
         if (emodesFallback) {
-            errorEl.textContent = 'Note: getEModes() call failed on all RPCs. E-mode data reconstructed from per-reserve fields — bitmap decoding unavailable. Assets shown are those with matching eModeCategoryId.';
+            errorEl.textContent = 'Note: getEModes() call failed on all RPCs. E-mode data reconstructed from per-reserve fields — bitmap decoding unavailable.';
             errorEl.style.background = 'var(--amber-dim)';
             errorEl.style.borderColor = 'var(--amber-border)';
             errorEl.style.color = 'var(--amber)';
@@ -1022,10 +1024,7 @@ async function fetchData() {
     } catch (err) {
         console.error('Fetch error:', err);
         statusEl.innerHTML = '<span class="dot dot--err"></span> Connection failed';
-        errorEl.textContent = `Failed to fetch data: ${err.message}. Check console for details.`;
-        errorEl.style.background = '';
-        errorEl.style.borderColor = '';
-        errorEl.style.color = '';
+        errorEl.textContent = `Failed to fetch data: ${err.message}`;
         errorEl.classList.add('error-banner--visible');
     }
 }
