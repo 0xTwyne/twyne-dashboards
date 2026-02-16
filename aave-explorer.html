@@ -983,7 +983,8 @@ function computeNetLoopYield(em) {
             // PT fixed yield: annualized discount from oracle price to underlying par
             y = computePTFixedYield(a);
         } else if (_stakingYields[a.symbol]) {
-            y = _stakingYields[a.symbol];
+            // Total collateral yield = staking yield + Aave supply APY
+            y = _stakingYields[a.symbol] + a.supplyAPY;
         } else {
             y = a.supplyAPY; // fallback to Aave supply APY
         }
@@ -1032,8 +1033,10 @@ function computePTFixedYield(reserve) {
     const discount = (underlying.priceUsd - reserve.priceUsd) / reserve.priceUsd;
     if (discount <= 0) return 0;
 
-    // Annualize
-    return discount / (daysLeft / 365) * 100;
+    // Compound annualization (matches Pendle's implied APY formula)
+    // effectiveImpliedApy = ptExchangeRate^(365/daysToExpiry) - 1
+    const exchangeRate = 1 + discount;  // underlyingPrice / ptPrice
+    return (Math.pow(exchangeRate, 365 / daysLeft) - 1) * 100;
 }
 
 /* ═══════ RPC Connection ═══════ */

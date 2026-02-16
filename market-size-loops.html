@@ -1112,8 +1112,10 @@ function renderStrategyCards() {
         const spread = s.yield - borrowRate;
         const aaveLev = leverage(s.aaveLtv);
         const twyneLev = leverage(twyneLtv);
-        const aaveYield = spread * aaveLev;
-        const twyneYield = spread * twyneLev;
+        // Correct formula: collYield * L - borrowRate * (L-1)
+        // You borrow (L-1) units, not L, since initial capital is not borrowed
+        const aaveYield = s.yield * aaveLev - borrowRate * (aaveLev - 1);
+        const twyneYield = s.yield * twyneLev - borrowRate * (twyneLev - 1);
 
         const status = spread > 2 ? 'green' : spread > 0 ? 'yellow' : 'red';
         const statusText = spread > 2 ? 'Profitable' : spread > 0 ? 'Marginal' : 'Unprofitable';
@@ -1294,8 +1296,9 @@ function updateCalc() {
     const spread = ptYield - borrowRate;
     const aaveLev = leverage(aaveLtv);
     const twyneLev = leverage(twyneLtv);
-    const aaveYield = spread * aaveLev;
-    const twyneYield = spread * twyneLev;
+    // Correct formula: collYield * L - borrowRate * (L-1)
+    const aaveYield = ptYield * aaveLev - borrowRate * (aaveLev - 1);
+    const twyneYield = ptYield * twyneLev - borrowRate * (twyneLev - 1);
 
     document.getElementById('calcSpread').textContent = fmt(spread, 2) + '%';
     document.getElementById('calcSpread').style.color = spread > 0 ? 'var(--teal)' : 'var(--coral)';
