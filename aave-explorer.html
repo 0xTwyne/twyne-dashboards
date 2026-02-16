@@ -641,10 +641,12 @@
 const POOL_ADDRESSES_PROVIDER = '0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e';
 const UI_POOL_DATA_PROVIDER   = '0x3F78BBD206e4D3c504Eb854232EdA7e47E9Fd8FC'; // V3.2 compatible
 
+// Note: getReservesData for 63 reserves needs >1M gas on eth_call.
+// LlamaRPC/Cloudflare cap at 1M and fail. These RPCs allow higher limits.
 const RPC_ENDPOINTS = [
+    'https://ethereum-rpc.publicnode.com',
+    'https://1rpc.io/eth',
     'https://eth.llamarpc.com',
-    'https://cloudflare-eth.com',
-    'https://rpc.ankr.com/eth',
 ];
 
 // ABI matching aave-v3-origin IUiPoolDataProviderV3 (V3.2+)
