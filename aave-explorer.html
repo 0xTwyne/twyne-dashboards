@@ -652,6 +652,28 @@
         .yield-matrix tr.ym-group-sep-row th {
             border-top: 2px solid var(--border-strong);
         }
+        .ym-universe {
+            margin-bottom: 20px;
+        }
+        .ym-universe-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .ym-universe-icon {
+            font-size: 1rem;
+        }
+        .ym-universe-title {
+            font-family: var(--font-mono);
+            font-size: 0.74rem;
+            font-weight: 700;
+        }
+        .ym-universe-meta {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            color: var(--text-muted);
+        }
         .ym-legend {
             display: flex;
             align-items: center;
@@ -1364,16 +1386,13 @@ function renderYieldMatrix() {
     const container = document.getElementById('yieldMatrix');
 
     // 1) Build pair map: for each (collateral, borrow) find best E-mode
-    //    "best" = highest LTV → highest leverage → typically highest yield
-    const pairMap = new Map(); // key: "collSymbol|borrSymbol" → { ltv, leverage, emodeId, label }
-    const collateralSet = new Set();
-    const borrowSet = new Set();
+    const pairMap = new Map(); // key: "collSymbol|borrSymbol" → info object
 
     const visibleEmodes = getVisibleEmodes();
     for (const em of visibleEmodes) {
         for (const coll of em.collateralAssets) {
             for (const borr of em.borrowableAssets) {
-                if (coll.symbol === borr.symbol) continue; // no self-loops
+                if (coll.symbol === borr.symbol) continue;
                 const key = `${coll.symbol}|${borr.symbol}`;
                 const existing = pairMap.get(key);
                 if (!existing || em.ltv > existing.ltv) {
@@ -1384,8 +1403,6 @@ function renderYieldMatrix() {
                         label: em.label,
                     });
                 }
-                collateralSet.add(coll.symbol);
-                borrowSet.add(borr.symbol);
             }
         }
     }
@@ -1402,7 +1419,6 @@ function renderYieldMatrix() {
         const borrReserve = _parsedReserves.find(r => r.symbol === borrSym);
         if (!collReserve || !borrReserve) continue;
 
-        // Collateral yield
         let collYield = 0;
         if (collSym.startsWith('PT-')) {
             collYield = computePTFixedYield(collReserve);
@@ -1412,11 +1428,8 @@ function renderYieldMatrix() {
             collYield = collReserve.supplyAPY;
         }
 
-        // Borrow cost
         const borrNativeYield = _stakingYields[borrSym] || 0;
         const effBorrCost = borrReserve.borrowAPY + borrNativeYield;
-
-        // Net yield at max leverage
         const L = info.leverage;
         const netYield = collYield * L - effBorrCost * (L - 1);
 
@@ -1427,56 +1440,76 @@ function renderYieldMatrix() {
         info.borrAaveRate = borrReserve.borrowAPY;
     }
 
-    // 3) Smart ordering: group assets by category, then by connectivity
-    const ASSET_GROUP_ORDER = [
-        { label: 'ETH LSTs', test: s => ETH_SYMBOLS.has(s) && s !== 'WETH' },
-        { label: 'WETH', test: s => s === 'WETH' },
-        { label: 'Stablecoins', test: s => STABLE_SYMBOLS.has(s) },
-        { label: 'USDe', test: s => USDE_BORROWS.has(s) || s === 'sUSDe' || s === 'eUSDe' },
-        { label: 'PTs', test: s => s.startsWith('PT-') },
-        { label: 'BTC', test: s => BTC_SYMBOLS.has(s) },
+    // 3) Define strategy universes
+    const USD_SYMBOLS = new Set([...STABLE_SYMBOLS, ...USDE_BORROWS, 'sUSDe', 'eUSDe']);
+    const isETH = s => ETH_SYMBOLS.has(s);
+    const isUSD = s => USD_SYMBOLS.has(s) || s.startsWith('PT-');
+    const isBTC = s => BTC_SYMBOLS.has(s);
+
+    const UNIVERSES = [
+        {
+            id: 'eth',
+            title: 'ETH Strategies',
+            icon: '\u{1F3D4}\uFE0F',
+            desc: 'ETH LST collateral, borrow ETH or stablecoins',
+            collTest: s => isETH(s),
+            borrTest: s => isETH(s) || isUSD(s),  // ETH LSTs can borrow stablecoins too
+            collSort: s => {
+                // WETH last among ETH, then LSTs alphabetical
+                if (s === 'WETH') return 'zzz';
+                return s;
+            },
+            borrSort: s => {
+                // ETH first, then stablecoins
+                if (isETH(s)) return '0_' + s;
+                return '1_' + s;
+            },
+        },
+        {
+            id: 'usd',
+            title: 'Stablecoin, USDe & PT Strategies',
+            icon: '\u{1F4B5}',
+            desc: 'Stablecoins, sUSDe, PTs as collateral — borrow stablecoins or USDe',
+            collTest: s => isUSD(s) && !isETH(s),
+            borrTest: s => isUSD(s),
+            collSort: s => {
+                // Stablecoins first, then USDe variants, then PTs
+                if (STABLE_SYMBOLS.has(s)) return '0_' + s;
+                if (USDE_BORROWS.has(s) || s === 'sUSDe' || s === 'eUSDe') return '1_' + s;
+                if (s.startsWith('PT-')) return '2_' + s;
+                return '3_' + s;
+            },
+            borrSort: s => {
+                if (STABLE_SYMBOLS.has(s)) return '0_' + s;
+                return '1_' + s;
+            },
+        },
+        {
+            id: 'btc',
+            title: 'BTC Strategies',
+            icon: '\u{1F7E0}',
+            desc: 'Wrapped BTC variants',
+            collTest: s => isBTC(s),
+            borrTest: s => isBTC(s) || isUSD(s),
+            collSort: s => s,
+            borrSort: s => {
+                if (isBTC(s)) return '0_' + s;
+                return '1_' + s;
+            },
+        },
     ];
 
-    function sortAssets(symbols) {
-        const ordered = [];
-        const groupBoundaries = []; // indices where groups start
-        for (const grp of ASSET_GROUP_ORDER) {
-            const inGroup = [...symbols].filter(grp.test).sort();
-            if (inGroup.length > 0) {
-                groupBoundaries.push(ordered.length);
-                ordered.push(...inGroup);
-            }
-        }
-        // Catch-all for uncategorized
-        const remaining = [...symbols].filter(s => !ordered.includes(s)).sort();
-        if (remaining.length > 0) {
-            groupBoundaries.push(ordered.length);
-            ordered.push(...remaining);
-        }
-        return { ordered, groupBoundaries };
-    }
-
-    const collResult = sortAssets(collateralSet);
-    const borrResult = sortAssets(borrowSet);
-    const collAssets = collResult.ordered;
-    const borrAssets = borrResult.ordered;
-    const collGroupStarts = new Set(collResult.groupBoundaries.slice(1)); // skip first
-    const borrGroupStarts = new Set(borrResult.groupBoundaries.slice(1));
-
-    // 4) Color scale: interpolate between red → transparent → green
+    // Color helpers
     function yieldColor(y) {
         if (y === undefined || y === null || isNaN(y)) return 'transparent';
-        // Clamp to ±50% for color mapping
         const clamped = Math.max(-50, Math.min(50, y));
-        const intensity = Math.min(Math.abs(clamped) / 30, 1); // saturate at ±30%
+        const intensity = Math.min(Math.abs(clamped) / 30, 1);
         if (clamped > 0) {
-            // Green (teal)
             const r = Math.round(15 + (1 - intensity) * 220);
             const g = Math.round(166 + (1 - intensity) * 60);
             const b = Math.round(127 + (1 - intensity) * 100);
             return `rgba(${r}, ${g}, ${b}, ${0.1 + intensity * 0.55})`;
         } else {
-            // Red (coral)
             const r = Math.round(199 + (1 - intensity) * 30);
             const g = Math.round(80 + (1 - intensity) * 150);
             const b = Math.round(80 + (1 - intensity) * 150);
@@ -1491,50 +1524,78 @@ function renderYieldMatrix() {
         return 'var(--coral)';
     }
 
-    // 5) Render table
-    let html = '<div class="yield-matrix-wrap"><div class="yield-matrix-scroll"><table class="yield-matrix">';
-
-    // Header row: corner + borrow assets
-    html += '<thead><tr>';
-    html += '<th class="ym-corner" title="Rows = Collateral (deposit)&#10;Columns = Borrow">Coll \\ Borr</th>';
-    for (let j = 0; j < borrAssets.length; j++) {
-        const sep = borrGroupStarts.has(j) ? ' ym-group-sep-col' : '';
-        html += `<th class="ym-col-header${sep}">${esc(borrAssets[j])}</th>`;
-    }
-    html += '</tr></thead><tbody>';
-
-    // Data rows
-    for (let i = 0; i < collAssets.length; i++) {
-        const rowSep = collGroupStarts.has(i) ? ' ym-group-sep-row' : '';
-        html += `<tr class="${rowSep}">`;
-        html += `<td class="ym-row-header">${esc(collAssets[i])}</td>`;
-
-        for (let j = 0; j < borrAssets.length; j++) {
-            const key = `${collAssets[i]}|${borrAssets[j]}`;
-            const info = pairMap.get(key);
-            const colSep = borrGroupStarts.has(j) ? ' ym-group-sep-col' : '';
-
-            if (!info || info.netYield === undefined) {
-                html += `<td class="ym-cell ym-cell--empty${colSep}">&middot;</td>`;
-            } else {
-                const bg = yieldColor(info.netYield);
-                const fg = yieldTextColor(info.netYield);
-                const tip = `${collAssets[i]} / ${borrAssets[j]}` +
-                    `\nE-Mode ${info.emodeId}: ${info.label}` +
-                    `\nLeverage: ${fmt(info.leverage, 1)}x (LTV ${fmt(info.ltv, 1)}%)` +
-                    `\nColl yield: ${fmt(info.collYield, 2)}%` +
-                    `\nBorr cost: ${fmt(info.effBorrCost, 2)}%` +
-                    (info.borrNativeYield > 0 ? ` (${fmt(info.borrAaveRate, 2)}% + ${fmt(info.borrNativeYield, 2)}% native)` : '') +
-                    `\nNet yield: ${fmt(info.netYield, 1)}% at ${fmt(info.leverage, 1)}x`;
-                html += `<td class="ym-cell${colSep}" style="background:${bg}; color:${fg};" title="${esc(tip)}">${fmt(info.netYield, 1)}</td>`;
+    // 4) Render one table per universe
+    function renderMatrixTable(universe) {
+        // Collect assets that actually have pairs in this universe
+        const collSet = new Set();
+        const borrSet = new Set();
+        for (const [key, info] of pairMap) {
+            if (info.netYield === undefined) continue;
+            const [c, b] = key.split('|');
+            if (universe.collTest(c) && universe.borrTest(b)) {
+                collSet.add(c);
+                borrSet.add(b);
             }
         }
-        html += '</tr>';
+        if (collSet.size === 0 || borrSet.size === 0) return '';
+
+        const collAssets = [...collSet].sort((a, b) => universe.collSort(a).localeCompare(universe.collSort(b)));
+        const borrAssets = [...borrSet].sort((a, b) => universe.borrSort(a).localeCompare(universe.borrSort(b)));
+
+        let html = '';
+        html += `<div class="ym-universe">`;
+        html += `<div class="ym-universe-header">`;
+        html += `<span class="ym-universe-icon">${universe.icon}</span>`;
+        html += `<span class="ym-universe-title">${esc(universe.title)}</span>`;
+        html += `<span class="ym-universe-meta">${collSet.size} collateral &times; ${borrSet.size} borrow</span>`;
+        html += `</div>`;
+
+        html += '<div class="yield-matrix-wrap"><div class="yield-matrix-scroll"><table class="yield-matrix">';
+
+        // Header
+        html += '<thead><tr>';
+        html += '<th class="ym-corner">Deposit \\ Borrow</th>';
+        for (const b of borrAssets) {
+            html += `<th class="ym-col-header">${esc(b)}</th>`;
+        }
+        html += '</tr></thead><tbody>';
+
+        // Rows
+        for (const c of collAssets) {
+            html += '<tr>';
+            html += `<td class="ym-row-header">${esc(c)}</td>`;
+            for (const b of borrAssets) {
+                const key = `${c}|${b}`;
+                const info = pairMap.get(key);
+                if (!info || info.netYield === undefined) {
+                    html += '<td class="ym-cell ym-cell--empty">&middot;</td>';
+                } else {
+                    const bg = yieldColor(info.netYield);
+                    const fg = yieldTextColor(info.netYield);
+                    const tip = `${c} / ${b}` +
+                        `\nE-Mode ${info.emodeId}: ${info.label}` +
+                        `\nLeverage: ${fmt(info.leverage, 1)}x (LTV ${fmt(info.ltv, 1)}%)` +
+                        `\nColl yield: ${fmt(info.collYield, 2)}%` +
+                        `\nBorr cost: ${fmt(info.effBorrCost, 2)}%` +
+                        (info.borrNativeYield > 0 ? ` (${fmt(info.borrAaveRate, 2)}% + ${fmt(info.borrNativeYield, 2)}% native)` : '') +
+                        `\nNet yield: ${fmt(info.netYield, 1)}% at ${fmt(info.leverage, 1)}x`;
+                    html += `<td class="ym-cell" style="background:${bg}; color:${fg};" title="${esc(tip)}">${fmt(info.netYield, 1)}</td>`;
+                }
+            }
+            html += '</tr>';
+        }
+
+        html += '</tbody></table></div></div></div>';
+        return html;
     }
 
-    html += '</tbody></table></div>';
+    // 5) Assemble all universe tables
+    let html = '';
+    for (const u of UNIVERSES) {
+        html += renderMatrixTable(u);
+    }
 
-    // Legend
+    // Legend (shared, at bottom)
     html += '<div class="ym-legend">';
     html += '<span>-30%</span>';
     html += '<div class="ym-legend-bar">';
@@ -1543,8 +1604,7 @@ function renderYieldMatrix() {
     }
     html += '</div>';
     html += '<span>+30%</span>';
-    html += '<span style="margin-left:12px; opacity:0.6;">&middot; = no shared E-mode</span>';
-    html += '</div>';
+    html += '<span style="margin-left:12px; opacity:0.6;">Net APY at max E-mode leverage &middot; hover for details</span>';
     html += '</div>';
 
     container.innerHTML = html;
