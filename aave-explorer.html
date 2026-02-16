@@ -472,6 +472,95 @@
         }
         .error-banner--visible { display: block; }
 
+        /* Category filter tabs */
+        .cat-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .cat-tab {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            font-weight: 600;
+            padding: 6px 16px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+            background: var(--bg-elevated);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .cat-tab:hover { border-color: var(--border-strong); color: var(--text-secondary); }
+        .cat-tab--active { background: var(--purple-dim); border-color: var(--purple-border); color: var(--purple); }
+        .cat-tab .cat-count {
+            font-size: 0.58rem;
+            font-weight: 400;
+            color: var(--text-muted);
+            margin-left: 4px;
+        }
+        .cat-tab--active .cat-count { color: var(--purple); opacity: 0.7; }
+
+        /* Category group headers */
+        .cat-group {
+            margin-bottom: 28px;
+        }
+        .cat-group-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+        .cat-group-icon {
+            font-size: 1.1rem;
+            width: 28px;
+            text-align: center;
+        }
+        .cat-group-title {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .cat-group-meta {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--text-muted);
+        }
+
+        /* Category badge on cards */
+        .cat-badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.55rem;
+            font-weight: 600;
+            padding: 1px 6px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-left: 6px;
+            vertical-align: middle;
+        }
+        .cat-badge--pt { background: var(--purple-dim); color: var(--purple); border: 1px solid var(--purple-border); }
+        .cat-badge--eth { background: var(--teal-dim); color: var(--teal); border: 1px solid var(--teal-border); }
+        .cat-badge--btc { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber-border); }
+        .cat-badge--stable { background: rgba(100,140,255,0.10); color: #6490ff; border: 1px solid rgba(100,140,255,0.30); }
+        html.dark .cat-badge--stable { background: rgba(130,170,255,0.12); color: #8ab0ff; border-color: rgba(130,170,255,0.35); }
+
+        /* Collateral/borrow flow on cards */
+        .emode-flow {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        .emode-flow .flow-arrow { color: var(--text-muted); margin: 0 4px; }
+
         /* All E-modes comparison table */
         .emode-compare-section {
             margin-bottom: 24px;
@@ -531,8 +620,8 @@
 <!-- Error banner -->
 <div class="error-banner" id="errorBanner"></div>
 
-<!-- Section 1: E-Mode Overview -->
-<div class="section-title">E-Mode Categories</div>
+<!-- Section 1: E-Mode Leverage Options -->
+<div class="section-title">Leverage Options (E-Modes)</div>
 <div id="emodeLoading">
     <div class="emode-grid">
         <div class="skeleton skeleton-card"></div>
@@ -541,30 +630,8 @@
         <div class="skeleton skeleton-card"></div>
     </div>
 </div>
-<div class="emode-grid" id="emodeGrid" style="display:none;"></div>
-
-<!-- All E-Modes comparison toggle -->
-<div class="emode-compare-section" id="emodeCompareSection" style="display:none;">
-    <div class="table-section">
-        <div class="table-wrap">
-            <table id="emodeCompareTable">
-                <thead>
-                    <tr>
-                        <th style="text-align:left;">ID</th>
-                        <th style="text-align:left;">Label</th>
-                        <th>LTV</th>
-                        <th>Liq Threshold</th>
-                        <th>Liq Bonus</th>
-                        <th>Max Leverage</th>
-                        <th>Collateral Assets</th>
-                        <th>Borrowable Assets</th>
-                    </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </div>
-</div>
+<div id="catTabs" class="cat-tabs" style="display:none;"></div>
+<div id="emodeGrouped" style="display:none;"></div>
 
 <!-- Section 2: E-Mode Detail -->
 <div class="emode-detail" id="emodeDetail">
@@ -756,8 +823,43 @@ let _selectedEmode = null;
 let _sortCol = null;
 let _sortAsc = true;
 let _showAllRaw = false;
+let _activeCat = 'all';
 
 window._aaveData = {};
+
+/* ═══════ Category Definitions ═══════ */
+const CATEGORIES = {
+    'pt-stable': { label: 'PT \u2192 Stablecoins', icon: '\u{1F4C8}', desc: 'Pendle PT collateral, borrow USDC/USDT', color: 'purple' },
+    'pt-usde':   { label: 'PT \u2192 USDe',        icon: '\u{1F504}', desc: 'Pendle PT collateral, borrow USDe (recursive)', color: 'purple' },
+    'eth-eth':   { label: 'ETH Correlated',   icon: '\u{1F3D4}\uFE0F', desc: 'ETH LSTs, borrow ETH/wstETH', color: 'teal' },
+    'eth-stable':{ label: 'ETH \u2192 Stablecoins', icon: '\u26A1', desc: 'ETH LSTs, borrow stablecoins', color: 'teal' },
+    'btc':       { label: 'BTC Correlated',    icon: '\u{1F7E0}', desc: 'BTC variants, borrow BTC', color: 'amber' },
+    'stablecoin':{ label: 'Stablecoins',       icon: '\u{1F4B5}', desc: 'Stablecoin collateral, borrow stables', color: 'stable' },
+};
+
+const CAT_ORDER = ['pt-stable', 'pt-usde', 'eth-eth', 'eth-stable', 'btc', 'stablecoin'];
+
+const ETH_SYMBOLS = new Set(['WETH','wstETH','cbETH','rETH','weETH','osETH','ETHx','rsETH','ezETH','tETH']);
+const BTC_SYMBOLS = new Set(['LBTC','FBTC','eBTC','WBTC','cbBTC','tBTC']);
+const USDE_BORROWS = new Set(['USDe']);
+
+function categorizeEmode(em) {
+    const hasPT = em.collateralAssets.some(a => a.symbol.startsWith('PT-'));
+    const hasETH = em.collateralAssets.some(a => ETH_SYMBOLS.has(a.symbol));
+    const hasBTC = em.collateralAssets.some(a => BTC_SYMBOLS.has(a.symbol));
+
+    if (hasPT) {
+        const borrowsOnlyUSDe = em.borrowableAssets.length > 0 &&
+            em.borrowableAssets.every(a => USDE_BORROWS.has(a.symbol));
+        return borrowsOnlyUSDe ? 'pt-usde' : 'pt-stable';
+    }
+    if (hasETH) {
+        const borrowsETH = em.borrowableAssets.every(a => ETH_SYMBOLS.has(a.symbol));
+        return borrowsETH ? 'eth-eth' : 'eth-stable';
+    }
+    if (hasBTC) return 'btc';
+    return 'stablecoin';
+}
 
 /* ═══════ RPC Connection ═══════ */
 async function tryRpc() {
@@ -964,77 +1066,136 @@ async function fetchData() {
 
 /* ═══════ Rendering ═══════ */
 function renderAll() {
-    renderEmodeGrid();
-    renderEmodeCompare();
+    // Assign categories to each emode
+    _parsedEmodes.forEach(em => { em.category = categorizeEmode(em); });
+
+    renderCatTabs();
+    renderEmodeGrouped();
     renderReservesTable();
     renderRawData();
 
     // Hide loading, show content
     document.getElementById('emodeLoading').style.display = 'none';
-    document.getElementById('emodeGrid').style.display = '';
-    document.getElementById('emodeCompareSection').style.display = '';
+    document.getElementById('catTabs').style.display = '';
+    document.getElementById('emodeGrouped').style.display = '';
     document.getElementById('reservesLoading').style.display = 'none';
     document.getElementById('reservesSection').style.display = '';
     document.getElementById('rawSection').style.display = '';
 }
 
-/* --- E-Mode Cards --- */
-function renderEmodeGrid() {
-    const grid = document.getElementById('emodeGrid');
-    grid.innerHTML = '';
+/* --- Category Tabs --- */
+function renderCatTabs() {
+    const container = document.getElementById('catTabs');
+    container.innerHTML = '';
 
-    _parsedEmodes.forEach(em => {
-        const card = document.createElement('div');
-        card.className = 'emode-card' + (_selectedEmode === em.id ? ' emode-card--selected' : '');
-        card.onclick = () => selectEmode(em.id);
+    // Count per category
+    const counts = {};
+    _parsedEmodes.forEach(em => { counts[em.category] = (counts[em.category] || 0) + 1; });
 
-        card.innerHTML = `
-            <div class="emode-id">E-Mode ${em.id}</div>
-            <div class="emode-label">${esc(em.label)}</div>
-            <div class="emode-params">
-                <div>
-                    <div class="emode-param-label">LTV</div>
-                    <div class="emode-param-value">${fmt(em.ltv, 2)}%</div>
-                </div>
-                <div>
-                    <div class="emode-param-label">Liq Threshold</div>
-                    <div class="emode-param-value">${fmt(em.liqThreshold, 2)}%</div>
-                </div>
-                <div>
-                    <div class="emode-param-label">Liq Bonus</div>
-                    <div class="emode-param-value">${fmt(em.liqBonus, 2)}%</div>
-                </div>
-                <div>
-                    <div class="emode-param-label">Max Leverage</div>
-                    <div class="emode-param-value">${fmt(em.maxLeverage, 1)}x</div>
-                </div>
-            </div>
-            <div class="emode-asset-count">
-                ${em.collateralAssets.length} collateral &middot; ${em.borrowableAssets.length} borrowable
-            </div>
-        `;
-        grid.appendChild(card);
+    // "All" tab
+    const allTab = document.createElement('button');
+    allTab.className = 'cat-tab' + (_activeCat === 'all' ? ' cat-tab--active' : '');
+    allTab.innerHTML = `All <span class="cat-count">${_parsedEmodes.length}</span>`;
+    allTab.onclick = () => { _activeCat = 'all'; renderCatTabs(); renderEmodeGrouped(); };
+    container.appendChild(allTab);
+
+    CAT_ORDER.forEach(catKey => {
+        if (!counts[catKey]) return;
+        const cat = CATEGORIES[catKey];
+        const tab = document.createElement('button');
+        tab.className = 'cat-tab' + (_activeCat === catKey ? ' cat-tab--active' : '');
+        tab.innerHTML = `${cat.icon} ${cat.label} <span class="cat-count">${counts[catKey]}</span>`;
+        tab.onclick = () => { _activeCat = catKey; renderCatTabs(); renderEmodeGrouped(); };
+        container.appendChild(tab);
     });
 }
 
-/* --- E-Mode Compare Table --- */
-function renderEmodeCompare() {
-    const tbody = document.querySelector('#emodeCompareTable tbody');
-    tbody.innerHTML = '';
+/* --- Grouped E-Mode Cards --- */
+function renderEmodeGrouped() {
+    const container = document.getElementById('emodeGrouped');
+    container.innerHTML = '';
 
-    _parsedEmodes.forEach(em => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td style="text-align:left;"><span class="emode-id" style="cursor:pointer;" onclick="selectEmode(${em.id})">${em.id}</span></td>
-            <td style="text-align:left; font-weight:600;">${esc(em.label)}</td>
-            <td>${fmt(em.ltv, 2)}%</td>
-            <td>${fmt(em.liqThreshold, 2)}%</td>
-            <td>${fmt(em.liqBonus, 2)}%</td>
-            <td>${fmt(em.maxLeverage, 1)}x</td>
-            <td>${em.collateralAssets.map(a => a.symbol).join(', ')}</td>
-            <td>${em.borrowableAssets.map(a => a.symbol).join(', ')}</td>
+    const catsToShow = _activeCat === 'all' ? CAT_ORDER : [_activeCat];
+
+    catsToShow.forEach(catKey => {
+        const cat = CATEGORIES[catKey];
+        const emodes = _parsedEmodes.filter(em => em.category === catKey);
+        if (emodes.length === 0) return;
+
+        // Sort: highest LTV first within each category
+        emodes.sort((a, b) => b.ltv - a.ltv);
+
+        const group = document.createElement('div');
+        group.className = 'cat-group';
+
+        // Group header
+        const ltvRange = emodes.length > 1
+            ? `${fmt(emodes[emodes.length-1].ltv, 1)}–${fmt(emodes[0].ltv, 1)}%`
+            : `${fmt(emodes[0].ltv, 1)}%`;
+        const levRange = emodes.length > 1
+            ? `${fmt(emodes[emodes.length-1].maxLeverage, 1)}–${fmt(emodes[0].maxLeverage, 1)}x`
+            : `${fmt(emodes[0].maxLeverage, 1)}x`;
+
+        group.innerHTML = `
+            <div class="cat-group-header">
+                <span class="cat-group-icon">${cat.icon}</span>
+                <span class="cat-group-title">${cat.label}</span>
+                <span class="cat-group-meta">${emodes.length} E-modes &middot; LTV ${ltvRange} &middot; Leverage ${levRange}</span>
+            </div>
         `;
-        tbody.appendChild(tr);
+
+        // Card grid
+        const grid = document.createElement('div');
+        grid.className = 'emode-grid';
+
+        emodes.forEach(em => {
+            const card = document.createElement('div');
+            card.className = 'emode-card' + (_selectedEmode === em.id ? ' emode-card--selected' : '');
+            card.onclick = () => selectEmode(em.id);
+
+            // Collateral → Borrow flow summary
+            const collSymbols = em.collateralAssets.map(a => a.symbol).filter(s => s.startsWith('PT-') || !['USDe','sUSDe','eUSDe'].includes(s));
+            const collDisplay = em.collateralAssets.length <= 3
+                ? em.collateralAssets.map(a => a.symbol).join(', ')
+                : em.collateralAssets.slice(0, 2).map(a => a.symbol).join(', ') + ` +${em.collateralAssets.length - 2}`;
+            const borrDisplay = em.borrowableAssets.map(a => a.symbol).join(', ');
+
+            const catBadgeClass = 'cat-badge--' + cat.color;
+
+            card.innerHTML = `
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+                    <span class="emode-id">E-Mode ${em.id}</span>
+                </div>
+                <div class="emode-label">${esc(em.label)}</div>
+                <div class="emode-flow">
+                    <strong>${collDisplay}</strong>
+                    <span class="flow-arrow">\u2192</span>
+                    borrow <strong>${borrDisplay}</strong>
+                </div>
+                <div class="emode-params">
+                    <div>
+                        <div class="emode-param-label">LTV</div>
+                        <div class="emode-param-value">${fmt(em.ltv, 2)}%</div>
+                    </div>
+                    <div>
+                        <div class="emode-param-label">Max Leverage</div>
+                        <div class="emode-param-value">${fmt(em.maxLeverage, 1)}x</div>
+                    </div>
+                    <div>
+                        <div class="emode-param-label">Liq Threshold</div>
+                        <div class="emode-param-value">${fmt(em.liqThreshold, 2)}%</div>
+                    </div>
+                    <div>
+                        <div class="emode-param-label">Liq Bonus</div>
+                        <div class="emode-param-value">${fmt(em.liqBonus, 2)}%</div>
+                    </div>
+                </div>
+            `;
+            grid.appendChild(card);
+        });
+
+        group.appendChild(grid);
+        container.appendChild(group);
     });
 }
 
@@ -1049,7 +1210,7 @@ function selectEmode(id) {
     if (!em) return;
 
     // Update card highlights
-    renderEmodeGrid();
+    renderEmodeGrouped();
 
     // Title
     document.getElementById('emodeDetailTitle').textContent = `E-Mode ${em.id}: ${em.label}`;
@@ -1138,7 +1299,7 @@ function selectEmode(id) {
 function closeEmodeDetail() {
     _selectedEmode = null;
     document.getElementById('emodeDetail').classList.remove('emode-detail--visible');
-    renderEmodeGrid();
+    renderEmodeGrouped();
 }
 
 function paramRow(label, value, raw) {
@@ -1378,6 +1539,7 @@ function toggleDark() {
 /* ═══════ Refresh ═══════ */
 function refreshData() {
     _selectedEmode = null;
+    _activeCat = 'all';
     document.getElementById('emodeDetail').classList.remove('emode-detail--visible');
     document.querySelectorAll('.expand-row').forEach(r => r.remove());
     _showAllRaw = false;
