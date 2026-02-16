@@ -555,13 +555,17 @@
 <div class="error-banner" id="errorBanner"></div>
 
 <!-- Section 1: E-Mode Leverage Options -->
-<div class="section-title">Leverage Options (E-Modes)</div>
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+    <div class="section-title" style="margin-bottom:0;">Leverage Options (E-Modes)</div>
+    <label style="font-family:var(--font-mono); font-size:0.68rem; color:var(--text-muted); cursor:pointer; display:flex; align-items:center; gap:6px;">
+        <input type="checkbox" id="hideExpiredToggle" checked onchange="_hideExpired=this.checked; renderCatTabs(); renderEmodeGrouped();">
+        Hide expired PTs
+    </label>
+</div>
 <div id="emodeLoading">
-    <div class="emode-grid">
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
-        <div class="skeleton skeleton-card"></div>
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+        <div class="skeleton" style="height:200px; border-radius:var(--radius-lg);"></div>
+        <div class="skeleton" style="height:200px; border-radius:var(--radius-lg);"></div>
     </div>
 </div>
 <div id="catTabs" class="cat-tabs" style="display:none;"></div>
@@ -579,40 +583,44 @@
     </div>
 </div>
 
-<!-- Section 3: All Reserves Browser -->
+<!-- Section 3: All Reserves Browser (collapsible) -->
 <hr class="section-divider">
-<div class="section-title">All Reserves</div>
-<div class="search-bar">
-    <input class="search-input" id="reserveSearch" type="text" placeholder="Search by symbol..." oninput="filterReserves()">
-    <span class="search-count" id="reserveCount"></span>
-</div>
-<div id="reservesLoading">
-    <div class="skeleton skeleton-table"></div>
-</div>
-<div class="table-section" id="reservesSection" style="display:none;">
-    <div class="table-wrap" style="max-height: 700px; overflow-y: auto;">
-        <table id="reservesTable">
-            <thead>
-                <tr>
-                    <th class="sortable" data-col="symbol" style="text-align:left;">Symbol</th>
-                    <th class="sortable" data-col="address">Address</th>
-                    <th class="sortable" data-col="decimals">Dec</th>
-                    <th class="sortable" data-col="ltv">LTV</th>
-                    <th class="sortable" data-col="liqThreshold">Liq Thresh</th>
-                    <th class="sortable" data-col="liqBonus">Liq Bonus</th>
-                    <th class="sortable" data-col="supplyAPY">Supply APY</th>
-                    <th class="sortable" data-col="borrowAPY">Borrow APY</th>
-                    <th class="sortable" data-col="availableLiquidity">Available ($)</th>
-                    <th class="sortable" data-col="totalDebt">Total Debt ($)</th>
-                    <th class="sortable" data-col="supplyCap">Supply Cap</th>
-                    <th class="sortable" data-col="borrowCap">Borrow Cap</th>
-                    <th>Status</th>
-                </tr>
-            </thead>
-            <tbody id="reservesBody"></tbody>
-        </table>
+<details class="raw-section" id="reservesDetails" style="margin-bottom:24px;">
+    <summary style="font-size:0.82rem;">All Reserves <span id="reserveCountSummary" style="font-size:0.65rem; color:var(--text-muted);"></span></summary>
+    <div style="padding:0 20px 16px;">
+        <div class="search-bar" style="margin-top:12px;">
+            <input class="search-input" id="reserveSearch" type="text" placeholder="Search by symbol..." oninput="filterReserves()">
+            <span class="search-count" id="reserveCount"></span>
+        </div>
+        <div id="reservesLoading">
+            <div class="skeleton skeleton-table"></div>
+        </div>
+        <div class="table-section" id="reservesSection" style="display:none; margin-bottom:0;">
+            <div class="table-wrap" style="max-height: 600px; overflow-y: auto;">
+                <table id="reservesTable">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-col="symbol" style="text-align:left;">Symbol</th>
+                            <th class="sortable" data-col="address">Address</th>
+                            <th class="sortable" data-col="decimals">Dec</th>
+                            <th class="sortable" data-col="ltv">LTV</th>
+                            <th class="sortable" data-col="liqThreshold">Liq Thresh</th>
+                            <th class="sortable" data-col="liqBonus">Liq Bonus</th>
+                            <th class="sortable" data-col="supplyAPY">Supply APY</th>
+                            <th class="sortable" data-col="borrowAPY">Borrow APY</th>
+                            <th class="sortable" data-col="availableLiquidity">Available ($)</th>
+                            <th class="sortable" data-col="totalDebt">Total Debt ($)</th>
+                            <th class="sortable" data-col="supplyCap">Supply Cap</th>
+                            <th class="sortable" data-col="borrowCap">Borrow Cap</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="reservesBody"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
-</div>
+</details>
 
 <!-- Section 4: Raw Data -->
 <hr class="section-divider">
@@ -758,6 +766,7 @@ let _sortCol = null;
 let _sortAsc = true;
 let _showAllRaw = false;
 let _activeCat = 'all';
+let _hideExpired = true;
 
 window._aaveData = {};
 
@@ -771,7 +780,7 @@ const CATEGORIES = {
     'stablecoin':{ label: 'Stablecoins',       icon: '\u{1F4B5}', desc: 'Stablecoin collateral, borrow stables', color: 'stable' },
 };
 
-const CAT_ORDER = ['pt-stable', 'pt-usde', 'eth-eth', 'eth-stable', 'btc', 'stablecoin'];
+const CAT_ORDER = ['eth-eth', 'eth-stable', 'btc', 'stablecoin', 'pt-stable', 'pt-usde'];
 
 const ETH_SYMBOLS = new Set(['WETH','wstETH','cbETH','rETH','weETH','osETH','ETHx','rsETH','ezETH','tETH']);
 const BTC_SYMBOLS = new Set(['LBTC','FBTC','eBTC','WBTC','cbBTC','tBTC']);
@@ -793,6 +802,37 @@ function categorizeEmode(em) {
     }
     if (hasBTC) return 'btc';
     return 'stablecoin';
+}
+
+/* ═══════ PT Maturity Parsing ═══════ */
+const MONTH_MAP = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+
+function parseMaturityFromSymbol(symbol) {
+    // Matches: PT-sUSDE-31JUL2025, PT-USDe-5FEB2026, PT-srUSDe-2APR2026
+    const m = symbol.match(/(\d{1,2})([A-Z]{3})(\d{4})$/);
+    if (!m) return null;
+    const day = parseInt(m[1]);
+    const month = MONTH_MAP[m[2]];
+    const year = parseInt(m[3]);
+    if (month === undefined) return null;
+    return new Date(year, month, day);
+}
+
+function getEmodeMaturity(em) {
+    // Find the latest PT maturity among collateral assets
+    let latest = null;
+    for (const a of em.collateralAssets) {
+        if (!a.symbol.startsWith('PT-')) continue;
+        const d = parseMaturityFromSymbol(a.symbol);
+        if (d && (!latest || d > latest)) latest = d;
+    }
+    return latest;
+}
+
+function isEmodeExpired(em) {
+    const mat = getEmodeMaturity(em);
+    if (!mat) return false; // non-PT E-modes never expire
+    return mat < new Date();
 }
 
 /* ═══════ RPC Connection ═══════ */
@@ -1008,6 +1048,9 @@ function renderAll() {
     renderReservesTable();
     renderRawData();
 
+    // Update reserve count in collapsible summary
+    document.getElementById('reserveCountSummary').textContent = `(${_parsedReserves.length} assets)`;
+
     // Hide loading, show content
     document.getElementById('emodeLoading').style.display = 'none';
     document.getElementById('catTabs').style.display = '';
@@ -1017,19 +1060,27 @@ function renderAll() {
     document.getElementById('rawSection').style.display = '';
 }
 
+/* --- Visible E-modes (filtered) --- */
+function getVisibleEmodes() {
+    return _parsedEmodes.filter(em => !_hideExpired || !isEmodeExpired(em));
+}
+
 /* --- Category Tabs --- */
 function renderCatTabs() {
     const container = document.getElementById('catTabs');
     container.innerHTML = '';
 
+    const visible = getVisibleEmodes();
+    const expiredCount = _parsedEmodes.length - visible.length;
+
     // Count per category
     const counts = {};
-    _parsedEmodes.forEach(em => { counts[em.category] = (counts[em.category] || 0) + 1; });
+    visible.forEach(em => { counts[em.category] = (counts[em.category] || 0) + 1; });
 
     // "All" tab
     const allTab = document.createElement('button');
     allTab.className = 'cat-tab' + (_activeCat === 'all' ? ' cat-tab--active' : '');
-    allTab.innerHTML = `All <span class="cat-count">${_parsedEmodes.length}</span>`;
+    allTab.innerHTML = `All <span class="cat-count">${visible.length}</span>`;
     allTab.onclick = () => { _activeCat = 'all'; renderCatTabs(); renderEmodeGrouped(); };
     container.appendChild(allTab);
 
@@ -1042,6 +1093,13 @@ function renderCatTabs() {
         tab.onclick = () => { _activeCat = catKey; renderCatTabs(); renderEmodeGrouped(); };
         container.appendChild(tab);
     });
+
+    if (expiredCount > 0 && _hideExpired) {
+        const note = document.createElement('span');
+        note.style.cssText = 'font-family:var(--font-mono); font-size:0.62rem; color:var(--text-muted); padding:6px 0; margin-left:4px;';
+        note.textContent = `${expiredCount} expired hidden`;
+        container.appendChild(note);
+    }
 }
 
 /* --- Grouped E-Mode Tables --- */
@@ -1049,11 +1107,12 @@ function renderEmodeGrouped() {
     const container = document.getElementById('emodeGrouped');
     container.innerHTML = '';
 
+    const visible = getVisibleEmodes();
     const catsToShow = _activeCat === 'all' ? CAT_ORDER : [_activeCat];
 
     catsToShow.forEach(catKey => {
         const cat = CATEGORIES[catKey];
-        const emodes = _parsedEmodes.filter(em => em.category === catKey);
+        const emodes = visible.filter(em => em.category === catKey);
         if (emodes.length === 0) return;
 
         // Sort: highest leverage first
@@ -1061,6 +1120,8 @@ function renderEmodeGrouped() {
 
         const group = document.createElement('div');
         group.className = 'cat-group';
+
+        const isPT = catKey.startsWith('pt');
 
         // Group header
         const maxLev = fmt(emodes[0].maxLeverage, 1);
@@ -1076,14 +1137,19 @@ function renderEmodeGrouped() {
         const tableWrap = document.createElement('div');
         tableWrap.className = 'table-section';
         tableWrap.style.marginBottom = '0';
+
+        const maturityHeader = isPT ? '<th style="width:80px;">Maturity</th>' : '';
+
         tableWrap.innerHTML = `<div class="table-wrap"><table>
             <thead><tr>
-                <th style="text-align:left; width:30%;">Collateral</th>
-                <th style="text-align:left; width:25%;">Borrow</th>
+                <th style="text-align:left;">Collateral</th>
+                <th style="text-align:left;">Borrow</th>
                 <th style="width:80px;">Leverage</th>
-                <th style="width:70px;">LTV</th>
-                <th style="width:80px;">Liq Thresh</th>
-                <th style="width:40px;"></th>
+                <th style="width:60px;">LTV</th>
+                <th style="width:80px;">Borrow APY</th>
+                <th style="width:90px;">Available ($)</th>
+                ${maturityHeader}
+                <th style="width:36px;"></th>
             </tr></thead>
             <tbody></tbody>
         </table></div>`;
@@ -1107,12 +1173,41 @@ function renderEmodeGrouped() {
 
             const levClass = em.maxLeverage >= 12 ? 'lev-high' : em.maxLeverage >= 8 ? 'lev-mid' : 'lev-low';
 
+            // Weighted average borrow APY + total available liquidity across borrow assets
+            let totalBorrLiq = 0;
+            let weightedAPY = 0;
+            let totalDebtWeight = 0;
+            em.borrowableAssets.forEach(a => {
+                totalBorrLiq += a.availableLiquidity;
+                weightedAPY += a.borrowAPY * a.totalDebt;
+                totalDebtWeight += a.totalDebt;
+            });
+            const avgBorrAPY = totalDebtWeight > 0 ? weightedAPY / totalDebtWeight : (em.borrowableAssets[0]?.borrowAPY || 0);
+
+            // Maturity for PT rows
+            let maturityCell = '';
+            if (isPT) {
+                const mat = getEmodeMaturity(em);
+                if (mat) {
+                    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                    const matStr = `${mat.getDate()} ${months[mat.getMonth()]} ${mat.getFullYear()}`;
+                    const daysLeft = Math.ceil((mat - new Date()) / 86400000);
+                    const daysLabel = daysLeft > 0 ? `${daysLeft}d` : 'expired';
+                    const daysColor = daysLeft > 90 ? 'var(--teal)' : daysLeft > 30 ? 'var(--amber)' : 'var(--coral)';
+                    maturityCell = `<td><span style="font-size:0.68rem;">${matStr}</span><br><span style="font-size:0.6rem; color:${daysColor};">${daysLabel}</span></td>`;
+                } else {
+                    maturityCell = '<td>—</td>';
+                }
+            }
+
             tr.innerHTML = `
                 <td style="text-align:left;"><div class="asset-pills">${collPills}</div></td>
                 <td style="text-align:left;"><div class="asset-pills">${borrPills}</div></td>
                 <td><span class="leverage-val ${levClass}">${fmt(em.maxLeverage, 1)}x</span></td>
                 <td>${fmt(em.ltv, 1)}%</td>
-                <td>${fmt(em.liqThreshold, 1)}%</td>
+                <td class="td-amber">${fmt(avgBorrAPY, 2)}%</td>
+                <td>${fmtUsd(totalBorrLiq)}</td>
+                ${maturityCell}
                 <td style="text-align:center;"><span class="emode-id">${em.id}</span></td>
             `;
             tbody.appendChild(tr);
