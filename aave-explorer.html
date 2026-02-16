@@ -1,0 +1,1357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aave V3 Data Explorer</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #e5e5e5;
+            --bg-card: #f5f5f5;
+            --bg-elevated: #ffffff;
+            --text: #1a1a2e;
+            --text-secondary: #4a4a6a;
+            --text-muted: #6a6a8a;
+
+            --purple: #7B2CBF;
+            --purple-dim: rgba(123, 44, 191, 0.08);
+            --purple-border: rgba(123, 44, 191, 0.25);
+
+            --coral: #c75050;
+            --coral-dim: rgba(199, 80, 80, 0.08);
+            --coral-border: rgba(199, 80, 80, 0.25);
+
+            --teal: #0fa67f;
+            --teal-dim: rgba(15, 166, 127, 0.08);
+            --teal-border: rgba(15, 166, 127, 0.25);
+
+            --amber: #c78a20;
+            --amber-dim: rgba(199, 138, 32, 0.08);
+            --amber-border: rgba(199, 138, 32, 0.25);
+
+            --border: rgba(0, 0, 0, 0.10);
+            --border-strong: rgba(0, 0, 0, 0.18);
+
+            --radius: 6px;
+            --radius-lg: 12px;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+            --font-mono: 'IBM Plex Mono', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        html.dark {
+            --bg: #1a1a2e;
+            --bg-card: #242444;
+            --bg-elevated: #2a2a4a;
+            --text: #e8eaed;
+            --text-secondary: #b0b4c0;
+            --text-muted: #8a8ea0;
+
+            --purple: #a970e0;
+            --purple-dim: rgba(169, 112, 224, 0.12);
+            --purple-border: rgba(169, 112, 224, 0.35);
+
+            --coral: #e07050;
+            --coral-dim: rgba(224, 112, 80, 0.12);
+            --coral-border: rgba(224, 112, 80, 0.35);
+
+            --teal: #2fd4aa;
+            --teal-dim: rgba(47, 212, 170, 0.12);
+            --teal-border: rgba(47, 212, 170, 0.35);
+
+            --amber: #e0a732;
+            --amber-dim: rgba(224, 167, 50, 0.12);
+            --amber-border: rgba(224, 167, 50, 0.35);
+
+            --border: rgba(255, 255, 255, 0.08);
+            --border-strong: rgba(255, 255, 255, 0.15);
+
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-sans);
+            padding: 32px 48px 64px;
+            max-width: 1400px;
+            margin: 0 auto;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 28px;
+        }
+        .header h1 {
+            font-family: var(--font-mono);
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+        .connection-status {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            text-align: right;
+            line-height: 1.6;
+        }
+        .connection-status .dot {
+            display: inline-block;
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        .dot--ok { background: var(--teal); }
+        .dot--err { background: var(--coral); }
+        .dot--loading { background: var(--amber); animation: pulse 1s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .btn {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            font-weight: 500;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 6px 14px;
+            cursor: pointer;
+            color: var(--text-muted);
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn:hover { color: var(--text-secondary); border-color: var(--border-strong); }
+        .dark-toggle { display: flex; align-items: center; gap: 8px; }
+
+        /* Section titles */
+        .section-title {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+        .section-divider {
+            border: none;
+            border-top: 1px solid var(--border-strong);
+            margin: 32px 0 24px;
+        }
+
+        /* Loading skeleton */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius);
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+        .skeleton-card {
+            height: 120px;
+            border-radius: var(--radius-lg);
+        }
+        .skeleton-table {
+            height: 300px;
+            border-radius: var(--radius-lg);
+        }
+
+        /* E-Mode card grid */
+        .emode-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+        .emode-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 18px 20px;
+            box-shadow: var(--shadow);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        .emode-card:hover { box-shadow: var(--shadow-hover); border-color: var(--border-strong); }
+        .emode-card--selected { border-color: var(--purple); border-width: 2px; }
+        .emode-card--selected::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: var(--radius-lg);
+            background: var(--purple-dim);
+            pointer-events: none;
+        }
+        .emode-id {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            font-weight: 700;
+            background: var(--purple-dim);
+            color: var(--purple);
+            border: 1px solid var(--purple-border);
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+        }
+        .emode-label {
+            font-family: var(--font-mono);
+            font-size: 0.88rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+        .emode-params {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px 12px;
+        }
+        .emode-param-label {
+            font-size: 0.62rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+        }
+        .emode-param-value {
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+        .emode-asset-count {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* E-Mode detail panel */
+        .emode-detail {
+            background: var(--bg-elevated);
+            border: 1px solid var(--purple-border);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow);
+            display: none;
+        }
+        .emode-detail--visible { display: block; }
+        .emode-detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .emode-detail-title {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        .emode-detail-close {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 12px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: none;
+            transition: all 0.15s;
+        }
+        .emode-detail-close:hover { color: var(--coral); border-color: var(--coral-border); }
+        .emode-detail-grid {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 24px;
+        }
+        .emode-params-panel {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+        }
+        .emode-param-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border);
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+        }
+        .emode-param-row:last-child { border-bottom: none; }
+        .emode-param-row .label { color: var(--text-secondary); font-size: 0.72rem; }
+        .emode-param-row .value { font-weight: 600; font-variant-numeric: tabular-nums; }
+        .emode-param-row .raw { color: var(--text-muted); font-size: 0.65rem; }
+        .emode-assets-panel h3 {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+        }
+        .emode-assets-panel h3:not(:first-child) { margin-top: 20px; }
+
+        /* Tables */
+        .table-section {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+        .table-wrap {
+            overflow-x: auto;
+        }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            padding: 10px 12px;
+            text-align: right;
+            border-bottom: 1px solid var(--border-strong);
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            background: var(--bg-elevated);
+        }
+        th:first-child { text-align: left; }
+        th.sortable { cursor: pointer; user-select: none; }
+        th.sortable:hover { color: var(--purple); }
+        th .sort-arrow { font-size: 0.55rem; margin-left: 3px; }
+        td {
+            font-family: var(--font-mono);
+            font-size: 0.76rem;
+            font-weight: 500;
+            padding: 7px 12px;
+            text-align: right;
+            border-bottom: 1px solid var(--border);
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
+        td:first-child { text-align: left; font-weight: 600; }
+        tr:hover td { background: var(--purple-dim); }
+        .td-teal { color: var(--teal); }
+        .td-coral { color: var(--coral); }
+        .td-purple { color: var(--purple); }
+        .td-amber { color: var(--amber); }
+
+        /* Search */
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .search-input {
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            padding: 8px 14px;
+            width: 280px;
+            transition: border-color 0.2s;
+        }
+        .search-input::placeholder { color: var(--text-muted); }
+        .search-input:focus { outline: none; border-color: var(--purple-border); }
+        .search-count {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--text-muted);
+        }
+
+        /* Status badges */
+        .badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.58rem;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .badge--active { background: var(--teal-dim); color: var(--teal); border: 1px solid var(--teal-border); }
+        .badge--frozen { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber-border); }
+        .badge--paused { background: var(--coral-dim); color: var(--coral); border: 1px solid var(--coral-border); }
+
+        /* Expandable row */
+        .expand-row td {
+            padding: 0;
+            background: var(--bg-card);
+        }
+        .expand-content {
+            padding: 12px 16px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .expand-content pre {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* Raw data */
+        .raw-section {
+            margin-bottom: 24px;
+        }
+        .raw-section details {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            margin-bottom: 10px;
+            box-shadow: var(--shadow);
+        }
+        .raw-section summary {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            padding: 14px 20px;
+            cursor: pointer;
+            user-select: none;
+        }
+        .raw-section summary:hover { color: var(--text); }
+        .raw-section pre {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--text-secondary);
+            padding: 0 20px 16px;
+            line-height: 1.5;
+            overflow-x: auto;
+            max-height: 500px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+
+        /* Error state */
+        .error-banner {
+            background: var(--coral-dim);
+            border: 1px solid var(--coral-border);
+            border-radius: var(--radius-lg);
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            color: var(--coral);
+            display: none;
+        }
+        .error-banner--visible { display: block; }
+
+        /* All E-modes comparison table */
+        .emode-compare-section {
+            margin-bottom: 24px;
+        }
+
+        /* Note footer */
+        .note {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+        }
+
+        /* Address truncation */
+        .addr {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+        .addr:hover { color: var(--purple); text-decoration: underline; }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+            body { padding: 20px 20px 48px; }
+            .emode-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+            .emode-detail-grid { grid-template-columns: 1fr; }
+            .search-input { width: 200px; }
+        }
+        @media (max-width: 600px) {
+            .emode-grid { grid-template-columns: 1fr; }
+            .header { flex-direction: column; gap: 12px; }
+            .header-right { width: 100%; justify-content: space-between; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div>
+        <h1>Aave V3 Data Explorer</h1>
+        <div style="font-size:0.85rem; color:var(--text-muted); max-width:680px; line-height:1.5;">
+            Live on-chain data from Aave V3 Ethereum mainnet. E-modes, reserves, rates, LTVs.
+        </div>
+    </div>
+    <div class="header-right">
+        <div class="connection-status" id="connStatus">
+            <span class="dot dot--loading"></span> Connecting...
+        </div>
+        <button class="btn" onclick="refreshData()" id="refreshBtn">Refresh</button>
+        <button class="btn dark-toggle" onclick="toggleDark()">
+            <span id="darkIcon">&#9790;</span>
+            <span id="darkLabel">Dark</span>
+        </button>
+    </div>
+</div>
+
+<!-- Error banner -->
+<div class="error-banner" id="errorBanner"></div>
+
+<!-- Section 1: E-Mode Overview -->
+<div class="section-title">E-Mode Categories</div>
+<div id="emodeLoading">
+    <div class="emode-grid">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+    </div>
+</div>
+<div class="emode-grid" id="emodeGrid" style="display:none;"></div>
+
+<!-- All E-Modes comparison toggle -->
+<div class="emode-compare-section" id="emodeCompareSection" style="display:none;">
+    <div class="table-section">
+        <div class="table-wrap">
+            <table id="emodeCompareTable">
+                <thead>
+                    <tr>
+                        <th style="text-align:left;">ID</th>
+                        <th style="text-align:left;">Label</th>
+                        <th>LTV</th>
+                        <th>Liq Threshold</th>
+                        <th>Liq Bonus</th>
+                        <th>Max Leverage</th>
+                        <th>Collateral Assets</th>
+                        <th>Borrowable Assets</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Section 2: E-Mode Detail -->
+<div class="emode-detail" id="emodeDetail">
+    <div class="emode-detail-header">
+        <div class="emode-detail-title" id="emodeDetailTitle"></div>
+        <button class="emode-detail-close" onclick="closeEmodeDetail()">Close</button>
+    </div>
+    <div class="emode-detail-grid">
+        <div class="emode-params-panel" id="emodeDetailParams"></div>
+        <div class="emode-assets-panel" id="emodeDetailAssets"></div>
+    </div>
+</div>
+
+<!-- Section 3: All Reserves Browser -->
+<hr class="section-divider">
+<div class="section-title">All Reserves</div>
+<div class="search-bar">
+    <input class="search-input" id="reserveSearch" type="text" placeholder="Search by symbol..." oninput="filterReserves()">
+    <span class="search-count" id="reserveCount"></span>
+</div>
+<div id="reservesLoading">
+    <div class="skeleton skeleton-table"></div>
+</div>
+<div class="table-section" id="reservesSection" style="display:none;">
+    <div class="table-wrap" style="max-height: 700px; overflow-y: auto;">
+        <table id="reservesTable">
+            <thead>
+                <tr>
+                    <th class="sortable" data-col="symbol" style="text-align:left;">Symbol</th>
+                    <th class="sortable" data-col="address">Address</th>
+                    <th class="sortable" data-col="decimals">Dec</th>
+                    <th class="sortable" data-col="ltv">LTV</th>
+                    <th class="sortable" data-col="liqThreshold">Liq Thresh</th>
+                    <th class="sortable" data-col="liqBonus">Liq Bonus</th>
+                    <th class="sortable" data-col="supplyAPY">Supply APY</th>
+                    <th class="sortable" data-col="borrowAPY">Borrow APY</th>
+                    <th class="sortable" data-col="availableLiquidity">Available ($)</th>
+                    <th class="sortable" data-col="totalDebt">Total Debt ($)</th>
+                    <th class="sortable" data-col="supplyCap">Supply Cap</th>
+                    <th class="sortable" data-col="borrowCap">Borrow Cap</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="reservesBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Section 4: Raw Data -->
+<hr class="section-divider">
+<div class="section-title">Raw Data</div>
+<div class="raw-section" id="rawSection" style="display:none;">
+    <details>
+        <summary>Base Currency Info</summary>
+        <pre id="rawBaseCurrency"></pre>
+    </details>
+    <details>
+        <summary>E-Modes Array (raw)</summary>
+        <pre id="rawEmodes"></pre>
+    </details>
+    <details>
+        <summary>Reserves Array (first 10 — <button class="btn" style="font-size:0.6rem; padding:2px 8px;" onclick="showAllRawReserves()">Show All</button>)</summary>
+        <pre id="rawReserves"></pre>
+    </details>
+</div>
+
+<div class="note">
+    Data sourced directly from Aave V3 UiPoolDataProvider on Ethereum mainnet. Rates are live on-chain values.
+    Open browser console and inspect <code>window._aaveData</code> for full raw data.
+</div>
+
+<script>
+/* ═══════ Constants ═══════ */
+const POOL_ADDRESSES_PROVIDER = '0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e';
+const UI_POOL_DATA_PROVIDER   = '0x56b7A1012765C285afAC8b8F25C69Bf10ccfE978';
+
+const RPC_ENDPOINTS = [
+    'https://eth.llamarpc.com',
+    'https://cloudflare-eth.com',
+    'https://rpc.ankr.com/eth',
+];
+
+const UI_POOL_ABI = [
+  {
+    "inputs": [{"internalType": "contract IPoolAddressesProvider", "name": "provider", "type": "address"}],
+    "name": "getReservesData",
+    "outputs": [
+      {
+        "components": [
+          {"name": "underlyingAsset", "type": "address"},
+          {"name": "name", "type": "string"},
+          {"name": "symbol", "type": "string"},
+          {"name": "decimals", "type": "uint256"},
+          {"name": "baseLTVasCollateral", "type": "uint256"},
+          {"name": "reserveLiquidationThreshold", "type": "uint256"},
+          {"name": "reserveLiquidationBonus", "type": "uint256"},
+          {"name": "usageAsCollateralEnabled", "type": "bool"},
+          {"name": "borrowingEnabled", "type": "bool"},
+          {"name": "isActive", "type": "bool"},
+          {"name": "isFrozen", "type": "bool"},
+          {"name": "liquidityIndex", "type": "uint128"},
+          {"name": "variableBorrowIndex", "type": "uint128"},
+          {"name": "liquidityRate", "type": "uint128"},
+          {"name": "variableBorrowRate", "type": "uint128"},
+          {"name": "lastUpdateTimestamp", "type": "uint40"},
+          {"name": "aTokenAddress", "type": "address"},
+          {"name": "variableDebtTokenAddress", "type": "address"},
+          {"name": "interestRateStrategyAddress", "type": "address"},
+          {"name": "availableLiquidity", "type": "uint256"},
+          {"name": "totalScaledVariableDebt", "type": "uint256"},
+          {"name": "priceInMarketReferenceCurrency", "type": "uint256"},
+          {"name": "priceOracle", "type": "address"},
+          {"name": "variableRateSlope1", "type": "uint256"},
+          {"name": "variableRateSlope2", "type": "uint256"},
+          {"name": "baseVariableBorrowRate", "type": "uint256"},
+          {"name": "optimalUsageRatio", "type": "uint256"},
+          {"name": "isPaused", "type": "bool"},
+          {"name": "isSiloedBorrowing", "type": "bool"},
+          {"name": "accruedToTreasury", "type": "uint128"},
+          {"name": "unbacked", "type": "uint128"},
+          {"name": "isolationModeTotalDebt", "type": "uint128"},
+          {"name": "flashLoanEnabled", "type": "bool"},
+          {"name": "debtCeiling", "type": "uint256"},
+          {"name": "debtCeilingDecimals", "type": "uint256"},
+          {"name": "eModeCategoryId", "type": "uint8"},
+          {"name": "borrowCap", "type": "uint256"},
+          {"name": "supplyCap", "type": "uint256"},
+          {"name": "eModeLtv", "type": "uint16"},
+          {"name": "eModeLiquidationThreshold", "type": "uint16"},
+          {"name": "eModeLiquidationBonus", "type": "uint16"},
+          {"name": "eModeLabel", "type": "string"},
+          {"name": "borrowableInIsolation", "type": "bool"},
+          {"name": "virtualAccActive", "type": "bool"},
+          {"name": "virtualUnderlyingBalance", "type": "uint128"}
+        ],
+        "name": "",
+        "type": "tuple[]"
+      },
+      {
+        "components": [
+          {"name": "marketReferenceCurrencyUnit", "type": "uint256"},
+          {"name": "marketReferenceCurrencyPriceInUsd", "type": "int256"},
+          {"name": "networkBaseTokenPriceInUsd", "type": "int256"},
+          {"name": "networkBaseTokenPriceDecimals", "type": "uint8"}
+        ],
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{"internalType": "contract IPoolAddressesProvider", "name": "provider", "type": "address"}],
+    "name": "getEModes",
+    "outputs": [
+      {
+        "components": [
+          {"name": "id", "type": "uint8"},
+          {"name": "ltv", "type": "uint16"},
+          {"name": "liquidationThreshold", "type": "uint16"},
+          {"name": "liquidationBonus", "type": "uint16"},
+          {"name": "label", "type": "string"},
+          {"name": "collateralBitmap", "type": "uint128"},
+          {"name": "borrowableBitmap", "type": "uint128"}
+        ],
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
+
+/* ═══════ State ═══════ */
+let _provider = null;
+let _parsedReserves = [];
+let _parsedEmodes = [];
+let _baseCurrency = null;
+let _rawReserves = null;
+let _rawEmodes = null;
+let _selectedEmode = null;
+let _sortCol = null;
+let _sortAsc = true;
+let _showAllRaw = false;
+
+window._aaveData = {};
+
+/* ═══════ RPC Connection ═══════ */
+async function tryRpc() {
+    for (const url of RPC_ENDPOINTS) {
+        try {
+            const p = new ethers.JsonRpcProvider(url);
+            const block = await p.getBlockNumber();
+            return { provider: p, url, block };
+        } catch (e) {
+            console.warn('RPC failed:', url, e.message);
+        }
+    }
+    throw new Error('All RPC endpoints failed');
+}
+
+/* ═══════ Bitmap Decoder ═══════ */
+function decodeBitmap(bitmap, reserves) {
+    const assets = [];
+    const bm = BigInt(bitmap);
+    for (let i = 0; i < reserves.length; i++) {
+        if ((bm >> BigInt(i)) & 1n) {
+            assets.push({ index: i, ...reserves[i] });
+        }
+    }
+    return assets;
+}
+
+/* ═══════ Data Parsing ═══════ */
+function parseReserves(rawReserves, baseCurrency) {
+    const ethPriceUsd = Number(baseCurrency.networkBaseTokenPriceInUsd) / (10 ** Number(baseCurrency.networkBaseTokenPriceDecimals));
+    const refUnit = Number(baseCurrency.marketReferenceCurrencyUnit);
+
+    return rawReserves.map((r, index) => {
+        const decimals = Number(r.decimals);
+        const priceRef = Number(r.priceInMarketReferenceCurrency) / refUnit;
+        const priceUsd = priceRef * ethPriceUsd;
+
+        const availableLiqTokens = Number(r.availableLiquidity) / (10 ** decimals);
+        const totalScaledDebtTokens = Number(r.totalScaledVariableDebt) / (10 ** decimals);
+        // Approximate actual debt: scaledDebt * variableBorrowIndex / 1e27
+        const borrowIndex = Number(r.variableBorrowIndex) / 1e27;
+        const totalDebtTokens = totalScaledDebtTokens * borrowIndex;
+
+        return {
+            index,
+            address: r.underlyingAsset,
+            name: r.name,
+            symbol: r.symbol,
+            decimals,
+            ltv: Number(r.baseLTVasCollateral) / 100,
+            ltvRaw: Number(r.baseLTVasCollateral),
+            liqThreshold: Number(r.reserveLiquidationThreshold) / 100,
+            liqThresholdRaw: Number(r.reserveLiquidationThreshold),
+            liqBonus: Number(r.reserveLiquidationBonus) > 0 ? (Number(r.reserveLiquidationBonus) - 10000) / 100 : 0,
+            liqBonusRaw: Number(r.reserveLiquidationBonus),
+            supplyAPY: Number(r.liquidityRate) / 1e27 * 100,
+            borrowAPY: Number(r.variableBorrowRate) / 1e27 * 100,
+            availableLiquidity: availableLiqTokens * priceUsd,
+            availableLiquidityTokens: availableLiqTokens,
+            totalDebt: totalDebtTokens * priceUsd,
+            totalDebtTokens,
+            priceUsd,
+            supplyCap: Number(r.supplyCap),
+            borrowCap: Number(r.borrowCap),
+            eModeCategoryId: Number(r.eModeCategoryId),
+            isActive: r.isActive,
+            isFrozen: r.isFrozen,
+            isPaused: r.isPaused,
+            usageAsCollateralEnabled: r.usageAsCollateralEnabled,
+            borrowingEnabled: r.borrowingEnabled,
+            flashLoanEnabled: r.flashLoanEnabled,
+            isSiloedBorrowing: r.isSiloedBorrowing,
+            borrowableInIsolation: r.borrowableInIsolation,
+            // Rate strategy params
+            variableRateSlope1: Number(r.variableRateSlope1) / 1e27 * 100,
+            variableRateSlope2: Number(r.variableRateSlope2) / 1e27 * 100,
+            baseVariableBorrowRate: Number(r.baseVariableBorrowRate) / 1e27 * 100,
+            optimalUsageRatio: Number(r.optimalUsageRatio) / 1e27 * 100,
+            // Raw for detail view
+            _raw: r,
+        };
+    });
+}
+
+function parseEmodes(rawEmodes, parsedReserves) {
+    return rawEmodes
+        .filter(e => Number(e.id) !== 0)
+        .map(e => {
+            const id = Number(e.id);
+            const ltv = Number(e.ltv) / 100;
+            const liqThreshold = Number(e.liquidationThreshold) / 100;
+            const liqBonus = Number(e.liquidationBonus) > 0 ? (Number(e.liquidationBonus) - 10000) / 100 : 0;
+            const maxLeverage = ltv > 0 ? 1 / (1 - ltv / 100) : 0;
+
+            const collateralAssets = decodeBitmap(e.collateralBitmap, parsedReserves);
+            const borrowableAssets = decodeBitmap(e.borrowableBitmap, parsedReserves);
+
+            return {
+                id,
+                label: e.label || `E-Mode ${id}`,
+                ltv,
+                ltvRaw: Number(e.ltv),
+                liqThreshold,
+                liqThresholdRaw: Number(e.liquidationThreshold),
+                liqBonus,
+                liqBonusRaw: Number(e.liquidationBonus),
+                maxLeverage,
+                collateralBitmap: e.collateralBitmap.toString(),
+                borrowableBitmap: e.borrowableBitmap.toString(),
+                collateralAssets,
+                borrowableAssets,
+            };
+        });
+}
+
+/* ═══════ Data Fetch ═══════ */
+async function fetchData() {
+    const statusEl = document.getElementById('connStatus');
+    const errorEl = document.getElementById('errorBanner');
+    errorEl.classList.remove('error-banner--visible');
+
+    statusEl.innerHTML = '<span class="dot dot--loading"></span> Connecting...';
+
+    try {
+        const { provider, url, block } = await tryRpc();
+        _provider = provider;
+
+        statusEl.innerHTML = `<span class="dot dot--ok"></span> ${url.replace('https://', '')}<br>Block ${block.toLocaleString()}`;
+
+        const contract = new ethers.Contract(UI_POOL_DATA_PROVIDER, UI_POOL_ABI, provider);
+
+        const [reservesResult, emodesResult] = await Promise.all([
+            contract.getReservesData(POOL_ADDRESSES_PROVIDER),
+            contract.getEModes(POOL_ADDRESSES_PROVIDER),
+        ]);
+
+        const [rawReserves, baseCurrency] = reservesResult;
+        _rawReserves = rawReserves;
+        _rawEmodes = emodesResult;
+        _baseCurrency = baseCurrency;
+
+        _parsedReserves = parseReserves(rawReserves, baseCurrency);
+        _parsedEmodes = parseEmodes(emodesResult, _parsedReserves);
+
+        // Store for console inspection
+        window._aaveData = {
+            reserves: _parsedReserves,
+            emodes: _parsedEmodes,
+            baseCurrency: {
+                marketReferenceCurrencyUnit: baseCurrency.marketReferenceCurrencyUnit.toString(),
+                marketReferenceCurrencyPriceInUsd: baseCurrency.marketReferenceCurrencyPriceInUsd.toString(),
+                networkBaseTokenPriceInUsd: baseCurrency.networkBaseTokenPriceInUsd.toString(),
+                networkBaseTokenPriceDecimals: Number(baseCurrency.networkBaseTokenPriceDecimals),
+            },
+            rawReserves: rawReserves,
+            rawEmodes: emodesResult,
+            block,
+            rpcUrl: url,
+            fetchedAt: new Date().toISOString(),
+        };
+
+        const now = new Date();
+        statusEl.innerHTML = `<span class="dot dot--ok"></span> ${url.replace('https://', '')}<br>Block ${block.toLocaleString()} &middot; ${now.toLocaleTimeString()}`;
+
+        renderAll();
+    } catch (err) {
+        console.error('Fetch error:', err);
+        statusEl.innerHTML = '<span class="dot dot--err"></span> Connection failed';
+        errorEl.textContent = `Failed to fetch data: ${err.message}. Check console for details.`;
+        errorEl.classList.add('error-banner--visible');
+    }
+}
+
+/* ═══════ Rendering ═══════ */
+function renderAll() {
+    renderEmodeGrid();
+    renderEmodeCompare();
+    renderReservesTable();
+    renderRawData();
+
+    // Hide loading, show content
+    document.getElementById('emodeLoading').style.display = 'none';
+    document.getElementById('emodeGrid').style.display = '';
+    document.getElementById('emodeCompareSection').style.display = '';
+    document.getElementById('reservesLoading').style.display = 'none';
+    document.getElementById('reservesSection').style.display = '';
+    document.getElementById('rawSection').style.display = '';
+}
+
+/* --- E-Mode Cards --- */
+function renderEmodeGrid() {
+    const grid = document.getElementById('emodeGrid');
+    grid.innerHTML = '';
+
+    _parsedEmodes.forEach(em => {
+        const card = document.createElement('div');
+        card.className = 'emode-card' + (_selectedEmode === em.id ? ' emode-card--selected' : '');
+        card.onclick = () => selectEmode(em.id);
+
+        card.innerHTML = `
+            <div class="emode-id">E-Mode ${em.id}</div>
+            <div class="emode-label">${esc(em.label)}</div>
+            <div class="emode-params">
+                <div>
+                    <div class="emode-param-label">LTV</div>
+                    <div class="emode-param-value">${fmt(em.ltv, 2)}%</div>
+                </div>
+                <div>
+                    <div class="emode-param-label">Liq Threshold</div>
+                    <div class="emode-param-value">${fmt(em.liqThreshold, 2)}%</div>
+                </div>
+                <div>
+                    <div class="emode-param-label">Liq Bonus</div>
+                    <div class="emode-param-value">${fmt(em.liqBonus, 2)}%</div>
+                </div>
+                <div>
+                    <div class="emode-param-label">Max Leverage</div>
+                    <div class="emode-param-value">${fmt(em.maxLeverage, 1)}x</div>
+                </div>
+            </div>
+            <div class="emode-asset-count">
+                ${em.collateralAssets.length} collateral &middot; ${em.borrowableAssets.length} borrowable
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+/* --- E-Mode Compare Table --- */
+function renderEmodeCompare() {
+    const tbody = document.querySelector('#emodeCompareTable tbody');
+    tbody.innerHTML = '';
+
+    _parsedEmodes.forEach(em => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="text-align:left;"><span class="emode-id" style="cursor:pointer;" onclick="selectEmode(${em.id})">${em.id}</span></td>
+            <td style="text-align:left; font-weight:600;">${esc(em.label)}</td>
+            <td>${fmt(em.ltv, 2)}%</td>
+            <td>${fmt(em.liqThreshold, 2)}%</td>
+            <td>${fmt(em.liqBonus, 2)}%</td>
+            <td>${fmt(em.maxLeverage, 1)}x</td>
+            <td>${em.collateralAssets.map(a => a.symbol).join(', ')}</td>
+            <td>${em.borrowableAssets.map(a => a.symbol).join(', ')}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+/* --- E-Mode Detail Panel --- */
+function selectEmode(id) {
+    if (_selectedEmode === id) {
+        closeEmodeDetail();
+        return;
+    }
+    _selectedEmode = id;
+    const em = _parsedEmodes.find(e => e.id === id);
+    if (!em) return;
+
+    // Update card highlights
+    renderEmodeGrid();
+
+    // Title
+    document.getElementById('emodeDetailTitle').textContent = `E-Mode ${em.id}: ${em.label}`;
+
+    // Params
+    const paramsEl = document.getElementById('emodeDetailParams');
+    paramsEl.innerHTML = `
+        <div style="font-family:var(--font-mono); font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:12px;">Decoded Parameters</div>
+        ${paramRow('LTV', fmt(em.ltv, 2) + '%', em.ltvRaw + ' bps')}
+        ${paramRow('Liq Threshold', fmt(em.liqThreshold, 2) + '%', em.liqThresholdRaw + ' bps')}
+        ${paramRow('Liq Bonus', fmt(em.liqBonus, 2) + '%', em.liqBonusRaw + ' bps (base 10000)')}
+        ${paramRow('Max Leverage', fmt(em.maxLeverage, 2) + 'x', '1 / (1 - LTV/100)')}
+        <div style="margin-top:16px; font-family:var(--font-mono); font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; color:var(--text-muted); margin-bottom:12px;">Raw Bitmaps</div>
+        ${paramRow('Collateral Bitmap', '', em.collateralBitmap)}
+        ${paramRow('Borrowable Bitmap', '', em.borrowableBitmap)}
+    `;
+
+    // Assets
+    const assetsEl = document.getElementById('emodeDetailAssets');
+    assetsEl.innerHTML = `
+        <h3>Collateral Assets (${em.collateralAssets.length})</h3>
+        ${em.collateralAssets.length > 0 ? `
+        <div class="table-section" style="margin-bottom:0;">
+            <div class="table-wrap">
+            <table>
+                <thead><tr>
+                    <th style="text-align:left;">Symbol</th>
+                    <th>Address</th>
+                    <th>Std LTV</th>
+                    <th>E-Mode LTV</th>
+                    <th>Supply APY</th>
+                    <th>Available ($)</th>
+                    <th>Supply Cap</th>
+                </tr></thead>
+                <tbody>
+                ${em.collateralAssets.map(a => `<tr>
+                    <td style="text-align:left;">${esc(a.symbol)}</td>
+                    <td><span class="addr" onclick="copyAddr('${a.address}')" title="${a.address}">${truncAddr(a.address)}</span></td>
+                    <td>${fmt(a.ltv, 2)}%</td>
+                    <td class="td-purple">${fmt(em.ltv, 2)}%</td>
+                    <td class="td-teal">${fmt(a.supplyAPY, 2)}%</td>
+                    <td>${fmtUsd(a.availableLiquidity)}</td>
+                    <td>${a.supplyCap > 0 ? fmtNum(a.supplyCap) : '—'}</td>
+                </tr>`).join('')}
+                </tbody>
+            </table>
+            </div>
+        </div>` : '<div style="color:var(--text-muted); font-size:0.78rem;">None</div>'}
+
+        <h3>Borrowable Assets (${em.borrowableAssets.length})</h3>
+        ${em.borrowableAssets.length > 0 ? `
+        <div class="table-section" style="margin-bottom:0;">
+            <div class="table-wrap">
+            <table>
+                <thead><tr>
+                    <th style="text-align:left;">Symbol</th>
+                    <th>Address</th>
+                    <th>Std Liq Thresh</th>
+                    <th>E-Mode Liq Thresh</th>
+                    <th>Borrow APY</th>
+                    <th>Total Debt ($)</th>
+                    <th>Borrow Cap</th>
+                </tr></thead>
+                <tbody>
+                ${em.borrowableAssets.map(a => `<tr>
+                    <td style="text-align:left;">${esc(a.symbol)}</td>
+                    <td><span class="addr" onclick="copyAddr('${a.address}')" title="${a.address}">${truncAddr(a.address)}</span></td>
+                    <td>${fmt(a.liqThreshold, 2)}%</td>
+                    <td class="td-purple">${fmt(em.liqThreshold, 2)}%</td>
+                    <td class="td-amber">${fmt(a.borrowAPY, 2)}%</td>
+                    <td>${fmtUsd(a.totalDebt)}</td>
+                    <td>${a.borrowCap > 0 ? fmtNum(a.borrowCap) : '—'}</td>
+                </tr>`).join('')}
+                </tbody>
+            </table>
+            </div>
+        </div>` : '<div style="color:var(--text-muted); font-size:0.78rem;">None</div>'}
+    `;
+
+    const detail = document.getElementById('emodeDetail');
+    detail.classList.add('emode-detail--visible');
+    detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeEmodeDetail() {
+    _selectedEmode = null;
+    document.getElementById('emodeDetail').classList.remove('emode-detail--visible');
+    renderEmodeGrid();
+}
+
+function paramRow(label, value, raw) {
+    return `<div class="emode-param-row">
+        <span class="label">${label}</span>
+        <span>
+            ${value ? `<span class="value">${value}</span>` : ''}
+            ${raw ? `<span class="raw" style="margin-left:6px;">${raw}</span>` : ''}
+        </span>
+    </div>`;
+}
+
+/* --- Reserves Table --- */
+function renderReservesTable() {
+    const tbody = document.getElementById('reservesBody');
+    tbody.innerHTML = '';
+
+    let reserves = [..._parsedReserves];
+
+    // Filter
+    const query = document.getElementById('reserveSearch').value.toLowerCase().trim();
+    if (query) {
+        reserves = reserves.filter(r => r.symbol.toLowerCase().includes(query) || r.name.toLowerCase().includes(query));
+    }
+
+    // Sort
+    if (_sortCol) {
+        reserves.sort((a, b) => {
+            let va = a[_sortCol], vb = b[_sortCol];
+            if (typeof va === 'string') {
+                va = va.toLowerCase(); vb = vb.toLowerCase();
+                return _sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+            }
+            return _sortAsc ? va - vb : vb - va;
+        });
+    }
+
+    document.getElementById('reserveCount').textContent = `${reserves.length} of ${_parsedReserves.length} reserves`;
+
+    reserves.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.style.cursor = 'pointer';
+        tr.onclick = () => toggleExpandRow(tr, r);
+
+        let statusBadge = '';
+        if (r.isPaused) statusBadge = '<span class="badge badge--paused">Paused</span>';
+        else if (r.isFrozen) statusBadge = '<span class="badge badge--frozen">Frozen</span>';
+        else if (r.isActive) statusBadge = '<span class="badge badge--active">Active</span>';
+
+        tr.innerHTML = `
+            <td style="text-align:left;">${esc(r.symbol)}</td>
+            <td><span class="addr" onclick="event.stopPropagation(); copyAddr('${r.address}')" title="${r.address}">${truncAddr(r.address)}</span></td>
+            <td>${r.decimals}</td>
+            <td>${r.ltv > 0 ? fmt(r.ltv, 2) + '%' : '—'}</td>
+            <td>${r.liqThreshold > 0 ? fmt(r.liqThreshold, 2) + '%' : '—'}</td>
+            <td>${r.liqBonus > 0 ? fmt(r.liqBonus, 2) + '%' : '—'}</td>
+            <td class="td-teal">${fmt(r.supplyAPY, 2)}%</td>
+            <td class="td-amber">${r.borrowingEnabled ? fmt(r.borrowAPY, 2) + '%' : '—'}</td>
+            <td>${fmtUsd(r.availableLiquidity)}</td>
+            <td>${fmtUsd(r.totalDebt)}</td>
+            <td>${r.supplyCap > 0 ? fmtNum(r.supplyCap) : '—'}</td>
+            <td>${r.borrowCap > 0 ? fmtNum(r.borrowCap) : '—'}</td>
+            <td>${statusBadge}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    // Attach sort handlers
+    document.querySelectorAll('#reservesTable th.sortable').forEach(th => {
+        th.onclick = () => {
+            const col = th.dataset.col;
+            if (_sortCol === col) _sortAsc = !_sortAsc;
+            else { _sortCol = col; _sortAsc = true; }
+            updateSortArrows();
+            renderReservesTable();
+        };
+    });
+    updateSortArrows();
+}
+
+function updateSortArrows() {
+    document.querySelectorAll('#reservesTable th.sortable').forEach(th => {
+        const existing = th.querySelector('.sort-arrow');
+        if (existing) existing.remove();
+        if (th.dataset.col === _sortCol) {
+            const arrow = document.createElement('span');
+            arrow.className = 'sort-arrow';
+            arrow.textContent = _sortAsc ? ' \u25B2' : ' \u25BC';
+            th.appendChild(arrow);
+        }
+    });
+}
+
+function toggleExpandRow(tr, reserve) {
+    const next = tr.nextElementSibling;
+    if (next && next.classList.contains('expand-row')) {
+        next.remove();
+        return;
+    }
+    // Remove any other expanded rows
+    document.querySelectorAll('.expand-row').forEach(r => r.remove());
+
+    const expandTr = document.createElement('tr');
+    expandTr.className = 'expand-row';
+    const td = document.createElement('td');
+    td.colSpan = 13;
+
+    // Build a nice raw data view
+    const rawObj = {};
+    const r = reserve._raw;
+    for (const key of Object.keys(r)) {
+        if (!isNaN(key)) continue; // skip numeric indices
+        const val = r[key];
+        if (typeof val === 'bigint') rawObj[key] = val.toString();
+        else if (typeof val === 'object' && val !== null && typeof val.toString === 'function' && val.constructor?.name !== 'Object')
+            rawObj[key] = val.toString();
+        else rawObj[key] = val;
+    }
+
+    // Add computed values
+    rawObj['_computed'] = {
+        priceUsd: '$' + fmt(reserve.priceUsd, 4),
+        supplyAPY: fmt(reserve.supplyAPY, 4) + '%',
+        borrowAPY: fmt(reserve.borrowAPY, 4) + '%',
+        availableLiquidityUsd: '$' + fmtUsd(reserve.availableLiquidity),
+        totalDebtUsd: '$' + fmtUsd(reserve.totalDebt),
+        rateStrategy: {
+            baseRate: fmt(reserve.baseVariableBorrowRate, 4) + '%',
+            slope1: fmt(reserve.variableRateSlope1, 4) + '%',
+            slope2: fmt(reserve.variableRateSlope2, 4) + '%',
+            optimalUsage: fmt(reserve.optimalUsageRatio, 2) + '%',
+        },
+    };
+
+    td.innerHTML = `<div class="expand-content"><pre>${esc(JSON.stringify(rawObj, null, 2))}</pre></div>`;
+    expandTr.appendChild(td);
+    tr.after(expandTr);
+}
+
+function filterReserves() {
+    renderReservesTable();
+}
+
+/* --- Raw Data --- */
+function renderRawData() {
+    // Base currency
+    const bc = _baseCurrency;
+    const bcObj = {
+        marketReferenceCurrencyUnit: bc.marketReferenceCurrencyUnit.toString(),
+        marketReferenceCurrencyPriceInUsd: bc.marketReferenceCurrencyPriceInUsd.toString(),
+        networkBaseTokenPriceInUsd: bc.networkBaseTokenPriceInUsd.toString(),
+        networkBaseTokenPriceDecimals: Number(bc.networkBaseTokenPriceDecimals),
+    };
+    document.getElementById('rawBaseCurrency').textContent = JSON.stringify(bcObj, null, 2);
+
+    // E-modes
+    const emodesArr = _rawEmodes.map(e => ({
+        id: Number(e.id),
+        ltv: Number(e.ltv),
+        liquidationThreshold: Number(e.liquidationThreshold),
+        liquidationBonus: Number(e.liquidationBonus),
+        label: e.label,
+        collateralBitmap: e.collateralBitmap.toString(),
+        borrowableBitmap: e.borrowableBitmap.toString(),
+    }));
+    document.getElementById('rawEmodes').textContent = JSON.stringify(emodesArr, null, 2);
+
+    // Reserves (first 10 or all)
+    renderRawReserves();
+}
+
+function renderRawReserves() {
+    const limit = _showAllRaw ? _rawReserves.length : 10;
+    const arr = [];
+    for (let i = 0; i < Math.min(limit, _rawReserves.length); i++) {
+        const r = _rawReserves[i];
+        const obj = {};
+        for (const key of Object.keys(r)) {
+            if (!isNaN(key)) continue;
+            const val = r[key];
+            if (typeof val === 'bigint') obj[key] = val.toString();
+            else if (typeof val === 'object' && val !== null && typeof val.toString === 'function' && val.constructor?.name !== 'Object')
+                obj[key] = val.toString();
+            else obj[key] = val;
+        }
+        arr.push(obj);
+    }
+    const suffix = !_showAllRaw && _rawReserves.length > 10
+        ? `\n\n... and ${_rawReserves.length - 10} more reserves (click "Show All" above)`
+        : '';
+    document.getElementById('rawReserves').textContent = JSON.stringify(arr, null, 2) + suffix;
+}
+
+function showAllRawReserves() {
+    _showAllRaw = true;
+    renderRawReserves();
+}
+
+/* ═══════ Helpers ═══════ */
+function fmt(v, d) { return Number(v).toFixed(d); }
+function fmtNum(v) {
+    if (v >= 1e9) return fmt(v / 1e9, 2) + 'B';
+    if (v >= 1e6) return fmt(v / 1e6, 2) + 'M';
+    if (v >= 1e3) return fmt(v / 1e3, 1) + 'K';
+    return fmt(v, 0);
+}
+function fmtUsd(v) {
+    if (Math.abs(v) >= 1e9) return '$' + fmt(v / 1e9, 2) + 'B';
+    if (Math.abs(v) >= 1e6) return '$' + fmt(v / 1e6, 2) + 'M';
+    if (Math.abs(v) >= 1e3) return '$' + fmt(v / 1e3, 1) + 'K';
+    if (Math.abs(v) >= 1) return '$' + fmt(v, 0);
+    return '$' + fmt(v, 2);
+}
+function truncAddr(a) { return a.slice(0, 6) + '...' + a.slice(-4); }
+function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+}
+function copyAddr(addr) {
+    navigator.clipboard.writeText(addr).catch(() => {});
+}
+
+/* ═══════ Dark Mode ═══════ */
+function toggleDark() {
+    document.documentElement.classList.toggle('dark');
+    const dk = document.documentElement.classList.contains('dark');
+    localStorage.setItem('aave-explorer-theme', dk ? 'dark' : 'light');
+    document.getElementById('darkIcon').innerHTML = dk ? '&#9788;' : '&#9790;';
+    document.getElementById('darkLabel').textContent = dk ? 'Light' : 'Dark';
+}
+
+/* ═══════ Refresh ═══════ */
+function refreshData() {
+    _selectedEmode = null;
+    document.getElementById('emodeDetail').classList.remove('emode-detail--visible');
+    document.querySelectorAll('.expand-row').forEach(r => r.remove());
+    _showAllRaw = false;
+    fetchData();
+}
+
+/* ═══════ Init ═══════ */
+(function() {
+    if (localStorage.getItem('aave-explorer-theme') !== 'light') {
+        document.documentElement.classList.add('dark');
+        document.getElementById('darkIcon').innerHTML = '&#9788;';
+        document.getElementById('darkLabel').textContent = 'Light';
+    }
+    fetchData();
+})();
+</script>
+</body>
+</html>
