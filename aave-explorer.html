@@ -848,6 +848,7 @@ let _sortAsc = true;
 let _showAllRaw = false;
 let _activeCat = 'all';
 let _hideExpired = true;
+let _flowSelection = null; // { side: 'coll'|'borr', symbol: string }
 
 window._aaveData = {};
 
@@ -1150,19 +1151,29 @@ function getVisibleEmodes() {
 }
 
 /* --- Flow Diagram --- */
+function onFlowNodeClick(side, symbol) {
+    // Toggle: click same node to deselect
+    if (_flowSelection && _flowSelection.side === side && _flowSelection.symbol === symbol) {
+        _flowSelection = null;
+    } else {
+        _flowSelection = { side, symbol };
+    }
+    renderFlowDiagram();
+}
+
 function renderFlowDiagram() {
     const container = document.getElementById('flowDiagram');
     const visible = getVisibleEmodes();
 
     // Build unique flows: collateral -> borrow with max leverage
-    const flowMap = new Map(); // "collSymbol|borrSymbol" -> { collateral, borrow, maxLev, category }
-    const collateralSet = new Map(); // symbol -> { symbol, category, totalFlows }
-    const borrowSet = new Map();     // symbol -> { symbol, totalFlows }
+    const flowMap = new Map();
+    const collateralSet = new Map();
+    const borrowSet = new Map();
 
     visible.forEach(em => {
         em.collateralAssets.forEach(coll => {
             em.borrowableAssets.forEach(borr => {
-                if (coll.symbol === borr.symbol) return; // skip self-loops
+                if (coll.symbol === borr.symbol) return;
                 const key = `${coll.symbol}|${borr.symbol}`;
                 const existing = flowMap.get(key);
                 if (!existing || em.maxLeverage > existing.maxLev) {
@@ -1174,17 +1185,16 @@ function renderFlowDiagram() {
                         emodeId: em.id,
                     });
                 }
-                // Track collateral nodes
                 if (!collateralSet.has(coll.symbol)) {
                     collateralSet.set(coll.symbol, { symbol: coll.symbol, category: em.category, flows: 0 });
                 }
                 collateralSet.get(coll.symbol).flows++;
-
-                // Track borrow nodes
                 if (!borrowSet.has(borr.symbol)) {
-                    borrowSet.set(borr.symbol, { symbol: borr.symbol, flows: 0 });
+                    borrowSet.set(borr.symbol, { symbol: borr.symbol, flows: 0, categories: new Set() });
                 }
-                borrowSet.get(borr.symbol).flows++;
+                const bs = borrowSet.get(borr.symbol);
+                bs.flows++;
+                bs.categories.add(em.category);
             });
         });
     });
@@ -1196,48 +1206,92 @@ function renderFlowDiagram() {
 
     const flows = [...flowMap.values()];
 
+    // Determine which nodes/links are active based on selection
+    const sel = _flowSelection;
+    let activeColls = null; // null = all active
+    let activeBorrs = null;
+    if (sel) {
+        activeColls = new Set();
+        activeBorrs = new Set();
+        if (sel.side === 'coll') {
+            activeColls.add(sel.symbol);
+            flows.forEach(f => { if (f.collSymbol === sel.symbol) activeBorrs.add(f.borrSymbol); });
+        } else {
+            activeBorrs.add(sel.symbol);
+            flows.forEach(f => { if (f.borrSymbol === sel.symbol) activeColls.add(f.collSymbol); });
+        }
+    }
+
     // Sort collateral by category order then by flow count
-    const catIndex = (sym) => {
-        const entry = collateralSet.get(sym);
-        const cat = entry ? entry.category : 'stablecoin';
-        const idx = CAT_ORDER.indexOf(cat);
-        return idx >= 0 ? idx : 99;
-    };
     const collNodes = [...collateralSet.values()].sort((a, b) => {
         const ci = CAT_ORDER.indexOf(a.category) - CAT_ORDER.indexOf(b.category);
         if (ci !== 0) return ci;
         return b.flows - a.flows;
     });
 
-    // Sort borrow by flow count (most connected first)
-    const borrNodes = [...borrowSet.values()].sort((a, b) => b.flows - a.flows);
+    // Sort borrow by category affinity: place each borrow asset near its primary category
+    // Assign each borrow asset a category based on where most of its connections come from
+    const borrCatOrder = ['eth-eth', 'eth-stable', 'stablecoin', 'btc', 'pt-stable', 'pt-usde'];
+    function borrPrimaryCategory(borrSym) {
+        const entry = borrowSet.get(borrSym);
+        if (!entry) return 99;
+        // Score each category by how many flows connect to this borrow
+        const catScore = {};
+        flows.forEach(f => {
+            if (f.borrSymbol !== borrSym) return;
+            catScore[f.category] = (catScore[f.category] || 0) + 1;
+        });
+        // Pick the category with most connections; break ties by borrCatOrder
+        let bestCat = 'stablecoin';
+        let bestCount = 0;
+        for (const cat of borrCatOrder) {
+            if ((catScore[cat] || 0) > bestCount) {
+                bestCount = catScore[cat];
+                bestCat = cat;
+            }
+        }
+        return bestCat;
+    }
+
+    const borrNodes = [...borrowSet.values()].sort((a, b) => {
+        const catA = borrPrimaryCategory(a.symbol);
+        const catB = borrPrimaryCategory(b.symbol);
+        const ci = borrCatOrder.indexOf(catA) - borrCatOrder.indexOf(catB);
+        if (ci !== 0) return ci;
+        return b.flows - a.flows;
+    });
 
     // Layout constants
     const nodeH = 26;
     const nodeGap = 4;
     const nodeW = 120;
     const midGap = 280;
-    const padTop = 16;
+    const padTop = 20;
     const padLeft = 10;
     const padRight = 10;
     const svgW = padLeft + nodeW + midGap + nodeW + padRight;
 
-    // Category group gaps
+    // Category group gaps on left
     let leftY = padTop;
     const collPositions = new Map();
     let prevCat = null;
     collNodes.forEach(n => {
-        if (prevCat !== null && n.category !== prevCat) leftY += 10; // gap between categories
+        if (prevCat !== null && n.category !== prevCat) leftY += 10;
         collPositions.set(n.symbol, { x: padLeft, y: leftY, h: nodeH });
         leftY += nodeH + nodeGap;
         prevCat = n.category;
     });
 
+    // Category group gaps on right
     let rightY = padTop;
     const borrPositions = new Map();
+    let prevBorrCat = null;
     borrNodes.forEach(n => {
+        const cat = borrPrimaryCategory(n.symbol);
+        if (prevBorrCat !== null && cat !== prevBorrCat) rightY += 10;
         borrPositions.set(n.symbol, { x: padLeft + nodeW + midGap, y: rightY, h: nodeH });
         rightY += nodeH + nodeGap;
+        prevBorrCat = cat;
     });
 
     // Center the shorter column vertically
@@ -1279,49 +1333,63 @@ function renderFlowDiagram() {
         const bp = borrPositions.get(f.borrSymbol);
         if (!cp || !bp) return;
 
+        // Determine if this link is active
+        const isActive = !sel ||
+            (activeColls.has(f.collSymbol) && activeBorrs.has(f.borrSymbol));
+        const opacity = sel ? (isActive ? 0.6 : 0.06) : 0.35;
+
         const x1 = cp.x + nodeW;
         const y1 = cp.y + cp.h / 2;
         const x2 = bp.x;
         const y2 = bp.y + bp.h / 2;
 
-        // Width proportional to leverage (min 1.5, max 6)
         const w = Math.max(1.5, Math.min(6, (f.maxLev - 1) / 2.5));
-
         const color = catColors[f.category] || catColors['stablecoin'];
         const cx1 = x1 + midGap * 0.4;
         const cx2 = x2 - midGap * 0.4;
 
-        // Leverage label at midpoint
-        const mx = (x1 + x2) / 2;
-        const my = (y1 + y2) / 2;
+        svg += `<path class="flow-link" d="M${x1},${y1} C${cx1},${y1} ${cx2},${y2} ${x2},${y2}" stroke="${color.stroke}" stroke-width="${w}" style="opacity:${opacity}" data-coll="${f.collSymbol}" data-borr="${f.borrSymbol}" />`;
 
-        svg += `<path class="flow-link" d="M${x1},${y1} C${cx1},${y1} ${cx2},${y2} ${x2},${y2}" stroke="${color.stroke}" stroke-width="${w}" data-lev="${fmt(f.maxLev, 1)}" />`;
-
-        // Only show leverage labels for high-leverage paths to avoid clutter
-        if (f.maxLev >= 6) {
-            svg += `<text class="flow-lev-label" x="${mx}" y="${my - 4}" text-anchor="middle">${fmt(f.maxLev, 1)}x</text>`;
+        // Show leverage labels on active links (all when filtered, only >=6x when unfiltered)
+        const showLabel = isActive && (sel || f.maxLev >= 6);
+        if (showLabel) {
+            const mx = (x1 + x2) / 2;
+            const my = (y1 + y2) / 2;
+            const labelOpacity = sel ? (isActive ? 1 : 0.15) : 1;
+            svg += `<text class="flow-lev-label" x="${mx}" y="${my - 4}" text-anchor="middle" style="opacity:${labelOpacity}">${fmt(f.maxLev, 1)}x</text>`;
         }
     });
 
     // Draw left nodes (collateral)
     collPositions.forEach((pos, symbol) => {
         const nc = nodeColor(symbol);
-        svg += `<rect class="flow-node-rect" x="${pos.x}" y="${pos.y}" width="${nodeW}" height="${pos.h}" fill="var(--bg-card)" stroke="${nc.border}" />`;
-        // Accent bar on the left
+        const isActive = !sel || activeColls.has(symbol);
+        const isSelected = sel && sel.side === 'coll' && sel.symbol === symbol;
+        const nodeOpacity = sel ? (isActive ? 1 : 0.2) : 1;
+        const strokeW = isSelected ? 2 : 1;
+
+        svg += `<g style="cursor:pointer; opacity:${nodeOpacity};" onclick="onFlowNodeClick('coll','${symbol}')">`;
+        svg += `<rect class="flow-node-rect" x="${pos.x}" y="${pos.y}" width="${nodeW}" height="${pos.h}" fill="var(--bg-card)" stroke="${isSelected ? nc.fill : nc.border}" stroke-width="${strokeW}" />`;
         svg += `<rect x="${pos.x}" y="${pos.y}" width="3" height="${pos.h}" rx="1" fill="${nc.fill}" />`;
-        // Label (truncate long PT names)
         let displayName = symbol;
         if (displayName.length > 16) displayName = displayName.slice(0, 14) + '..';
         svg += `<text class="flow-node-label" x="${pos.x + 9}" y="${pos.y + pos.h / 2 + 4}" text-anchor="start">${esc(displayName)}</text>`;
+        svg += `</g>`;
     });
 
     // Draw right nodes (borrow)
     borrPositions.forEach((pos, symbol) => {
         const nc = nodeColor(symbol);
-        svg += `<rect class="flow-node-rect" x="${pos.x}" y="${pos.y}" width="${nodeW}" height="${pos.h}" fill="var(--bg-card)" stroke="${nc.border}" />`;
-        // Accent bar on the right
+        const isActive = !sel || activeBorrs.has(symbol);
+        const isSelected = sel && sel.side === 'borr' && sel.symbol === symbol;
+        const nodeOpacity = sel ? (isActive ? 1 : 0.2) : 1;
+        const strokeW = isSelected ? 2 : 1;
+
+        svg += `<g style="cursor:pointer; opacity:${nodeOpacity};" onclick="onFlowNodeClick('borr','${symbol}')">`;
+        svg += `<rect class="flow-node-rect" x="${pos.x}" y="${pos.y}" width="${nodeW}" height="${pos.h}" fill="var(--bg-card)" stroke="${isSelected ? nc.fill : nc.border}" stroke-width="${strokeW}" />`;
         svg += `<rect x="${pos.x + nodeW - 3}" y="${pos.y}" width="3" height="${pos.h}" rx="1" fill="${nc.fill}" />`;
         svg += `<text class="flow-node-label" x="${pos.x + nodeW - 9}" y="${pos.y + pos.h / 2 + 4}" text-anchor="end">${esc(symbol)}</text>`;
+        svg += `</g>`;
     });
 
     // Column headers
@@ -1330,13 +1398,18 @@ function renderFlowDiagram() {
 
     svg += '</svg>';
 
-    // Legend
+    // Legend + selection hint
+    const selHint = sel
+        ? `<div class="flow-legend-item" style="margin-left:auto; color:var(--purple); cursor:pointer;" onclick="_flowSelection=null; renderFlowDiagram();">Clear filter &times;</div>`
+        : `<div class="flow-legend-item" style="margin-left:auto;">Click any asset to filter</div>`;
+
     const legend = `<div class="flow-legend">
         <div class="flow-legend-item"><div class="flow-legend-swatch" style="background:var(--teal);"></div>ETH correlated</div>
         <div class="flow-legend-item"><div class="flow-legend-swatch" style="background:var(--amber);"></div>BTC correlated</div>
         <div class="flow-legend-item"><div class="flow-legend-swatch" style="background:var(--purple);"></div>Pendle PTs</div>
         <div class="flow-legend-item"><div class="flow-legend-swatch" style="background:var(--text-muted);"></div>Stablecoins</div>
-        <div class="flow-legend-item" style="margin-left:12px;">Line width = leverage level &middot; Labels shown for &ge;6x</div>
+        <div class="flow-legend-item">Line width = leverage</div>
+        ${selHint}
     </div>`;
 
     container.innerHTML = svg + legend;
@@ -1847,6 +1920,7 @@ function toggleDark() {
 function refreshData() {
     _selectedEmode = null;
     _activeCat = 'all';
+    _flowSelection = null;
     document.getElementById('emodeDetail').classList.remove('emode-detail--visible');
     document.querySelectorAll('.expand-row').forEach(r => r.remove());
     _showAllRaw = false;
