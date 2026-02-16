@@ -639,7 +639,7 @@
 <script>
 /* ═══════ Constants ═══════ */
 const POOL_ADDRESSES_PROVIDER = '0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e';
-const UI_POOL_DATA_PROVIDER   = '0x56b7A1012765C285afAC8b8F25C69Bf10ccfE978';
+const UI_POOL_DATA_PROVIDER   = '0x3F78BBD206e4D3c504Eb854232EdA7e47E9Fd8FC'; // V3.2 compatible
 
 const RPC_ENDPOINTS = [
     'https://eth.llamarpc.com',
@@ -647,9 +647,10 @@ const RPC_ENDPOINTS = [
     'https://rpc.ankr.com/eth',
 ];
 
+// ABI matching aave-v3-origin IUiPoolDataProviderV3 (V3.2+)
 const UI_POOL_ABI = [
   {
-    "inputs": [{"internalType": "contract IPoolAddressesProvider", "name": "provider", "type": "address"}],
+    "inputs": [{"name": "provider", "type": "address"}],
     "name": "getReservesData",
     "outputs": [
       {
@@ -661,6 +662,7 @@ const UI_POOL_ABI = [
           {"name": "baseLTVasCollateral", "type": "uint256"},
           {"name": "reserveLiquidationThreshold", "type": "uint256"},
           {"name": "reserveLiquidationBonus", "type": "uint256"},
+          {"name": "reserveFactor", "type": "uint256"},
           {"name": "usageAsCollateralEnabled", "type": "bool"},
           {"name": "borrowingEnabled", "type": "bool"},
           {"name": "isActive", "type": "bool"},
@@ -684,21 +686,15 @@ const UI_POOL_ABI = [
           {"name": "isPaused", "type": "bool"},
           {"name": "isSiloedBorrowing", "type": "bool"},
           {"name": "accruedToTreasury", "type": "uint128"},
-          {"name": "unbacked", "type": "uint128"},
           {"name": "isolationModeTotalDebt", "type": "uint128"},
           {"name": "flashLoanEnabled", "type": "bool"},
           {"name": "debtCeiling", "type": "uint256"},
           {"name": "debtCeilingDecimals", "type": "uint256"},
-          {"name": "eModeCategoryId", "type": "uint8"},
           {"name": "borrowCap", "type": "uint256"},
           {"name": "supplyCap", "type": "uint256"},
-          {"name": "eModeLtv", "type": "uint16"},
-          {"name": "eModeLiquidationThreshold", "type": "uint16"},
-          {"name": "eModeLiquidationBonus", "type": "uint16"},
-          {"name": "eModeLabel", "type": "string"},
           {"name": "borrowableInIsolation", "type": "bool"},
-          {"name": "virtualAccActive", "type": "bool"},
-          {"name": "virtualUnderlyingBalance", "type": "uint128"}
+          {"name": "virtualUnderlyingBalance", "type": "uint128"},
+          {"name": "deficit", "type": "uint128"}
         ],
         "name": "",
         "type": "tuple[]"
@@ -718,18 +714,25 @@ const UI_POOL_ABI = [
     "type": "function"
   },
   {
-    "inputs": [{"internalType": "contract IPoolAddressesProvider", "name": "provider", "type": "address"}],
+    "inputs": [{"name": "provider", "type": "address"}],
     "name": "getEModes",
     "outputs": [
       {
         "components": [
           {"name": "id", "type": "uint8"},
-          {"name": "ltv", "type": "uint16"},
-          {"name": "liquidationThreshold", "type": "uint16"},
-          {"name": "liquidationBonus", "type": "uint16"},
-          {"name": "label", "type": "string"},
-          {"name": "collateralBitmap", "type": "uint128"},
-          {"name": "borrowableBitmap", "type": "uint128"}
+          {
+            "name": "eMode",
+            "type": "tuple",
+            "components": [
+              {"name": "ltv", "type": "uint16"},
+              {"name": "liquidationThreshold", "type": "uint16"},
+              {"name": "liquidationBonus", "type": "uint16"},
+              {"name": "collateralBitmap", "type": "uint128"},
+              {"name": "label", "type": "string"},
+              {"name": "borrowableBitmap", "type": "uint128"},
+              {"name": "ltvzeroBitmap", "type": "uint128"}
+            ]
+          }
         ],
         "name": "",
         "type": "tuple[]"
@@ -768,8 +771,8 @@ async function tryRpc() {
     throw new Error('All RPC endpoints failed');
 }
 
-/* ═══════ Try a contract call across all RPCs ═══════ */
-async function tryCallAcrossRpcs(fnName) {
+/* ═══════ Try a contract call across RPCs ═══════ */
+async function tryCallOnRpcs(fnName) {
     for (const url of RPC_ENDPOINTS) {
         try {
             const p = new ethers.JsonRpcProvider(url);
@@ -833,7 +836,8 @@ function parseReserves(rawReserves, baseCurrency) {
             priceUsd,
             supplyCap: Number(r.supplyCap),
             borrowCap: Number(r.borrowCap),
-            eModeCategoryId: Number(r.eModeCategoryId),
+            reserveFactor: Number(r.reserveFactor) / 100,
+            reserveFactorRaw: Number(r.reserveFactor),
             isActive: r.isActive,
             isFrozen: r.isFrozen,
             isPaused: r.isPaused,
@@ -858,85 +862,32 @@ function parseEmodes(rawEmodes, parsedReserves) {
         .filter(e => Number(e.id) !== 0)
         .map(e => {
             const id = Number(e.id);
-            const ltv = Number(e.ltv) / 100;
-            const liqThreshold = Number(e.liquidationThreshold) / 100;
-            const liqBonus = Number(e.liquidationBonus) > 0 ? (Number(e.liquidationBonus) - 10000) / 100 : 0;
+            // V3.2: nested struct — e.eMode contains ltv, liquidationThreshold, etc.
+            const em = e.eMode;
+            const ltv = Number(em.ltv) / 100;
+            const liqThreshold = Number(em.liquidationThreshold) / 100;
+            const liqBonus = Number(em.liquidationBonus) > 0 ? (Number(em.liquidationBonus) - 10000) / 100 : 0;
             const maxLeverage = ltv > 0 ? 1 / (1 - ltv / 100) : 0;
 
-            const collateralAssets = decodeBitmap(e.collateralBitmap, parsedReserves);
-            const borrowableAssets = decodeBitmap(e.borrowableBitmap, parsedReserves);
+            const collateralAssets = decodeBitmap(em.collateralBitmap, parsedReserves);
+            const borrowableAssets = decodeBitmap(em.borrowableBitmap, parsedReserves);
 
             return {
                 id,
-                label: e.label || `E-Mode ${id}`,
+                label: em.label || `E-Mode ${id}`,
                 ltv,
-                ltvRaw: Number(e.ltv),
+                ltvRaw: Number(em.ltv),
                 liqThreshold,
-                liqThresholdRaw: Number(e.liquidationThreshold),
+                liqThresholdRaw: Number(em.liquidationThreshold),
                 liqBonus,
-                liqBonusRaw: Number(e.liquidationBonus),
+                liqBonusRaw: Number(em.liquidationBonus),
                 maxLeverage,
-                collateralBitmap: e.collateralBitmap.toString(),
-                borrowableBitmap: e.borrowableBitmap.toString(),
+                collateralBitmap: em.collateralBitmap.toString(),
+                borrowableBitmap: em.borrowableBitmap.toString(),
                 collateralAssets,
                 borrowableAssets,
             };
         });
-}
-
-/* ═══════ Parse E-Modes from Fallback (reserve-level fields) ═══════ */
-function parseEmodesFromFallback(reconstructed, parsedReserves) {
-    return reconstructed.map(e => {
-        const id = e.id;
-        const ltv = Number(e.ltv) / 100;
-        const liqThreshold = Number(e.liquidationThreshold) / 100;
-        const liqBonus = Number(e.liquidationBonus) > 0 ? (Number(e.liquidationBonus) - 10000) / 100 : 0;
-        const maxLeverage = ltv > 0 ? 1 / (1 - ltv / 100) : 0;
-
-        // Assets associated with this E-mode (from eModeCategoryId match)
-        const associatedAssets = parsedReserves.filter(r => r.eModeCategoryId === id);
-
-        return {
-            id,
-            label: e.label || `E-Mode ${id}`,
-            ltv,
-            ltvRaw: Number(e.ltv),
-            liqThreshold,
-            liqThresholdRaw: Number(e.liquidationThreshold),
-            liqBonus,
-            liqBonusRaw: Number(e.liquidationBonus),
-            maxLeverage,
-            collateralBitmap: '(unavailable)',
-            borrowableBitmap: '(unavailable)',
-            // Without bitmaps, we list all associated assets in both categories
-            collateralAssets: associatedAssets,
-            borrowableAssets: associatedAssets,
-            _fallback: true,
-        };
-    });
-}
-
-/* ═══════ Reconstruct E-Modes from Reserve Fields (fallback) ═══════ */
-function reconstructEmodesFromReserves(rawReserves) {
-    const emodeMap = {};
-    rawReserves.forEach(r => {
-        const catId = Number(r.eModeCategoryId);
-        if (catId === 0) return;
-        if (!emodeMap[catId]) {
-            emodeMap[catId] = {
-                id: catId,
-                ltv: Number(r.eModeLtv),
-                liquidationThreshold: Number(r.eModeLiquidationThreshold),
-                liquidationBonus: Number(r.eModeLiquidationBonus),
-                label: r.eModeLabel || `E-Mode ${catId}`,
-                collateralBitmap: 0n,
-                borrowableBitmap: 0n,
-                _reserveIndices: [],
-            };
-        }
-        emodeMap[catId]._reserveIndices.push(r);
-    });
-    return Object.values(emodeMap);
 }
 
 /* ═══════ Data Fetch ═══════ */
@@ -955,10 +906,10 @@ async function fetchData() {
         const { provider, url, block } = await tryRpc();
         _provider = provider;
 
+        // Step 1: Fetch reserves — try each RPC since this is a heavy call
         statusEl.innerHTML = `<span class="dot dot--loading"></span> ${url.replace('https://', '')}<br>Block ${block.toLocaleString()} &middot; Fetching reserves...`;
 
-        // Step 1: Fetch reserves — try each RPC since this is a heavy call
-        const reservesCall = await tryCallAcrossRpcs('getReservesData');
+        const reservesCall = await tryCallOnRpcs('getReservesData');
         if (!reservesCall) {
             throw new Error('getReservesData failed on all RPC endpoints. Free RPCs may be rate-limiting large calls. Try refreshing in a moment.');
         }
@@ -970,21 +921,14 @@ async function fetchData() {
 
         statusEl.innerHTML = `<span class="dot dot--loading"></span> ${reservesCall.url.replace('https://', '')}<br>Block ${block.toLocaleString()} &middot; Fetching E-modes...`;
 
-        // Step 2: Fetch E-modes — try each RPC independently
-        let emodesFallback = false;
-        const emodesCall = await tryCallAcrossRpcs('getEModes');
-
-        if (emodesCall) {
-            _rawEmodes = emodesCall.result;
-            _parsedEmodes = parseEmodes(emodesCall.result, _parsedReserves);
-        } else {
-            // Fallback: reconstruct from per-reserve E-mode fields
-            emodesFallback = true;
-            console.warn('getEModes failed on all RPCs, using reserve-level E-mode data');
-            const reconstructed = reconstructEmodesFromReserves(rawReserves);
-            _rawEmodes = reconstructed;
-            _parsedEmodes = parseEmodesFromFallback(reconstructed, _parsedReserves);
+        // Step 2: Fetch E-modes
+        const emodesCall = await tryCallOnRpcs('getEModes');
+        if (!emodesCall) {
+            throw new Error('getEModes failed on all RPC endpoints. Try refreshing in a moment.');
         }
+
+        _rawEmodes = emodesCall.result;
+        _parsedEmodes = parseEmodes(emodesCall.result, _parsedReserves);
 
         // Store for console inspection
         const rpcUsed = reservesCall.url;
@@ -998,27 +942,14 @@ async function fetchData() {
                 networkBaseTokenPriceDecimals: Number(baseCurrency.networkBaseTokenPriceDecimals),
             },
             rawReserves: rawReserves,
-            rawEmodes: emodesCall ? emodesCall.result : _rawEmodes,
-            emodesFallback,
+            rawEmodes: emodesCall.result,
             block,
             rpcUrl: rpcUsed,
             fetchedAt: new Date().toISOString(),
         };
 
         const now = new Date();
-        let statusHtml = `<span class="dot dot--ok"></span> ${rpcUsed.replace('https://', '')}<br>Block ${block.toLocaleString()} &middot; ${now.toLocaleTimeString()}`;
-        if (emodesFallback) {
-            statusHtml += '<br><span style="color:var(--amber);">E-modes: fallback (no bitmap data)</span>';
-        }
-        statusEl.innerHTML = statusHtml;
-
-        if (emodesFallback) {
-            errorEl.textContent = 'Note: getEModes() call failed on all RPCs. E-mode data reconstructed from per-reserve fields — bitmap decoding unavailable.';
-            errorEl.style.background = 'var(--amber-dim)';
-            errorEl.style.borderColor = 'var(--amber-border)';
-            errorEl.style.color = 'var(--amber)';
-            errorEl.classList.add('error-banner--visible');
-        }
+        statusEl.innerHTML = `<span class="dot dot--ok"></span> ${rpcUsed.replace('https://', '')}<br>Block ${block.toLocaleString()} &middot; ${now.toLocaleTimeString()}`;
 
         renderAll();
     } catch (err) {
@@ -1077,10 +1008,7 @@ function renderEmodeGrid() {
                 </div>
             </div>
             <div class="emode-asset-count">
-                ${em._fallback
-                    ? em.collateralAssets.length + ' associated assets (no bitmap data)'
-                    : em.collateralAssets.length + ' collateral &middot; ' + em.borrowableAssets.length + ' borrowable'
-                }
+                ${em.collateralAssets.length} collateral &middot; ${em.borrowableAssets.length} borrowable
             </div>
         `;
         grid.appendChild(card);
@@ -1101,8 +1029,8 @@ function renderEmodeCompare() {
             <td>${fmt(em.liqThreshold, 2)}%</td>
             <td>${fmt(em.liqBonus, 2)}%</td>
             <td>${fmt(em.maxLeverage, 1)}x</td>
-            <td>${em._fallback ? em.collateralAssets.map(a => a.symbol).join(', ') + ' *' : em.collateralAssets.map(a => a.symbol).join(', ')}</td>
-            <td>${em._fallback ? '(same — no bitmap)' : em.borrowableAssets.map(a => a.symbol).join(', ')}</td>
+            <td>${em.collateralAssets.map(a => a.symbol).join(', ')}</td>
+            <td>${em.borrowableAssets.map(a => a.symbol).join(', ')}</td>
         `;
         tbody.appendChild(tr);
     });
@@ -1139,46 +1067,8 @@ function selectEmode(id) {
 
     // Assets
     const assetsEl = document.getElementById('emodeDetailAssets');
-    const fallbackNote = em._fallback
-        ? '<div style="padding:8px 12px; margin-bottom:12px; background:var(--amber-dim); border:1px solid var(--amber-border); border-radius:6px; font-family:var(--font-mono); font-size:0.68rem; color:var(--amber);">Bitmap data unavailable — assets shown by eModeCategoryId match. Collateral/borrowable distinction not available.</div>'
-        : '';
 
-    if (em._fallback) {
-        // Fallback: show single combined table
-        assetsEl.innerHTML = `
-            ${fallbackNote}
-            <h3>Associated Assets (${em.collateralAssets.length})</h3>
-            ${em.collateralAssets.length > 0 ? `
-            <div class="table-section" style="margin-bottom:0;">
-                <div class="table-wrap">
-                <table>
-                    <thead><tr>
-                        <th style="text-align:left;">Symbol</th>
-                        <th>Address</th>
-                        <th>Std LTV</th>
-                        <th>E-Mode LTV</th>
-                        <th>Supply APY</th>
-                        <th>Borrow APY</th>
-                        <th>Available ($)</th>
-                    </tr></thead>
-                    <tbody>
-                    ${em.collateralAssets.map(a => `<tr>
-                        <td style="text-align:left;">${esc(a.symbol)}</td>
-                        <td><span class="addr" onclick="copyAddr('${a.address}')" title="${a.address}">${truncAddr(a.address)}</span></td>
-                        <td>${fmt(a.ltv, 2)}%</td>
-                        <td class="td-purple">${fmt(em.ltv, 2)}%</td>
-                        <td class="td-teal">${fmt(a.supplyAPY, 2)}%</td>
-                        <td class="td-amber">${a.borrowingEnabled ? fmt(a.borrowAPY, 2) + '%' : '—'}</td>
-                        <td>${fmtUsd(a.availableLiquidity)}</td>
-                    </tr>`).join('')}
-                    </tbody>
-                </table>
-                </div>
-            </div>` : '<div style="color:var(--text-muted); font-size:0.78rem;">None</div>'}
-        `;
-    } else {
-        // Normal: separate collateral and borrowable tables from bitmap decoding
-        assetsEl.innerHTML = `
+    assetsEl.innerHTML = `
         <h3>Collateral Assets (${em.collateralAssets.length})</h3>
         ${em.collateralAssets.length > 0 ? `
         <div class="table-section" style="margin-bottom:0;">
@@ -1237,7 +1127,6 @@ function selectEmode(id) {
             </div>
         </div>` : '<div style="color:var(--text-muted); font-size:0.78rem;">None</div>'}
     `;
-    }
 
     const detail = document.getElementById('emodeDetail');
     detail.classList.add('emode-detail--visible');
@@ -1403,25 +1292,20 @@ function renderRawData() {
     };
     document.getElementById('rawBaseCurrency').textContent = JSON.stringify(bcObj, null, 2);
 
-    // E-modes
-    let emodesArr;
-    try {
-        emodesArr = _rawEmodes.map(e => ({
+    // E-modes (V3.2 nested struct: e.id + e.eMode.{ltv, liquidationThreshold, ...})
+    const emodesArr = _rawEmodes.map(e => {
+        const em = e.eMode;
+        return {
             id: Number(e.id),
-            ltv: Number(e.ltv),
-            liquidationThreshold: Number(e.liquidationThreshold),
-            liquidationBonus: Number(e.liquidationBonus),
-            label: e.label,
-            collateralBitmap: e.collateralBitmap != null ? e.collateralBitmap.toString() : '(fallback)',
-            borrowableBitmap: e.borrowableBitmap != null ? e.borrowableBitmap.toString() : '(fallback)',
-            _source: e._reserveIndices ? 'reconstructed from reserves' : 'getEModes()',
-        }));
-    } catch (err) {
-        emodesArr = _parsedEmodes.map(e => ({
-            id: e.id, label: e.label, ltv: e.ltvRaw, liqThreshold: e.liqThresholdRaw,
-            liqBonus: e.liqBonusRaw, _source: 'fallback',
-        }));
-    }
+            ltv: Number(em.ltv),
+            liquidationThreshold: Number(em.liquidationThreshold),
+            liquidationBonus: Number(em.liquidationBonus),
+            label: em.label,
+            collateralBitmap: em.collateralBitmap.toString(),
+            borrowableBitmap: em.borrowableBitmap.toString(),
+            ltvzeroBitmap: em.ltvzeroBitmap.toString(),
+        };
+    });
     document.getElementById('rawEmodes').textContent = JSON.stringify(emodesArr, null, 2);
 
     // Reserves (first 10 or all)
