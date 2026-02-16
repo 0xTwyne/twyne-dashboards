@@ -1,0 +1,1534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PT/Ethena Loop Market Size — Twyne</title>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #e5e5e5;
+            --bg-card: #f5f5f5;
+            --bg-elevated: #ffffff;
+            --text: #1a1a2e;
+            --text-secondary: #4a4a6a;
+            --text-muted: #6a6a8a;
+
+            --purple: #7B2CBF;
+            --purple-dim: rgba(123, 44, 191, 0.08);
+            --purple-border: rgba(123, 44, 191, 0.25);
+
+            --coral: #c75050;
+            --coral-dim: rgba(199, 80, 80, 0.08);
+            --coral-border: rgba(199, 80, 80, 0.25);
+
+            --teal: #0fa67f;
+            --teal-dim: rgba(15, 166, 127, 0.08);
+            --teal-border: rgba(15, 166, 127, 0.25);
+
+            --amber: #c78a20;
+            --amber-dim: rgba(199, 138, 32, 0.08);
+            --amber-border: rgba(199, 138, 32, 0.25);
+
+            --border: rgba(0, 0, 0, 0.10);
+            --border-strong: rgba(0, 0, 0, 0.18);
+
+            --radius: 6px;
+            --radius-lg: 12px;
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
+
+            --font-mono: 'IBM Plex Mono', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        html.dark {
+            --bg: #1a1a2e;
+            --bg-card: #242444;
+            --bg-elevated: #2a2a4a;
+            --text: #e8eaed;
+            --text-secondary: #b0b4c0;
+            --text-muted: #8a8ea0;
+
+            --purple: #a970e0;
+            --purple-dim: rgba(169, 112, 224, 0.12);
+            --purple-border: rgba(169, 112, 224, 0.35);
+
+            --coral: #e07050;
+            --coral-dim: rgba(224, 112, 80, 0.12);
+            --coral-border: rgba(224, 112, 80, 0.35);
+
+            --teal: #2fd4aa;
+            --teal-dim: rgba(47, 212, 170, 0.12);
+            --teal-border: rgba(47, 212, 170, 0.35);
+
+            --amber: #e0a732;
+            --amber-dim: rgba(224, 167, 50, 0.12);
+            --amber-border: rgba(224, 167, 50, 0.35);
+
+            --border: rgba(255, 255, 255, 0.08);
+            --border-strong: rgba(255, 255, 255, 0.15);
+
+            --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-sans);
+            transition: background 0.3s, color 0.3s;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            background: var(--bg-elevated);
+            border-right: 1px solid var(--border);
+            padding: 24px 20px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        .sidebar-logo {
+            height: 28px;
+            margin-bottom: 20px;
+            filter: var(--logo-filter, none);
+        }
+        .sidebar-title {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+        .sidebar-section {
+            margin-bottom: 24px;
+        }
+        .sidebar-label {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        .sidebar-value {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--purple);
+            margin-bottom: 4px;
+        }
+        .sidebar input[type="range"] {
+            width: 100%;
+            margin: 6px 0;
+            accent-color: var(--purple);
+        }
+        .sidebar-ticks {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            color: var(--text-muted);
+        }
+        .sidebar-select {
+            width: 100%;
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            padding: 8px 10px;
+            cursor: pointer;
+        }
+        .sidebar-select:focus { outline: none; border-color: var(--purple-border); }
+        .sidebar-divider {
+            border: none;
+            border-top: 1px solid var(--border);
+            margin: 20px 0;
+        }
+        .emode-info {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+        .emode-info span { color: var(--text); font-weight: 600; }
+
+        .status-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        .status-dot--live { background: var(--teal); }
+        .status-dot--loading { background: var(--amber); animation: pulse 1.2s infinite; }
+        .status-dot--error { background: var(--coral); }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        .data-status {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        /* ── Main ── */
+        .main {
+            padding: 28px 36px 64px;
+            max-width: 1100px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 28px;
+        }
+        .header h1 {
+            font-family: var(--font-mono);
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .header .subtitle {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            max-width: 680px;
+            line-height: 1.55;
+        }
+        .header-controls {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        .dark-toggle, .refresh-btn {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 11px;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .dark-toggle:hover, .refresh-btn:hover { color: var(--text-secondary); border-color: var(--border-strong); }
+        .refresh-btn.loading { opacity: 0.6; pointer-events: none; }
+
+        .section-title {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 14px;
+        }
+        .section-divider {
+            border: none;
+            border-top: 1px solid var(--border-strong);
+            margin: 28px 0 20px;
+        }
+
+        /* ── Strategy Cards (Panel 1) ── */
+        .strategy-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-bottom: 24px;
+        }
+        .strategy-card {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 18px 20px;
+            box-shadow: var(--shadow);
+            transition: box-shadow 0.2s;
+        }
+        .strategy-card:hover { box-shadow: var(--shadow-hover); }
+        .strategy-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .strategy-name {
+            font-family: var(--font-mono);
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+        .strategy-badge {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+        .strategy-badge--green { background: var(--teal-dim); color: var(--teal); border: 1px solid var(--teal-border); }
+        .strategy-badge--yellow { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber-border); }
+        .strategy-badge--red { background: var(--coral-dim); color: var(--coral); border: 1px solid var(--coral-border); }
+        .strategy-row {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            padding: 4px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .strategy-row:last-child { border-bottom: none; }
+        .strategy-row-label { color: var(--text-muted); }
+        .strategy-row-value { font-weight: 600; color: var(--text); }
+        .strategy-row-value.highlight { color: var(--purple); }
+        .strategy-twyne-section {
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 2px solid var(--purple-border);
+        }
+        .strategy-twyne-label {
+            font-family: var(--font-mono);
+            font-size: 0.6rem;
+            font-weight: 700;
+            color: var(--purple);
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 6px;
+        }
+
+        /* ── Two-Col Grid ── */
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        /* ── Panel Card ── */
+        .panel {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            padding: 20px 24px;
+            box-shadow: var(--shadow);
+        }
+        .panel-title {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+        }
+        .chart-wrapper { position: relative; height: 280px; }
+
+        /* ── Table ── */
+        .table-wrap {
+            overflow-x: auto;
+            margin-bottom: 24px;
+        }
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+        .data-table th {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            padding: 10px 14px;
+            text-align: right;
+            border-bottom: 1px solid var(--border-strong);
+        }
+        .data-table th:first-child { text-align: left; }
+        .data-table td {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            font-weight: 500;
+            padding: 8px 14px;
+            text-align: right;
+            border-bottom: 1px solid var(--border);
+            font-variant-numeric: tabular-nums;
+        }
+        .data-table td:first-child { text-align: left; font-weight: 600; }
+        .data-table tr:hover td { background: var(--purple-dim); }
+        .td-purple { color: var(--purple); font-weight: 700 !important; }
+        .td-teal { color: var(--teal); }
+        .td-coral { color: var(--coral); }
+        .td-amber { color: var(--amber); }
+
+        /* ── Yield Calculator ── */
+        .calc-inputs {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .calc-field label {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .calc-field input {
+            width: 100%;
+            font-family: var(--font-mono);
+            font-size: 0.88rem;
+            font-weight: 500;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            color: var(--text);
+            padding: 8px 10px;
+            -moz-appearance: textfield;
+        }
+        .calc-field input::-webkit-outer-spin-button,
+        .calc-field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .calc-field input:focus { outline: none; border-color: var(--purple-border); }
+        .calc-results {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .calc-result-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 16px;
+            text-align: center;
+        }
+        .calc-result-label {
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+        .calc-result-value {
+            font-family: var(--font-mono);
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        .calc-result-detail {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        /* ── Revenue Table ── */
+        .revenue-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+        .revenue-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+        }
+        .revenue-card-title {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 12px;
+        }
+        .revenue-card--conservative .revenue-card-title { color: var(--text-muted); }
+        .revenue-card--base .revenue-card-title { color: var(--purple); }
+        .revenue-card--aggressive .revenue-card-title { color: var(--teal); }
+        .revenue-line {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            padding: 5px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .revenue-line:last-child { border-bottom: none; }
+        .revenue-line-label { color: var(--text-muted); }
+        .revenue-line-value { font-weight: 600; }
+
+        .revenue-sliders {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .revenue-slider-label {
+            font-family: var(--font-mono);
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .revenue-slider-value {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--purple);
+            margin-bottom: 4px;
+        }
+        .revenue-slider-wrap input[type="range"] {
+            width: 100%;
+            accent-color: var(--purple);
+        }
+
+        /* ── Loading skeleton ── */
+        .skeleton {
+            background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-elevated) 50%, var(--bg-card) 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+            border-radius: var(--radius);
+        }
+        @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+        .skeleton-line { height: 16px; margin-bottom: 8px; }
+        .skeleton-chart { height: 280px; }
+
+        /* ── Tooltip ── */
+        .tooltip-trigger {
+            border-bottom: 1px dotted var(--text-muted);
+            cursor: help;
+            position: relative;
+        }
+        .tooltip-trigger:hover::after {
+            content: attr(data-tip);
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius);
+            padding: 6px 10px;
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            z-index: 100;
+            box-shadow: var(--shadow-hover);
+        }
+
+        /* ── Footer ── */
+        .footer {
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+            color: var(--text-muted);
+            line-height: 1.6;
+            margin-top: 32px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .layout { grid-template-columns: 1fr; }
+            .sidebar {
+                position: static;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+            .main { padding: 20px 16px 48px; }
+            .strategy-grid { grid-template-columns: 1fr; }
+            .two-col { grid-template-columns: 1fr; }
+            .calc-inputs { grid-template-columns: repeat(2, 1fr); }
+            .calc-results { grid-template-columns: 1fr; }
+            .revenue-grid { grid-template-columns: 1fr; }
+            .revenue-sliders { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div class="layout">
+
+    <!-- ════════ SIDEBAR ════════ -->
+    <aside class="sidebar">
+        <img src="icons/twyne_logo_white_full.png" alt="Twyne" class="sidebar-logo">
+        <div class="sidebar-title">Market Size Dashboard</div>
+
+        <div class="sidebar-section">
+            <div class="data-status" id="dataStatus">
+                <span class="status-dot status-dot--loading"></span> Loading data...
+            </div>
+        </div>
+
+        <div class="sidebar-section">
+            <div class="sidebar-label">Twyne Liquidation LTV</div>
+            <div class="sidebar-value" id="twyneLtvDisplay">95.0%</div>
+            <input type="range" id="twyneLtvSlider" min="93" max="98" step="0.5" value="95">
+            <div class="sidebar-ticks"><span>93%</span><span>95.5%</span><span>98%</span></div>
+        </div>
+
+        <hr class="sidebar-divider">
+
+        <div class="sidebar-section">
+            <div class="sidebar-label">E-Mode Category</div>
+            <select class="sidebar-select" id="emodeSelect">
+                <option value="all">All E-Modes</option>
+            </select>
+        </div>
+
+        <hr class="sidebar-divider">
+
+        <div class="sidebar-section" id="emodeInfoPanel">
+            <div class="sidebar-label">Selected E-Mode Parameters</div>
+            <div class="emode-info" id="emodeInfo">Select an E-mode above</div>
+        </div>
+
+        <hr class="sidebar-divider">
+
+        <div class="sidebar-section">
+            <div class="sidebar-label">Data Sources</div>
+            <div class="emode-info">
+                <span class="status-dot status-dot--live" id="aaveStatusDot"></span> Aave RPC<br>
+                <span class="status-dot status-dot--live" id="llamaStatusDot"></span> DefiLlama API<br>
+                <span class="status-dot status-dot--live" id="pendleStatusDot"></span> Pendle API
+            </div>
+        </div>
+    </aside>
+
+    <!-- ════════ MAIN ════════ -->
+    <main class="main">
+
+        <div class="header">
+            <div>
+                <h1>PT/Ethena Loop Market Opportunity</h1>
+                <div class="subtitle">
+                    PT and Ethena-based looping strategies on Aave represent a multi-billion dollar market.
+                    Twyne's higher <span class="tooltip-trigger" data-tip="Loan-to-Value: ratio of borrowed amount to collateral">LTV</span>
+                    widens the profitable spread range, keeping positions viable even when yield spreads compress.
+                </div>
+            </div>
+            <div class="header-controls">
+                <button class="refresh-btn" id="refreshBtn" onclick="refreshData()">
+                    <span id="refreshIcon">&#8635;</span> <span id="refreshLabel">Refresh</span>
+                </button>
+                <button class="dark-toggle" onclick="toggleDark()">
+                    <span id="darkIcon">&#9790;</span> <span id="darkLabel">Dark</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ── Panel 1: Loop Strategy Overview ── -->
+        <div class="section-title">Loop Strategy Overview</div>
+        <div class="strategy-grid" id="strategyGrid">
+            <div class="strategy-card"><div class="skeleton skeleton-line" style="height:160px;"></div></div>
+            <div class="strategy-card"><div class="skeleton skeleton-line" style="height:160px;"></div></div>
+            <div class="strategy-card"><div class="skeleton skeleton-line" style="height:160px;"></div></div>
+        </div>
+
+        <!-- ── Panel 2 & 3: Waterfall + E-Mode Table ── -->
+        <div class="two-col">
+            <!-- Panel 2: Market Size Waterfall -->
+            <div class="panel">
+                <div class="panel-title">Market Size Funnel</div>
+                <div class="chart-wrapper" id="waterfallChartWrap">
+                    <canvas id="waterfallChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Panel 3: E-Mode Comparison Table -->
+            <div class="panel" style="padding:0; overflow:hidden;">
+                <div class="panel-title" style="padding:20px 20px 0;">E-Mode Comparison</div>
+                <div class="table-wrap" style="padding:0 4px 4px;">
+                    <table class="data-table" id="emodeTable">
+                        <thead>
+                            <tr>
+                                <th>E-Mode</th>
+                                <th><span class="tooltip-trigger" data-tip="Loan-to-Value ratio">LTV</span></th>
+                                <th><span class="tooltip-trigger" data-tip="Liquidation Threshold">Liq Thr</span></th>
+                                <th>Aave Lev</th>
+                                <th>Twyne Lev</th>
+                                <th>Delta</th>
+                            </tr>
+                        </thead>
+                        <tbody id="emodeTableBody">
+                            <tr><td colspan="6"><div class="skeleton skeleton-line"></div></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Panel 4: Loop Yield Calculator ── -->
+        <hr class="section-divider">
+        <div class="section-title">Loop Yield Calculator</div>
+        <div class="panel" style="margin-bottom:24px;">
+            <div class="calc-inputs">
+                <div class="calc-field">
+                    <label><span class="tooltip-trigger" data-tip="Pendle PT implied APY at maturity">PT Yield (%)</span></label>
+                    <input type="number" id="calcPtYield" value="8.0" step="0.1" oninput="updateCalc()">
+                </div>
+                <div class="calc-field">
+                    <label><span class="tooltip-trigger" data-tip="Aave variable borrow rate for stablecoin">Borrow Rate (%)</span></label>
+                    <input type="number" id="calcBorrowRate" value="5.0" step="0.1" oninput="updateCalc()">
+                </div>
+                <div class="calc-field">
+                    <label><span class="tooltip-trigger" data-tip="Aave E-mode LTV for this strategy">Aave LTV (%)</span></label>
+                    <input type="number" id="calcAaveLtv" value="89.5" step="0.5" oninput="updateCalc()">
+                </div>
+                <div class="calc-field">
+                    <label><span class="tooltip-trigger" data-tip="Twyne boosted liquidation LTV">Twyne LTV (%)</span></label>
+                    <input type="number" id="calcTwyneLtv" value="95.0" step="0.5" oninput="updateCalc()">
+                </div>
+            </div>
+            <div class="calc-results" id="calcResults">
+                <div class="calc-result-card">
+                    <div class="calc-result-label">Net Spread</div>
+                    <div class="calc-result-value" id="calcSpread" style="color:var(--teal);">3.00%</div>
+                    <div class="calc-result-detail">PT yield - Borrow rate</div>
+                </div>
+                <div class="calc-result-card">
+                    <div class="calc-result-label">Aave Leveraged Yield</div>
+                    <div class="calc-result-value" id="calcAaveYield" style="color:var(--coral);">28.6%</div>
+                    <div class="calc-result-detail" id="calcAaveLevDetail">9.52x leverage</div>
+                </div>
+                <div class="calc-result-card">
+                    <div class="calc-result-label">Twyne Leveraged Yield</div>
+                    <div class="calc-result-value td-purple" id="calcTwyneYield">60.0%</div>
+                    <div class="calc-result-detail" id="calcTwyneLevDetail">20.0x leverage</div>
+                </div>
+            </div>
+            <div class="chart-wrapper" style="height:220px;">
+                <canvas id="yieldCompareChart"></canvas>
+            </div>
+        </div>
+
+        <!-- ── Panel 5 & 6: Historical + Revenue ── -->
+        <div class="two-col">
+            <!-- Panel 5: Historical Context -->
+            <div class="panel">
+                <div class="panel-title">Historical: Ethena on Aave & Yield Spread</div>
+                <div class="chart-wrapper" id="historicalChartWrap">
+                    <canvas id="historicalChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Panel 6: Revenue Projection -->
+            <div class="panel">
+                <div class="panel-title">Revenue Projection</div>
+                <div class="revenue-sliders">
+                    <div>
+                        <div class="revenue-slider-label">Addressable Market ($B)</div>
+                        <div class="revenue-slider-value" id="revMarketDisplay">$2.0B</div>
+                        <div class="revenue-slider-wrap">
+                            <input type="range" id="revMarketSlider" min="0.5" max="6" step="0.5" value="2" oninput="updateRevenue()">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="revenue-slider-label">Avg Siphoning Rate</div>
+                        <div class="revenue-slider-value" id="revSiphonDisplay">3.0%</div>
+                        <div class="revenue-slider-wrap">
+                            <input type="range" id="revSiphonSlider" min="1" max="8" step="0.5" value="3" oninput="updateRevenue()">
+                        </div>
+                    </div>
+                </div>
+                <div class="revenue-grid" id="revenueGrid"></div>
+            </div>
+        </div>
+
+        <div class="footer">
+            Data from Aave V3 on-chain (UiPoolDataProvider), DefiLlama, and Pendle APIs.
+            E-mode LTVs are dynamic — adjusted by Chaos Labs Risk Oracle as PT maturity approaches.
+            Twyne leverage assumes <code>beta_safe = 0.95</code>. All yields are annualized, pre-fee.
+            Last refreshed: <span id="lastRefresh">—</span>
+        </div>
+
+    </main>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   Constants & Config
+   ═══════════════════════════════════════════════════════════════ */
+const FONT = "'IBM Plex Mono', monospace";
+const POOL_ADDRESSES_PROVIDER = '0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e';
+const UI_POOL_DATA_PROVIDER   = '0x56b7A1012765C285afAC8b8F25C69Bf10ccfE978';
+
+const RPC_URLS = [
+    'https://eth.llamarpc.com',
+    'https://cloudflare-eth.com',
+    'https://rpc.ankr.com/eth'
+];
+
+const UI_POOL_ABI = [
+    {
+        "inputs": [{"name": "provider", "type": "address"}],
+        "name": "getReservesData",
+        "outputs": [
+            {"components": [
+                {"name": "underlyingAsset", "type": "address"},
+                {"name": "name", "type": "string"},
+                {"name": "symbol", "type": "string"},
+                {"name": "decimals", "type": "uint256"},
+                {"name": "baseLTVasCollateral", "type": "uint256"},
+                {"name": "reserveLiquidationThreshold", "type": "uint256"},
+                {"name": "reserveLiquidationBonus", "type": "uint256"},
+                {"name": "usageAsCollateralEnabled", "type": "bool"},
+                {"name": "borrowingEnabled", "type": "bool"},
+                {"name": "isActive", "type": "bool"},
+                {"name": "isFrozen", "type": "bool"},
+                {"name": "liquidityIndex", "type": "uint128"},
+                {"name": "variableBorrowIndex", "type": "uint128"},
+                {"name": "liquidityRate", "type": "uint128"},
+                {"name": "variableBorrowRate", "type": "uint128"},
+                {"name": "lastUpdateTimestamp", "type": "uint40"},
+                {"name": "aTokenAddress", "type": "address"},
+                {"name": "variableDebtTokenAddress", "type": "address"},
+                {"name": "interestRateStrategyAddress", "type": "address"},
+                {"name": "availableLiquidity", "type": "uint256"},
+                {"name": "totalScaledVariableDebt", "type": "uint256"},
+                {"name": "priceInMarketReferenceCurrency", "type": "uint256"},
+                {"name": "priceOracle", "type": "address"},
+                {"name": "variableRateSlope1", "type": "uint256"},
+                {"name": "variableRateSlope2", "type": "uint256"},
+                {"name": "baseVariableBorrowRate", "type": "uint256"},
+                {"name": "optimalUsageRatio", "type": "uint256"},
+                {"name": "isPaused", "type": "bool"},
+                {"name": "isSiloedBorrowing", "type": "bool"},
+                {"name": "accruedToTreasury", "type": "uint128"},
+                {"name": "unbacked", "type": "uint128"},
+                {"name": "isolationModeTotalDebt", "type": "uint128"},
+                {"name": "flashLoanEnabled", "type": "bool"},
+                {"name": "debtCeiling", "type": "uint256"},
+                {"name": "debtCeilingDecimals", "type": "uint256"},
+                {"name": "eModeCategoryId", "type": "uint8"},
+                {"name": "borrowCap", "type": "uint256"},
+                {"name": "supplyCap", "type": "uint256"},
+                {"name": "eModeLtv", "type": "uint16"},
+                {"name": "eModeLiquidationThreshold", "type": "uint16"},
+                {"name": "eModeLiquidationBonus", "type": "uint16"},
+                {"name": "eModeLabel", "type": "string"},
+                {"name": "borrowableInIsolation", "type": "bool"},
+                {"name": "virtualAccActive", "type": "bool"},
+                {"name": "virtualUnderlyingBalance", "type": "uint128"}
+            ], "name": "", "type": "tuple[]"},
+            {"components": [
+                {"name": "marketReferenceCurrencyUnit", "type": "uint256"},
+                {"name": "marketReferenceCurrencyPriceInUsd", "type": "int256"},
+                {"name": "networkBaseTokenPriceInUsd", "type": "int256"},
+                {"name": "networkBaseTokenPriceDecimals", "type": "uint8"}
+            ], "name": "", "type": "tuple"}
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [{"name": "provider", "type": "address"}],
+        "name": "getEModes",
+        "outputs": [
+            {"components": [
+                {"name": "id", "type": "uint8"},
+                {"name": "ltv", "type": "uint16"},
+                {"name": "liquidationThreshold", "type": "uint16"},
+                {"name": "liquidationBonus", "type": "uint16"},
+                {"name": "label", "type": "string"},
+                {"name": "collateralBitmap", "type": "uint128"},
+                {"name": "borrowableBitmap", "type": "uint128"}
+            ], "name": "", "type": "tuple[]"}
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    }
+];
+
+/* Fallback E-mode data if RPC fails */
+const FALLBACK_EMODES = [
+    { id: 1, label: 'Stablecoins', ltv: 9700, liquidationThreshold: 9750, liquidationBonus: 10100 },
+    { id: 2, label: 'ETH correlated', ltv: 9300, liquidationThreshold: 9500, liquidationBonus: 10100 },
+    { id: 6, label: 'sUSDe Stablecoins', ltv: 9000, liquidationThreshold: 9200, liquidationBonus: 10300 },
+    { id: 8, label: 'PT-sUSDe Stablecoins', ltv: 8950, liquidationThreshold: 9150, liquidationBonus: 10450 },
+    { id: 9, label: 'PT-eUSDe/USDe Stablecoins', ltv: 9120, liquidationThreshold: 9320, liquidationBonus: 10260 },
+    { id: 10, label: 'PT-srUSDe Stablecoins', ltv: 8950, liquidationThreshold: 9150, liquidationBonus: 10450 },
+    { id: 11, label: 'PT-srUSDe USDe', ltv: 9120, liquidationThreshold: 9320, liquidationBonus: 10260 },
+];
+
+/* ═══════════════════════════════════════════════════════════════
+   State
+   ═══════════════════════════════════════════════════════════════ */
+let DATA = {
+    emodes: [],
+    reserves: [],
+    aaveTvl: null,
+    pendleMarkets: [],
+    yields: [],
+    rpcLive: false,
+    llamaLive: false,
+    pendleLive: false,
+};
+
+let charts = {};
+
+/* ═══════════════════════════════════════════════════════════════
+   Data Fetching
+   ═══════════════════════════════════════════════════════════════ */
+async function tryRpc(urls) {
+    for (const url of urls) {
+        try {
+            const provider = new ethers.JsonRpcProvider(url);
+            await provider.getBlockNumber(); // quick connectivity check
+            return provider;
+        } catch (e) { continue; }
+    }
+    return null;
+}
+
+async function fetchAaveData() {
+    try {
+        const provider = await tryRpc(RPC_URLS);
+        if (!provider) throw new Error('All RPCs failed');
+
+        const contract = new ethers.Contract(UI_POOL_DATA_PROVIDER, UI_POOL_ABI, provider);
+        const [reservesResult, emodesResult] = await Promise.all([
+            contract.getReservesData(POOL_ADDRESSES_PROVIDER),
+            contract.getEModes(POOL_ADDRESSES_PROVIDER),
+        ]);
+
+        const [reserves, baseCurrency] = reservesResult;
+        DATA.reserves = reserves.map(r => ({
+            symbol: r.symbol,
+            decimals: Number(r.decimals),
+            ltv: Number(r.baseLTVasCollateral) / 100,
+            liqThreshold: Number(r.reserveLiquidationThreshold) / 100,
+            supplyAPY: Number(r.liquidityRate) / 1e27 * 100,
+            borrowAPY: Number(r.variableBorrowRate) / 1e27 * 100,
+            availableLiquidity: Number(r.availableLiquidity),
+            totalDebt: Number(r.totalScaledVariableDebt),
+            eModeCategoryId: Number(r.eModeCategoryId),
+            priceUsd: Number(r.priceInMarketReferenceCurrency),
+            supplyCap: Number(r.supplyCap),
+            borrowCap: Number(r.borrowCap),
+            active: r.isActive,
+            borrowingEnabled: r.borrowingEnabled,
+        }));
+
+        DATA.emodes = emodesResult
+            .filter(e => Number(e.id) > 0)
+            .map(e => ({
+                id: Number(e.id),
+                label: e.label,
+                ltv: Number(e.ltv),
+                liquidationThreshold: Number(e.liquidationThreshold),
+                liquidationBonus: Number(e.liquidationBonus),
+            }));
+
+        DATA.rpcLive = true;
+        setSourceStatus('aaveStatusDot', 'live');
+    } catch (err) {
+        console.warn('Aave RPC failed, using fallback:', err.message);
+        DATA.emodes = FALLBACK_EMODES;
+        DATA.rpcLive = false;
+        setSourceStatus('aaveStatusDot', 'error');
+    }
+}
+
+async function fetchDefiLlama() {
+    try {
+        const [tvlRes, yieldsRes] = await Promise.all([
+            fetch('https://api.llama.fi/protocol/aave').then(r => r.json()),
+            fetch('https://yields.llama.fi/pools').then(r => r.json()),
+        ]);
+        DATA.aaveTvl = tvlRes;
+        DATA.yields = yieldsRes.data || [];
+        DATA.llamaLive = true;
+        setSourceStatus('llamaStatusDot', 'live');
+    } catch (err) {
+        console.warn('DefiLlama failed:', err.message);
+        DATA.llamaLive = false;
+        setSourceStatus('llamaStatusDot', 'error');
+    }
+}
+
+async function fetchPendle() {
+    try {
+        const res = await fetch('https://api-v2.pendle.finance/core/v1/1/markets/active').then(r => r.json());
+        DATA.pendleMarkets = (res.results || []).filter(m => {
+            const name = (m.pt?.name || m.pt?.symbol || m.name || '').toLowerCase();
+            return /susde|eusde|usde|srusde/.test(name);
+        });
+        DATA.pendleLive = true;
+        setSourceStatus('pendleStatusDot', 'live');
+    } catch (err) {
+        console.warn('Pendle failed:', err.message);
+        DATA.pendleLive = false;
+        setSourceStatus('pendleStatusDot', 'error');
+    }
+}
+
+function setSourceStatus(dotId, status) {
+    const dot = document.getElementById(dotId);
+    if (!dot) return;
+    dot.className = 'status-dot status-dot--' + status;
+}
+
+async function fetchAllData() {
+    setStatus('loading', 'Fetching data...');
+    await Promise.all([fetchAaveData(), fetchDefiLlama(), fetchPendle()]);
+    const live = [DATA.rpcLive, DATA.llamaLive, DATA.pendleLive].filter(Boolean).length;
+    setStatus(live === 3 ? 'live' : live > 0 ? 'live' : 'error',
+        live === 3 ? 'All sources live' : `${live}/3 sources live`);
+    document.getElementById('lastRefresh').textContent = new Date().toLocaleTimeString();
+}
+
+function setStatus(type, text) {
+    const el = document.getElementById('dataStatus');
+    const cls = type === 'live' ? 'live' : type === 'loading' ? 'loading' : 'error';
+    el.innerHTML = `<span class="status-dot status-dot--${cls}"></span> ${text}`;
+}
+
+async function refreshData() {
+    const btn = document.getElementById('refreshBtn');
+    btn.classList.add('loading');
+    document.getElementById('refreshLabel').textContent = 'Loading...';
+    await fetchAllData();
+    renderAll();
+    btn.classList.remove('loading');
+    document.getElementById('refreshLabel').textContent = 'Refresh';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Rendering
+   ═══════════════════════════════════════════════════════════════ */
+function getTwyneLtv() {
+    return parseFloat(document.getElementById('twyneLtvSlider').value);
+}
+
+function leverage(ltv) {
+    return ltv >= 100 ? Infinity : 1 / (1 - ltv / 100);
+}
+
+function fmt(n, d) {
+    if (!isFinite(n)) return '---';
+    return d === undefined ? n.toLocaleString() : n.toFixed(d);
+}
+function fmtB(n) {
+    if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + 'B';
+    if (n >= 1e6) return '$' + (n / 1e6).toFixed(0) + 'M';
+    return '$' + n.toLocaleString();
+}
+
+function COL() {
+    const dk = document.documentElement.classList.contains('dark');
+    return {
+        purple: dk ? '#a970e0' : '#7B2CBF',
+        coral:  dk ? '#e07050' : '#c75050',
+        teal:   dk ? '#2fd4aa' : '#0fa67f',
+        amber:  dk ? '#e0a732' : '#c78a20',
+        text:   dk ? '#e8eaed' : '#1a1a2e',
+        muted:  dk ? '#8a8ea0' : '#6a6a8a',
+        grid:   dk ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+        bg:     dk ? '#2a2a4a' : '#ffffff',
+    };
+}
+
+/* ─── Panel 1: Strategy Cards ─── */
+function renderStrategyCards() {
+    const grid = document.getElementById('strategyGrid');
+    const twyneLtv = getTwyneLtv();
+
+    // Find relevant borrow rate (USDC on Aave)
+    const usdcReserve = DATA.reserves.find(r => r.symbol === 'USDC') || {};
+    const borrowRate = usdcReserve.borrowAPY || 5.0;
+
+    // Find sUSDe yield from DefiLlama
+    const susdePool = DATA.yields.find(p => p.pool === '66985a81-9c51-46ca-9977-42b4fe7bc6df');
+    const susdeApy = susdePool ? susdePool.apy : 12;
+
+    // Find best PT yield from Pendle
+    const bestPt = DATA.pendleMarkets.reduce((best, m) => {
+        const apy = (m.impliedApy || 0) * 100;
+        return apy > (best?.apy || 0) ? { name: m.pt?.symbol || m.pt?.name || 'PT', apy, expiry: m.expiry } : best;
+    }, null);
+    const ptYield = bestPt ? bestPt.apy : 8;
+
+    const strategies = [
+        {
+            name: 'PT-sUSDe Loop',
+            collateral: 'PT-sUSDe',
+            borrow: 'USDC/USDT',
+            aaveLtv: 89.5,
+            yield: ptYield,
+            description: 'Deposit PT-sUSDe, borrow stablecoins',
+        },
+        {
+            name: 'sUSDe Carry',
+            collateral: 'sUSDe',
+            borrow: 'USDC/USDS',
+            aaveLtv: 90,
+            yield: susdeApy,
+            description: 'Deposit sUSDe, borrow stablecoins',
+        },
+        {
+            name: 'PT-eUSDe/USDe Loop',
+            collateral: 'PT-eUSDe',
+            borrow: 'USDe',
+            aaveLtv: 91.2,
+            yield: ptYield * 0.95,
+            description: 'Deposit PT-eUSDe, borrow USDe',
+        },
+    ];
+
+    grid.innerHTML = strategies.map(s => {
+        const spread = s.yield - borrowRate;
+        const aaveLev = leverage(s.aaveLtv);
+        const twyneLev = leverage(twyneLtv);
+        const aaveYield = spread * aaveLev;
+        const twyneYield = spread * twyneLev;
+
+        const status = spread > 2 ? 'green' : spread > 0 ? 'yellow' : 'red';
+        const statusText = spread > 2 ? 'Profitable' : spread > 0 ? 'Marginal' : 'Unprofitable';
+
+        return `<div class="strategy-card">
+            <div class="strategy-card-header">
+                <div class="strategy-name">${s.name}</div>
+                <div class="strategy-badge strategy-badge--${status}">${statusText}</div>
+            </div>
+            <div class="strategy-row">
+                <span class="strategy-row-label">Collateral</span>
+                <span class="strategy-row-value">${s.collateral}</span>
+            </div>
+            <div class="strategy-row">
+                <span class="strategy-row-label">Borrow</span>
+                <span class="strategy-row-value">${s.borrow}</span>
+            </div>
+            <div class="strategy-row">
+                <span class="strategy-row-label">Aave E-Mode LTV</span>
+                <span class="strategy-row-value">${fmt(s.aaveLtv, 1)}%</span>
+            </div>
+            <div class="strategy-row">
+                <span class="strategy-row-label">Yield Spread</span>
+                <span class="strategy-row-value" style="color:var(--${spread > 0 ? 'teal' : 'coral'})">${fmt(spread, 2)}%</span>
+            </div>
+            <div class="strategy-row">
+                <span class="strategy-row-label">Aave Lev Yield</span>
+                <span class="strategy-row-value">${fmt(aaveYield, 1)}%</span>
+            </div>
+            <div class="strategy-twyne-section">
+                <div class="strategy-twyne-label">With Twyne (${fmt(twyneLtv, 1)}%)</div>
+                <div class="strategy-row">
+                    <span class="strategy-row-label">Leverage</span>
+                    <span class="strategy-row-value highlight">${fmt(twyneLev, 1)}x</span>
+                </div>
+                <div class="strategy-row">
+                    <span class="strategy-row-label">Leveraged Yield</span>
+                    <span class="strategy-row-value highlight">${fmt(twyneYield, 1)}%</span>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+/* ─── Panel 2: Market Size Waterfall ─── */
+function renderWaterfallChart() {
+    const ctx = document.getElementById('waterfallChart');
+    if (charts.waterfall) charts.waterfall.destroy();
+
+    // Extract data from DefiLlama or use estimates
+    const aaveTvlTotal = DATA.aaveTvl?.currentChainTvls?.Ethereum || DATA.aaveTvl?.tvl?.[DATA.aaveTvl.tvl.length - 1]?.totalLiquidityUSD || 15e9;
+
+    // Estimate Ethena footprint on Aave from reserves
+    const ethenaTokens = ['sUSDe', 'USDe'];
+    let ethenaOnAave = 0;
+    DATA.reserves.forEach(r => {
+        if (ethenaTokens.some(t => r.symbol.includes(t))) {
+            const total = (r.availableLiquidity + r.totalDebt) / (10 ** r.decimals);
+            ethenaOnAave += total * (r.priceUsd / 1e8); // price in 8 decimals
+        }
+    });
+    if (ethenaOnAave < 1e6) ethenaOnAave = 340e6; // fallback
+
+    // PT collateral estimate
+    const ptOnAave = ethenaOnAave * 0.4; // ~40% of Ethena is PTs (estimate)
+
+    // Idle borrowing power
+    const idleBorrowPower = ptOnAave * 0.15; // ~15% idle (conservative)
+
+    const c = COL();
+    const labels = ['DeFi Lending TVL', 'Ethena on Aave', 'PT Collateral', 'Idle Borrow Power'];
+    const values = [aaveTvlTotal, ethenaOnAave, ptOnAave, idleBorrowPower];
+
+    charts.waterfall = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                data: values,
+                backgroundColor: [c.muted + '44', c.amber + '88', c.purple + '88', c.teal + '88'],
+                borderColor: [c.muted, c.amber, c.purple, c.teal],
+                borderWidth: 1,
+                borderRadius: 4,
+            }],
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            indexAxis: 'y',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(26,26,46,0.94)',
+                    titleFont: { family: FONT, size: 11 },
+                    bodyFont: { family: FONT, size: 11 },
+                    callbacks: {
+                        label: (item) => fmtB(item.parsed.x),
+                    },
+                },
+            },
+            scales: {
+                x: {
+                    type: 'logarithmic',
+                    grid: { color: c.grid },
+                    ticks: {
+                        font: { family: FONT, size: 10 }, color: c.muted,
+                        callback: (v) => fmtB(v),
+                    },
+                },
+                y: {
+                    grid: { display: false },
+                    ticks: { font: { family: FONT, size: 10 }, color: c.muted },
+                },
+            },
+        },
+    });
+}
+
+/* ─── Panel 3: E-Mode Table ─── */
+function renderEmodeTable() {
+    const tbody = document.getElementById('emodeTableBody');
+    const twyneLtv = getTwyneLtv();
+    const twyneLev = leverage(twyneLtv);
+    const select = document.getElementById('emodeSelect');
+
+    // Populate select if not done
+    if (select.options.length <= 1) {
+        DATA.emodes.forEach(e => {
+            const opt = document.createElement('option');
+            opt.value = e.id;
+            opt.textContent = `${e.id}: ${e.label}`;
+            select.appendChild(opt);
+        });
+    }
+
+    const selectedId = select.value;
+    const filtered = selectedId === 'all' ? DATA.emodes : DATA.emodes.filter(e => e.id == selectedId);
+
+    tbody.innerHTML = filtered.map(e => {
+        const ltv = e.ltv / 100;
+        const liqThr = e.liquidationThreshold / 100;
+        const aaveLev = leverage(ltv);
+        const delta = twyneLev - aaveLev;
+
+        return `<tr>
+            <td>${e.label}</td>
+            <td>${fmt(ltv, 1)}%</td>
+            <td>${fmt(liqThr, 1)}%</td>
+            <td>${fmt(aaveLev, 1)}x</td>
+            <td class="td-purple">${fmt(twyneLev, 1)}x</td>
+            <td class="td-teal">+${fmt(delta, 1)}x</td>
+        </tr>`;
+    }).join('');
+
+    // Update sidebar info
+    if (selectedId !== 'all' && filtered.length > 0) {
+        const e = filtered[0];
+        const ltv = e.ltv / 100;
+        const liqThr = e.liquidationThreshold / 100;
+        const liqBonus = (e.liquidationBonus - 10000) / 100;
+        document.getElementById('emodeInfo').innerHTML =
+            `<span>LTV:</span> ${fmt(ltv, 2)}%<br>` +
+            `<span>Liq Threshold:</span> ${fmt(liqThr, 2)}%<br>` +
+            `<span>Liq Bonus:</span> ${fmt(liqBonus, 2)}%<br>` +
+            `<span>Max Leverage:</span> ${fmt(leverage(ltv), 2)}x<br>` +
+            `<span>Twyne Leverage:</span> <span style="color:var(--purple)">${fmt(twyneLev, 2)}x</span>`;
+    } else {
+        document.getElementById('emodeInfo').textContent = `${DATA.emodes.length} E-modes loaded`;
+    }
+}
+
+/* ─── Panel 4: Yield Calculator ─── */
+function updateCalc() {
+    const ptYield = parseFloat(document.getElementById('calcPtYield').value) || 0;
+    const borrowRate = parseFloat(document.getElementById('calcBorrowRate').value) || 0;
+    const aaveLtv = parseFloat(document.getElementById('calcAaveLtv').value) || 0;
+    const twyneLtv = parseFloat(document.getElementById('calcTwyneLtv').value) || getTwyneLtv();
+
+    const spread = ptYield - borrowRate;
+    const aaveLev = leverage(aaveLtv);
+    const twyneLev = leverage(twyneLtv);
+    const aaveYield = spread * aaveLev;
+    const twyneYield = spread * twyneLev;
+
+    document.getElementById('calcSpread').textContent = fmt(spread, 2) + '%';
+    document.getElementById('calcSpread').style.color = spread > 0 ? 'var(--teal)' : 'var(--coral)';
+    document.getElementById('calcAaveYield').textContent = fmt(aaveYield, 1) + '%';
+    document.getElementById('calcAaveLevDetail').textContent = fmt(aaveLev, 2) + 'x leverage';
+    document.getElementById('calcTwyneYield').textContent = fmt(twyneYield, 1) + '%';
+    document.getElementById('calcTwyneLevDetail').textContent = fmt(twyneLev, 2) + 'x leverage';
+
+    renderYieldCompareChart(aaveYield, twyneYield, spread, aaveLev, twyneLev);
+}
+
+function renderYieldCompareChart(aaveYield, twyneYield, spread, aaveLev, twyneLev) {
+    const ctx = document.getElementById('yieldCompareChart');
+    if (charts.yieldCompare) charts.yieldCompare.destroy();
+    const c = COL();
+
+    charts.yieldCompare = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Net Spread', 'Aave Leverage', 'Twyne Leverage', 'Aave Yield', 'Twyne Yield'],
+            datasets: [{
+                data: [spread, aaveLev, twyneLev, aaveYield, twyneYield],
+                backgroundColor: [
+                    c.teal + '88',
+                    c.coral + '88',
+                    c.purple + '88',
+                    c.coral + '88',
+                    c.purple + '88',
+                ],
+                borderColor: [c.teal, c.coral, c.purple, c.coral, c.purple],
+                borderWidth: 1,
+                borderRadius: 4,
+            }],
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(26,26,46,0.94)',
+                    titleFont: { family: FONT, size: 11 },
+                    bodyFont: { family: FONT, size: 11 },
+                    callbacks: {
+                        label: (item) => {
+                            const i = item.dataIndex;
+                            const v = item.parsed.y;
+                            if (i < 3) return i === 0 ? fmt(v, 2) + '%' : fmt(v, 1) + 'x';
+                            return fmt(v, 1) + '%';
+                        },
+                    },
+                },
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { family: FONT, size: 10 }, color: c.muted },
+                },
+                y: {
+                    grid: { color: c.grid },
+                    ticks: { font: { family: FONT, size: 10 }, color: c.muted },
+                },
+            },
+        },
+    });
+}
+
+/* ─── Panel 5: Historical Context ─── */
+function renderHistoricalChart() {
+    const ctx = document.getElementById('historicalChart');
+    if (charts.historical) charts.historical.destroy();
+    const c = COL();
+
+    if (!DATA.aaveTvl?.tvl?.length) {
+        // No historical data available
+        const wrap = document.getElementById('historicalChartWrap');
+        wrap.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;font-family:var(--font-mono);font-size:0.78rem;color:var(--text-muted);">Historical data unavailable — DefiLlama API offline</div>';
+        return;
+    }
+
+    // Get last 365 days of Aave TVL
+    const tvlData = DATA.aaveTvl.tvl.slice(-365);
+    const labels = tvlData.map(d => {
+        const date = new Date(d.date * 1000);
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    });
+    const tvlValues = tvlData.map(d => d.totalLiquidityUSD / 1e9);
+
+    // Get sUSDe APY history from yields (only current point, no history from this endpoint)
+    // We'll show TVL trend only since DefiLlama /pools doesn't give history
+
+    charts.historical = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Aave TVL ($B)',
+                data: tvlValues,
+                borderColor: c.purple,
+                backgroundColor: c.purple + '22',
+                fill: true,
+                tension: 0.3,
+                pointRadius: 0,
+                borderWidth: 2,
+            }],
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: { font: { family: FONT, size: 10 }, color: c.muted, boxWidth: 12 },
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(26,26,46,0.94)',
+                    titleFont: { family: FONT, size: 11 },
+                    bodyFont: { family: FONT, size: 11 },
+                    callbacks: {
+                        label: (item) => item.dataset.label + ': $' + fmt(item.parsed.y, 1) + 'B',
+                    },
+                },
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        font: { family: FONT, size: 9 }, color: c.muted,
+                        maxTicksLimit: 12,
+                    },
+                },
+                y: {
+                    grid: { color: c.grid },
+                    ticks: {
+                        font: { family: FONT, size: 10 }, color: c.muted,
+                        callback: (v) => '$' + v.toFixed(0) + 'B',
+                    },
+                },
+            },
+        },
+    });
+}
+
+/* ─── Panel 6: Revenue Projection ─── */
+function updateRevenue() {
+    const market = parseFloat(document.getElementById('revMarketSlider').value);
+    const siphon = parseFloat(document.getElementById('revSiphonSlider').value);
+
+    document.getElementById('revMarketDisplay').textContent = '$' + market.toFixed(1) + 'B';
+    document.getElementById('revSiphonDisplay').textContent = siphon.toFixed(1) + '%';
+
+    const scenarios = [
+        { name: 'Conservative', capture: 0.05, cls: 'conservative' },
+        { name: 'Base Case', capture: 0.15, cls: 'base' },
+        { name: 'Aggressive', capture: 0.30, cls: 'aggressive' },
+    ];
+
+    const grid = document.getElementById('revenueGrid');
+    grid.innerHTML = scenarios.map(s => {
+        const creditReserved = market * 1e9 * s.capture;
+        const annualFees = creditReserved * (siphon / 100);
+        const protocolRev = annualFees * 0.10; // 10% take rate assumption
+        const takeRate = 10;
+
+        return `<div class="revenue-card revenue-card--${s.cls}">
+            <div class="revenue-card-title">${s.name} (${(s.capture * 100).toFixed(0)}%)</div>
+            <div class="revenue-line">
+                <span class="revenue-line-label">Credit Reserved</span>
+                <span class="revenue-line-value">${fmtB(creditReserved)}</span>
+            </div>
+            <div class="revenue-line">
+                <span class="revenue-line-label">Annual Siphoning</span>
+                <span class="revenue-line-value">${fmtB(annualFees)}</span>
+            </div>
+            <div class="revenue-line">
+                <span class="revenue-line-label">Protocol Rev (${takeRate}%)</span>
+                <span class="revenue-line-value" style="color:var(--purple)">${fmtB(protocolRev)}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Master Render
+   ═══════════════════════════════════════════════════════════════ */
+function renderAll() {
+    renderStrategyCards();
+    renderWaterfallChart();
+    renderEmodeTable();
+    updateCalc();
+    renderHistoricalChart();
+    updateRevenue();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Event Handlers
+   ═══════════════════════════════════════════════════════════════ */
+document.getElementById('twyneLtvSlider').addEventListener('input', function() {
+    document.getElementById('twyneLtvDisplay').textContent = this.value + '%';
+    // Sync with calculator
+    document.getElementById('calcTwyneLtv').value = this.value;
+    renderAll();
+});
+
+document.getElementById('emodeSelect').addEventListener('change', function() {
+    renderEmodeTable();
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   Dark Mode
+   ═══════════════════════════════════════════════════════════════ */
+function toggleDark() {
+    document.documentElement.classList.toggle('dark');
+    const dk = document.documentElement.classList.contains('dark');
+    localStorage.setItem('theme', dk ? 'dark' : 'light');
+    document.getElementById('darkIcon').innerHTML = dk ? '&#9788;' : '&#9790;';
+    document.getElementById('darkLabel').textContent = dk ? 'Light' : 'Dark';
+    renderAll();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Init
+   ═══════════════════════════════════════════════════════════════ */
+(async function() {
+    // Dark mode default
+    if (localStorage.getItem('theme') !== 'light') {
+        document.documentElement.classList.add('dark');
+        document.getElementById('darkIcon').innerHTML = '&#9788;';
+        document.getElementById('darkLabel').textContent = 'Light';
+    }
+
+    await fetchAllData();
+    renderAll();
+})();
+</script>
+</body>
+</html>
