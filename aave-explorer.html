@@ -849,6 +849,7 @@ let _showAllRaw = false;
 let _activeCat = 'all';
 let _hideExpired = true;
 let _flowSelection = null; // { side: 'coll'|'borr', symbol: string }
+let _stakingYields = {}; // symbol -> APY% (from DeFiLlama)
 
 window._aaveData = {};
 
@@ -915,6 +916,113 @@ function isEmodeExpired(em) {
     const mat = getEmodeMaturity(em);
     if (!mat) return false; // non-PT E-modes never expire
     return mat < new Date();
+}
+
+/* ═══════ DeFiLlama Staking Yields ═══════ */
+// Maps Aave symbol → DeFiLlama project + pool symbol for native yield
+const YIELD_SOURCES = {
+    'wstETH':  { project: 'lido', pool: 'STETH' },
+    'cbETH':   { project: 'coinbase-wrapped-staked-eth', pool: 'CBETH' },
+    'rETH':    { project: 'rocket-pool', pool: 'RETH' },
+    'weETH':   { project: 'ether.fi-stake', pool: 'WEETH' },
+    'ezETH':   { project: 'renzo', pool: 'EZETH' },
+    'osETH':   { project: 'stakewise-v2', pool: 'OSETH' },
+    'rsETH':   { project: 'kelp', pool: 'RSETH' },
+    'ETHx':    { project: 'stader', pool: 'ETHX' },
+    'sUSDe':   { project: 'ethena-usde', pool: 'SUSDE' },
+    'USDe':    { project: 'ethena-usde', pool: 'SUSDE' }, // USDe yield = sUSDe staking rate
+    'eUSDe':   { project: 'ethena-usde', pool: 'SUSDE' },
+    'sUSDS':   { project: 'sky-lending', pool: 'SUSDS' },
+    'USDS':    { project: 'sky-lending', pool: 'SUSDS' },
+};
+
+async function fetchStakingYields() {
+    try {
+        const resp = await fetch('https://yields.llama.fi/pools');
+        const data = await resp.json();
+        const pools = data.data || [];
+
+        const yields = {};
+        for (const [symbol, source] of Object.entries(YIELD_SOURCES)) {
+            const match = pools.find(p =>
+                p.project === source.project &&
+                p.symbol === source.pool &&
+                p.chain === 'Ethereum' &&
+                p.tvlUsd > 1000000
+            );
+            if (match) {
+                yields[symbol] = match.apy || 0;
+            }
+        }
+
+        // tETH doesn't have its own — approximate with wstETH
+        if (yields['wstETH'] && !yields['tETH']) yields['tETH'] = yields['wstETH'];
+
+        console.log('Staking yields from DeFiLlama:', yields);
+        return yields;
+    } catch (e) {
+        console.warn('DeFiLlama fetch failed:', e.message);
+        return {};
+    }
+}
+
+// Compute net loop yield for an E-mode:
+// For non-PT: netYield = (stakingYield * L - borrowAPY * (L-1)) where L = 1/(1-LTV)
+// For PT: netYield ≈ (ptFixedYield * L - borrowAPY * (L-1))
+//   where ptFixedYield is annualized discount to par
+function computeNetLoopYield(em) {
+    const lev = em.maxLeverage;
+    if (lev <= 1) return null;
+
+    // Best collateral yield (highest staking/fixed yield among collateral assets)
+    let bestCollYield = 0;
+    let bestCollSymbol = '';
+    for (const a of em.collateralAssets) {
+        let y = 0;
+        if (a.symbol.startsWith('PT-')) {
+            // PT fixed yield: annualized discount from oracle price to underlying par
+            y = computePTFixedYield(a);
+        } else if (_stakingYields[a.symbol]) {
+            y = _stakingYields[a.symbol];
+        } else {
+            y = a.supplyAPY; // fallback to Aave supply APY
+        }
+        if (y > bestCollYield) { bestCollYield = y; bestCollSymbol = a.symbol; }
+    }
+
+    // Best borrow cost (lowest borrow APY)
+    let bestBorrAPY = Infinity;
+    let bestBorrSymbol = '';
+    for (const a of em.borrowableAssets) {
+        if (a.borrowAPY < bestBorrAPY) { bestBorrAPY = a.borrowAPY; bestBorrSymbol = a.symbol; }
+    }
+    if (bestBorrAPY === Infinity) return null;
+
+    const netYield = bestCollYield * lev - bestBorrAPY * (lev - 1);
+    return { netYield, collYield: bestCollYield, collSymbol: bestCollSymbol, borrowAPY: bestBorrAPY, borrSymbol: bestBorrSymbol, lev };
+}
+
+function computePTFixedYield(reserve) {
+    // Annualized yield from PT discount: (par - price) / price * (365 / daysToMaturity)
+    const mat = parseMaturityFromSymbol(reserve.symbol);
+    if (!mat) return 0;
+    const daysLeft = (mat - new Date()) / 86400000;
+    if (daysLeft <= 0) return 0;
+
+    // Find underlying price (the asset the PT converges to at maturity)
+    // PT-sUSDE → sUSDe, PT-USDe → USDe, PT-eUSDE → eUSDe, PT-srUSDe → sUSDe
+    let underlyingSymbol = 'USDe';
+    if (reserve.symbol.includes('sUSDE') || reserve.symbol.includes('srUSDe')) underlyingSymbol = 'sUSDe';
+    else if (reserve.symbol.includes('eUSDE')) underlyingSymbol = 'eUSDe';
+
+    const underlying = _parsedReserves.find(r => r.symbol === underlyingSymbol);
+    if (!underlying) return 0;
+
+    const discount = (underlying.priceUsd - reserve.priceUsd) / reserve.priceUsd;
+    if (discount <= 0) return 0;
+
+    // Annualize
+    return discount / (daysLeft / 365) * 100;
 }
 
 /* ═══════ RPC Connection ═══════ */
@@ -1079,10 +1187,14 @@ async function fetchData() {
         _baseCurrency = baseCurrency;
         _parsedReserves = parseReserves(rawReserves, baseCurrency);
 
-        statusEl.innerHTML = `<span class="dot dot--loading"></span> ${reservesCall.url.replace('https://', '')}<br>Block ${block.toLocaleString()} &middot; Fetching E-modes...`;
+        statusEl.innerHTML = `<span class="dot dot--loading"></span> ${reservesCall.url.replace('https://', '')}<br>Block ${block.toLocaleString()} &middot; Fetching E-modes + yields...`;
 
-        // Step 2: Fetch E-modes
-        const emodesCall = await tryCallOnRpcs('getEModes');
+        // Step 2: Fetch E-modes + DeFiLlama yields in parallel
+        const [emodesCall, stakingYields] = await Promise.all([
+            tryCallOnRpcs('getEModes'),
+            fetchStakingYields(),
+        ]);
+        _stakingYields = stakingYields;
         if (!emodesCall) {
             throw new Error('getEModes failed on all RPC endpoints. Try refreshing in a moment.');
         }
@@ -1103,6 +1215,7 @@ async function fetchData() {
             },
             rawReserves: rawReserves,
             rawEmodes: emodesCall.result,
+            stakingYields: _stakingYields,
             block,
             rpcUrl: rpcUsed,
             fetchedAt: new Date().toISOString(),
@@ -1465,8 +1578,15 @@ function renderEmodeGrouped() {
         const emodes = visible.filter(em => em.category === catKey);
         if (emodes.length === 0) return;
 
-        // Sort: highest leverage first
-        emodes.sort((a, b) => b.maxLeverage - a.maxLeverage);
+        // Sort: highest net yield first, fall back to leverage
+        emodes.sort((a, b) => {
+            const ya = computeNetLoopYield(a);
+            const yb = computeNetLoopYield(b);
+            const na = ya ? ya.netYield : -999;
+            const nb = yb ? yb.netYield : -999;
+            if (Math.abs(na - nb) > 0.1) return nb - na;
+            return b.maxLeverage - a.maxLeverage;
+        });
 
         const group = document.createElement('div');
         group.className = 'cat-group';
@@ -1488,17 +1608,18 @@ function renderEmodeGrouped() {
         tableWrap.className = 'table-section';
         tableWrap.style.marginBottom = '0';
 
-        const maturityCol = isPT ? '<col style="width:88px;">' : '';
+        const maturityCol = isPT ? '<col style="width:80px;">' : '';
         const maturityHeader = isPT ? '<th>Maturity</th>' : '';
 
         tableWrap.innerHTML = `<div class="table-wrap"><table>
             <colgroup>
-                <col style="width:34%;">
-                <col style="width:${isPT ? '18' : '22'}%;">
+                <col style="width:30%;">
+                <col style="width:${isPT ? '16' : '20'}%;">
+                <col style="width:68px;">
+                <col style="width:52px;">
                 <col style="width:72px;">
-                <col style="width:56px;">
-                <col style="width:76px;">
-                <col style="width:84px;">
+                <col style="width:72px;">
+                <col style="width:80px;">
                 ${maturityCol}
                 <col style="width:36px;">
             </colgroup>
@@ -1507,8 +1628,9 @@ function renderEmodeGrouped() {
                 <th style="text-align:left;">Borrow</th>
                 <th>Leverage</th>
                 <th>LTV</th>
-                <th>Borrow APY</th>
-                <th>Available</th>
+                <th>Coll Yield</th>
+                <th>Borr Cost</th>
+                <th>Net Yield</th>
                 ${maturityHeader}
                 <th></th>
             </tr></thead>
@@ -1534,16 +1656,16 @@ function renderEmodeGrouped() {
 
             const levClass = em.maxLeverage >= 12 ? 'lev-high' : em.maxLeverage >= 8 ? 'lev-mid' : 'lev-low';
 
-            // Weighted average borrow APY + total available liquidity across borrow assets
-            let totalBorrLiq = 0;
-            let weightedAPY = 0;
-            let totalDebtWeight = 0;
-            em.borrowableAssets.forEach(a => {
-                totalBorrLiq += a.availableLiquidity;
-                weightedAPY += a.borrowAPY * a.totalDebt;
-                totalDebtWeight += a.totalDebt;
-            });
-            const avgBorrAPY = totalDebtWeight > 0 ? weightedAPY / totalDebtWeight : (em.borrowableAssets[0]?.borrowAPY || 0);
+            // Compute net loop yield
+            const loopData = computeNetLoopYield(em);
+            const collYieldStr = loopData ? fmt(loopData.collYield, 2) + '%' : '—';
+            const borrCostStr = loopData ? fmt(loopData.borrowAPY, 2) + '%' : '—';
+            let netYieldStr = '—';
+            let netYieldClass = '';
+            if (loopData) {
+                netYieldStr = fmt(loopData.netYield, 1) + '%';
+                netYieldClass = loopData.netYield > 0 ? 'td-teal' : 'td-coral';
+            }
 
             // Maturity for PT rows
             let maturityCell = '';
@@ -1561,13 +1683,19 @@ function renderEmodeGrouped() {
                 }
             }
 
+            // Tooltip showing the formula
+            const netTitle = loopData
+                ? `${loopData.collSymbol} ${fmt(loopData.collYield, 2)}% × ${fmt(loopData.lev, 1)} − ${loopData.borrSymbol} ${fmt(loopData.borrowAPY, 2)}% × ${fmt(loopData.lev - 1, 1)}`
+                : '';
+
             tr.innerHTML = `
                 <td class="td-wrap" style="text-align:left;"><div class="asset-pills">${collPills}</div></td>
                 <td class="td-wrap" style="text-align:left;"><div class="asset-pills">${borrPills}</div></td>
                 <td><span class="leverage-val ${levClass}">${fmt(em.maxLeverage, 1)}x</span></td>
                 <td>${fmt(em.ltv, 1)}%</td>
-                <td class="td-amber">${fmt(avgBorrAPY, 2)}%</td>
-                <td>${fmtUsd(totalBorrLiq)}</td>
+                <td class="td-teal">${collYieldStr}</td>
+                <td class="td-amber">${borrCostStr}</td>
+                <td class="${netYieldClass}" title="${netTitle}" style="font-weight:700;">${netYieldStr}</td>
                 ${maturityCell}
                 <td style="text-align:center;"><span class="emode-id">${em.id}</span></td>
             `;
