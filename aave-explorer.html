@@ -990,16 +990,27 @@ function computeNetLoopYield(em) {
         if (y > bestCollYield) { bestCollYield = y; bestCollSymbol = a.symbol; }
     }
 
-    // Best borrow cost (lowest borrow APY)
-    let bestBorrAPY = Infinity;
+    // Best effective borrow cost (lowest after accounting for borrowed asset's yield)
+    // When borrowing a yield-bearing asset (e.g., wstETH), your debt is denominated in that
+    // asset which appreciates. Effective cost in base terms = Aave rate + asset's staking yield.
+    let bestEffBorrCost = Infinity;
+    let bestBorrAaveRate = 0;
+    let bestBorrNativeYield = 0;
     let bestBorrSymbol = '';
     for (const a of em.borrowableAssets) {
-        if (a.borrowAPY < bestBorrAPY) { bestBorrAPY = a.borrowAPY; bestBorrSymbol = a.symbol; }
+        const nativeYield = _stakingYields[a.symbol] || 0;
+        const effCost = a.borrowAPY + nativeYield;
+        if (effCost < bestEffBorrCost) {
+            bestEffBorrCost = effCost;
+            bestBorrAaveRate = a.borrowAPY;
+            bestBorrNativeYield = nativeYield;
+            bestBorrSymbol = a.symbol;
+        }
     }
-    if (bestBorrAPY === Infinity) return null;
+    if (bestEffBorrCost === Infinity) return null;
 
-    const netYield = bestCollYield * lev - bestBorrAPY * (lev - 1);
-    return { netYield, collYield: bestCollYield, collSymbol: bestCollSymbol, borrowAPY: bestBorrAPY, borrSymbol: bestBorrSymbol, lev };
+    const netYield = bestCollYield * lev - bestEffBorrCost * (lev - 1);
+    return { netYield, collYield: bestCollYield, collSymbol: bestCollSymbol, borrowCost: bestEffBorrCost, borrowAaveRate: bestBorrAaveRate, borrowNativeYield: bestBorrNativeYield, borrSymbol: bestBorrSymbol, lev };
 }
 
 function computePTFixedYield(reserve) {
@@ -1659,7 +1670,14 @@ function renderEmodeGrouped() {
             // Compute net loop yield
             const loopData = computeNetLoopYield(em);
             const collYieldStr = loopData ? fmt(loopData.collYield, 2) + '%' : '—';
-            const borrCostStr = loopData ? fmt(loopData.borrowAPY, 2) + '%' : '—';
+            let borrCostStr = '—';
+            let borrCostTitle = '';
+            if (loopData) {
+                borrCostStr = fmt(loopData.borrowCost, 2) + '%';
+                if (loopData.borrowNativeYield > 0) {
+                    borrCostTitle = `Aave rate ${fmt(loopData.borrowAaveRate, 2)}% + ${loopData.borrSymbol} yield ${fmt(loopData.borrowNativeYield, 2)}%`;
+                }
+            }
             let netYieldStr = '—';
             let netYieldClass = '';
             if (loopData) {
@@ -1685,7 +1703,7 @@ function renderEmodeGrouped() {
 
             // Tooltip showing the formula
             const netTitle = loopData
-                ? `${loopData.collSymbol} ${fmt(loopData.collYield, 2)}% × ${fmt(loopData.lev, 1)} − ${loopData.borrSymbol} ${fmt(loopData.borrowAPY, 2)}% × ${fmt(loopData.lev - 1, 1)}`
+                ? `${loopData.collSymbol} ${fmt(loopData.collYield, 2)}% × ${fmt(loopData.lev, 1)} − ${loopData.borrSymbol} ${fmt(loopData.borrowCost, 2)}% × ${fmt(loopData.lev - 1, 1)}` + (loopData.borrowNativeYield > 0 ? `\nBorrow cost = ${fmt(loopData.borrowAaveRate, 2)}% Aave + ${fmt(loopData.borrowNativeYield, 2)}% ${loopData.borrSymbol} yield` : '')
                 : '';
 
             tr.innerHTML = `
@@ -1694,7 +1712,7 @@ function renderEmodeGrouped() {
                 <td><span class="leverage-val ${levClass}">${fmt(em.maxLeverage, 1)}x</span></td>
                 <td>${fmt(em.ltv, 1)}%</td>
                 <td class="td-teal">${collYieldStr}</td>
-                <td class="td-amber">${borrCostStr}</td>
+                <td class="td-amber" ${borrCostTitle ? `title="${borrCostTitle}"` : ''}>${borrCostStr}</td>
                 <td class="${netYieldClass}" title="${netTitle}" style="font-weight:700;">${netYieldStr}</td>
                 ${maturityCell}
                 <td style="text-align:center;"><span class="emode-id">${em.id}</span></td>
