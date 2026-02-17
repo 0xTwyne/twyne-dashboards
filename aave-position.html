@@ -31,7 +31,7 @@
       display: flex;
       gap: 0.75rem;
       margin-bottom: 1.5rem;
-      max-width: 720px;
+      max-width: 800px;
     }
     input[type="text"] {
       flex: 1;
@@ -89,13 +89,12 @@
     #status.loading { display: block; background: #1a2332; border: 1px solid var(--accent); color: var(--accent); }
     #status.error { display: block; background: #2d1117; border: 1px solid var(--red); color: var(--red); }
 
+    /* Card styles */
     .card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 1.25rem;
-      margin-bottom: 1rem;
-      max-width: 720px;
     }
     .card-title {
       font-size: 0.75rem;
@@ -105,35 +104,77 @@
       margin-bottom: 1rem;
     }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 2rem; }
-    .metric { }
     .metric-label { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.125rem; }
     .metric-value { font-size: 1.125rem; font-weight: 600; font-family: 'SF Mono', 'Fira Code', monospace; }
-    .metric-value.large { font-size: 1.5rem; }
+    .metric-value.large { font-size: 1.75rem; }
     .metric-unit { font-weight: 400; color: var(--text-dim); font-size: 0.8em; }
 
-    .health-bar {
-      height: 6px;
-      background: var(--border);
-      border-radius: 3px;
-      margin-top: 0.5rem;
-      overflow: hidden;
-    }
-    .health-bar-fill {
-      height: 100%;
-      border-radius: 3px;
-      transition: width 0.3s;
+    /* Two-column top row */
+    .top-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      max-width: 800px;
     }
 
-    .divider {
-      border: none;
-      border-top: 1px solid var(--border);
-      margin: 1rem 0;
+    /* Full-width cards */
+    .full-card {
+      max-width: 800px;
+      margin-bottom: 1rem;
+    }
+
+    /* LTV progress bar */
+    .ltv-bar-container {
+      margin-top: 0.75rem;
+    }
+    .ltv-bar-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-bottom: 0.25rem;
+    }
+    .ltv-bar {
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .ltv-bar-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s;
+    }
+    .ltv-bar-marker {
+      position: absolute;
+      top: -3px;
+      width: 2px;
+      height: 14px;
+      background: var(--text-dim);
+      border-radius: 1px;
+    }
+
+    /* Clickable values */
+    .flippable {
+      cursor: pointer;
+      transition: color 0.15s;
+      user-select: none;
+    }
+    .flippable:hover { color: var(--accent); }
+    .flip-hint {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      font-weight: 400;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
     }
 
     #results { display: none; }
 
-    @media (max-width: 600px) {
+    @media (max-width: 700px) {
       body { padding: 1rem; }
+      .top-row { grid-template-columns: 1fr; }
       .grid { grid-template-columns: 1fr; }
       .input-row { flex-direction: column; }
     }
@@ -157,75 +198,92 @@
 <div id="status"></div>
 
 <div id="results">
-  <div class="card">
-    <div class="card-title">Health</div>
-    <div class="grid">
-      <div class="metric">
-        <div class="metric-label">Health Factor</div>
-        <div class="metric-value large" id="hf">—</div>
-        <div class="health-bar"><div class="health-bar-fill" id="hfBar"></div></div>
+  <!-- Row 1: Health Factor + Protocol Parameters (side by side) -->
+  <div class="top-row">
+    <div class="card">
+      <div class="card-title">Health Factor</div>
+      <div class="metric-value large" id="hf">&mdash;</div>
+      <div style="margin-top: 0.5rem;">
+        <span class="metric-label">Actual LTV: </span>
+        <span class="metric-value" id="actualLtv" style="font-size: 1rem;">&mdash;</span>
       </div>
-      <div class="metric">
-        <div class="metric-label">Actual LTV</div>
-        <div class="metric-value large" id="actualLtv">—</div>
+      <div class="ltv-bar-container">
+        <div class="ltv-bar-labels">
+          <span id="ltvBarLabel">0%</span>
+          <span id="ltvBarThresh">Liq: &mdash;</span>
+        </div>
+        <div class="ltv-bar">
+          <div class="ltv-bar-fill" id="ltvBarFill"></div>
+          <div class="ltv-bar-marker" id="ltvBarMarker" style="display:none;" title="Liquidation threshold"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Protocol Parameters</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 1.5rem;">
+        <div>
+          <div class="metric-label">Max LTV</div>
+          <div class="metric-value" id="avgLtv">&mdash;</div>
+        </div>
+        <div>
+          <div class="metric-label">Liq Threshold</div>
+          <div class="metric-value" id="liqThresh">&mdash;</div>
+        </div>
+        <div>
+          <div class="metric-label">Leverage</div>
+          <div class="metric-value" id="leverage">&mdash;</div>
+        </div>
+        <div>
+          <div class="metric-label">Dist to Liq</div>
+          <div class="metric-value" id="distLiq">&mdash;</div>
+        </div>
       </div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-title">Token Balances</div>
+  <!-- Row 2: Position (click to flip USD / token) -->
+  <div class="card full-card">
+    <div class="card-title">Position <span class="flip-hint">(click values to flip USD / token)</span></div>
     <div class="grid">
-      <div class="metric">
-        <div class="metric-label">aWstETH (collateral)</div>
-        <div class="metric-value" id="colBal">—</div>
+      <div>
+        <div class="metric-label">Collateral</div>
+        <div class="metric-value flippable" id="colVal" onclick="flip('col')">&mdash;</div>
       </div>
-      <div class="metric">
-        <div class="metric-label">variableDebtWETH (debt)</div>
-        <div class="metric-value" id="debtBal">—</div>
+      <div>
+        <div class="metric-label">Debt</div>
+        <div class="metric-value flippable" id="debtVal" onclick="flip('debt')">&mdash;</div>
       </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">USD Aggregates <span style="font-size:0.7rem; text-transform:none; letter-spacing:0;">(from Aave oracle)</span></div>
-    <div class="grid">
-      <div class="metric">
-        <div class="metric-label">Total Collateral</div>
-        <div class="metric-value" id="colUsd">—</div>
-      </div>
-      <div class="metric">
-        <div class="metric-label">Total Debt</div>
-        <div class="metric-value" id="debtUsd">—</div>
-      </div>
-      <div class="metric">
+      <div>
         <div class="metric-label">Available to Borrow</div>
-        <div class="metric-value" id="availUsd">—</div>
+        <div class="metric-value" id="availVal">&mdash;</div>
       </div>
-      <div class="metric">
+      <div>
         <div class="metric-label">Net Worth</div>
-        <div class="metric-value" id="netUsd">—</div>
+        <div class="metric-value" id="netVal">&mdash;</div>
       </div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-title">Protocol Parameters</div>
+  <!-- Row 3: Rates & Yield -->
+  <div class="card full-card">
+    <div class="card-title">Rates & Yield</div>
     <div class="grid">
-      <div class="metric">
-        <div class="metric-label">Weighted Avg LTV (max borrow)</div>
-        <div class="metric-value" id="avgLtv">—</div>
+      <div>
+        <div class="metric-label">wstETH Staking APR</div>
+        <div class="metric-value" id="stakeRate">&mdash;</div>
       </div>
-      <div class="metric">
-        <div class="metric-label">Liquidation Threshold</div>
-        <div class="metric-value" id="liqThresh">—</div>
+      <div>
+        <div class="metric-label">WETH Borrow APR</div>
+        <div class="metric-value" id="borrowRate">&mdash;</div>
       </div>
-      <div class="metric">
-        <div class="metric-label">Leverage</div>
-        <div class="metric-value" id="leverage">—</div>
+      <div>
+        <div class="metric-label">wstETH Supply APR</div>
+        <div class="metric-value" id="supplyRate">&mdash;</div>
       </div>
-      <div class="metric">
-        <div class="metric-label">Distance to Liquidation</div>
-        <div class="metric-value" id="distLiq">—</div>
+      <div>
+        <div class="metric-label">Net APY</div>
+        <div class="metric-value" id="netApy">&mdash;</div>
       </div>
     </div>
   </div>
@@ -237,10 +295,20 @@ const POOL         = '0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2';
 const MULTICALL3   = '0xcA11bde05977b3631167028862bE2a173976CA11';
 const A_WSTETH     = '0x0B925eD163218f6662a35e0f0371Ac234f9E9371';
 const VAR_DEBT_WETH= '0xeA51d7853EEFb32b6ee06b1C12E6dcCA88Be0fFe';
+const WSTETH       = '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0';
+const WETH         = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
 
 // Function selectors
-const BALANCE_OF_SEL          = '70a08231';
+const BALANCE_OF_SEL           = '70a08231';
 const GET_USER_ACCOUNT_DATA_SEL = 'bf92857c';
+const GET_RESERVE_DATA_SEL     = '35ea6a75';
+
+// RAY = 1e27
+const RAY = 10n ** 27n;
+
+// Flip state
+const flipState = { col: false, debt: false };
+const flipData  = { col: { usd: 0, token: 0 }, debt: { usd: 0, token: 0 } };
 
 // --- ABI Encoding helpers ---
 function padAddr(addr) {
@@ -255,6 +323,10 @@ function encodeGetUserAccountData(addr) {
   return '0x' + GET_USER_ACCOUNT_DATA_SEL + padAddr(addr);
 }
 
+function encodeGetReserveData(asset) {
+  return '0x' + GET_RESERVE_DATA_SEL + padAddr(asset);
+}
+
 function toHex32(n) {
   return BigInt(n).toString(16).padStart(64, '0');
 }
@@ -263,29 +335,19 @@ function buildMulticallData(addr) {
   // aggregate3((address target, bool allowFailure, bytes callData)[])
   // selector: 0x82ad56cb
   const calls = [
-    { target: A_WSTETH,      data: encodeBalanceOf(addr) },
-    { target: VAR_DEBT_WETH, data: encodeBalanceOf(addr) },
-    { target: POOL,          data: encodeGetUserAccountData(addr) },
+    { target: A_WSTETH,      data: encodeBalanceOf(addr) },           // 0: aWstETH balance
+    { target: VAR_DEBT_WETH, data: encodeBalanceOf(addr) },           // 1: variableDebtWETH balance
+    { target: POOL,          data: encodeGetUserAccountData(addr) },   // 2: account data
+    { target: POOL,          data: encodeGetReserveData(WSTETH) },     // 3: wstETH reserve data
+    { target: POOL,          data: encodeGetReserveData(WETH) },       // 4: WETH reserve data
   ];
 
-  // Each call's calldata bytes (without 0x prefix)
   const callBytes = calls.map(c => c.data.slice(2));
 
-  // We need to ABI encode: aggregate3((address,bool,bytes)[])
-  // Layout:
-  //   selector (4 bytes)
-  //   offset to array (32 bytes) = 0x20
-  //   array length (32 bytes)
-  //   offsets to each tuple (N * 32 bytes)
-  //   tuple data...
-
   let hex = '82ad56cb';
-  // offset to array
   hex += toHex32(0x20);
-  // array length
   hex += toHex32(calls.length);
 
-  // Build tuple data and compute offsets
   const tupleChunks = [];
   for (let i = 0; i < calls.length; i++) {
     const target = calls[i].target;
@@ -294,15 +356,14 @@ function buildMulticallData(addr) {
     const cdPadded = cd + '0'.repeat((32 - (cdLen % 32)) % 32 * 2);
 
     let chunk = '';
-    chunk += padAddr(target);           // address
-    chunk += toHex32(1);                // allowFailure = true
-    chunk += toHex32(0x60);             // offset to bytes within tuple
-    chunk += toHex32(cdLen);            // bytes length
-    chunk += cdPadded;                  // bytes data (padded)
+    chunk += padAddr(target);
+    chunk += toHex32(1);       // allowFailure = true
+    chunk += toHex32(0x60);    // offset to bytes within tuple
+    chunk += toHex32(cdLen);
+    chunk += cdPadded;
     tupleChunks.push(chunk);
   }
 
-  // Offsets to each tuple (relative to start of first offset word after array length)
   const offsetBase = calls.length * 32;
   let currentOffset = offsetBase;
   for (let i = 0; i < tupleChunks.length; i++) {
@@ -310,7 +371,6 @@ function buildMulticallData(addr) {
     currentOffset += tupleChunks[i].length / 2;
   }
 
-  // Append tuple data
   for (const chunk of tupleChunks) {
     hex += chunk;
   }
@@ -328,7 +388,6 @@ function hexToBI(hex) {
 }
 
 function decodeMulticallResult(hexData) {
-  // Strip 0x
   const d = hexData.startsWith('0x') ? hexData.slice(2) : hexData;
 
   const arrayOffset = Number(hexToBI(hexSlice(d, 0, 32)));
@@ -369,25 +428,63 @@ async function ethCall(rpcUrl, to, data) {
   return json.result;
 }
 
+// --- Lido staking APR ---
+async function fetchLidoApr() {
+  try {
+    const resp = await fetch('https://eth-api.lido.fi/v1/protocol/steth/apr/sma');
+    const json = await resp.json();
+    return { apr: json.data.smaApr, estimated: false };
+  } catch {
+    return { apr: 3.5, estimated: true };
+  }
+}
+
 // --- Format helpers ---
 function fmtUsd(n) {
   return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function fmtToken(n, decimals = 6) {
-  return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+function fmtToken(n, unit) {
+  return n.toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 6 }) + ' ' + unit;
 }
 
 function fmtPct(n) {
   return n.toFixed(2) + '%';
 }
 
-// --- Health color ---
+// --- LTV bar color ---
+function ltvColor(ratio) {
+  // ratio = actualLTV / liqThreshold (0 to 1+)
+  if (ratio > 0.95) return 'var(--red)';
+  if (ratio > 0.90) return 'var(--orange)';
+  if (ratio > 0.75) return 'var(--yellow)';
+  return 'var(--green)';
+}
+
+// --- Health factor color ---
 function hfColor(hf) {
   if (hf >= 2) return 'var(--green)';
   if (hf >= 1.5) return 'var(--yellow)';
   if (hf >= 1.1) return 'var(--orange)';
   return 'var(--red)';
+}
+
+// --- Flip USD / token ---
+function flip(key) {
+  flipState[key] = !flipState[key];
+  const el = document.getElementById(key + 'Val');
+  if (flipState[key]) {
+    const unit = key === 'col' ? 'wstETH' : 'WETH';
+    el.textContent = fmtToken(flipData[key].token, unit);
+  } else {
+    el.textContent = fmtUsd(flipData[key].usd);
+  }
+}
+
+// --- RAY to percent ---
+function rayToPercent(bigintVal) {
+  // RAY = 1e27, result is APR in percent
+  return Number(bigintVal * 10000n / RAY) / 100;
 }
 
 // --- Main ---
@@ -412,22 +509,31 @@ async function queryPosition() {
   resultsEl.style.display = 'none';
   btn.disabled = true;
 
+  // Reset flip state
+  flipState.col = false;
+  flipState.debt = false;
+
   try {
+    // Fire RPC + Lido in parallel
     const calldata = buildMulticallData(addr);
-    const raw = await ethCall(rpcUrl, MULTICALL3, calldata);
+    const [raw, lidoResult] = await Promise.all([
+      ethCall(rpcUrl, MULTICALL3, calldata),
+      fetchLidoApr(),
+    ]);
+
     const decoded = decodeMulticallResult(raw);
 
-    // 1. aWstETH balance
+    // --- 0: aWstETH balance ---
     if (!decoded[0].success) throw new Error('aWstETH balanceOf call failed');
     const colRaw = hexToBI(decoded[0].data);
     const collateral = Number(colRaw) / 1e18;
 
-    // 2. variableDebtWETH balance
+    // --- 1: variableDebtWETH balance ---
     if (!decoded[1].success) throw new Error('variableDebtWETH balanceOf call failed');
     const debtRaw = hexToBI(decoded[1].data);
     const debt = Number(debtRaw) / 1e18;
 
-    // 3. getUserAccountData
+    // --- 2: getUserAccountData ---
     if (!decoded[2].success) throw new Error('getUserAccountData call failed');
     const acct = decoded[2].data;
     const totalColUsd   = Number(hexToBI(hexSlice(acct, 0, 32))) / 1e8;
@@ -446,42 +552,100 @@ async function queryPosition() {
     const liqThreshPct = liqThreshBps / 100;
     const distToLiq = liqThreshPct > 0 ? liqThreshPct - actualLtv : 0;
 
-    // Update UI
-    // Health
-    const hfStr = hf === Infinity ? '∞' : hf.toFixed(4);
-    document.getElementById('hf').textContent = hfStr;
-    document.getElementById('hf').style.color = hf === Infinity ? 'var(--text-dim)' : hfColor(hf);
-
-    const barEl = document.getElementById('hfBar');
-    if (hf === Infinity) {
-      barEl.style.width = '100%';
-      barEl.style.background = 'var(--text-dim)';
-    } else {
-      const barPct = Math.min(Math.max((hf / 3) * 100, 2), 100);
-      barEl.style.width = barPct + '%';
-      barEl.style.background = hfColor(hf);
+    // --- 3: getReserveData(wstETH) → word 2 = currentLiquidityRate ---
+    let wstethSupplyApr = 0;
+    if (decoded[3].success && decoded[3].data.length >= 192) {
+      // word 2 = bytes 64-95 of return data
+      const liquidityRateRay = hexToBI(hexSlice(decoded[3].data, 64, 96));
+      wstethSupplyApr = rayToPercent(liquidityRateRay);
     }
 
+    // --- 4: getReserveData(WETH) → word 4 = currentVariableBorrowRate ---
+    let wethBorrowApr = 0;
+    if (decoded[4].success && decoded[4].data.length >= 320) {
+      // word 4 = bytes 128-159 of return data
+      const borrowRateRay = hexToBI(hexSlice(decoded[4].data, 128, 160));
+      wethBorrowApr = rayToPercent(borrowRateRay);
+    }
+
+    // --- Lido staking APR ---
+    const lidoApr = lidoResult.apr;
+    const lidoEstimated = lidoResult.estimated;
+
+    // --- Net APY: (r_stake + r_supply - r_borrow * ltv) / (1 - ltv) ---
+    const ltvDecimal = actualLtv / 100;
+    let netApy = null;
+    if (totalDebtUsd > 0 && ltvDecimal < 1) {
+      const rStake = lidoApr / 100;
+      const rSupply = wstethSupplyApr / 100;
+      const rBorrow = wethBorrowApr / 100;
+      netApy = ((rStake + rSupply - rBorrow * ltvDecimal) / (1 - ltvDecimal)) * 100;
+    }
+
+    // Store flip data
+    flipData.col  = { usd: totalColUsd, token: collateral };
+    flipData.debt = { usd: totalDebtUsd, token: debt };
+
+    // ========== Update UI ==========
+
+    // Health Factor
+    const hfStr = hf === Infinity ? '\u221E' : hf.toFixed(4);
+    const hfEl = document.getElementById('hf');
+    hfEl.textContent = hfStr;
+    hfEl.style.color = hf === Infinity ? 'var(--text-dim)' : hfColor(hf);
+
+    // Actual LTV
     document.getElementById('actualLtv').textContent = fmtPct(actualLtv);
-    document.getElementById('actualLtv').style.color = actualLtv > liqThreshPct ? 'var(--red)' : actualLtv > liqThreshPct * 0.9 ? 'var(--yellow)' : 'var(--text)';
 
-    // Token balances
-    document.getElementById('colBal').innerHTML = fmtToken(collateral) + ' <span class="metric-unit">wstETH</span>';
-    document.getElementById('debtBal').innerHTML = fmtToken(debt) + ' <span class="metric-unit">WETH</span>';
+    // LTV bar
+    const ltvRatio = liqThreshPct > 0 ? actualLtv / liqThreshPct : 0;
+    const barPct = Math.min(ltvRatio * 100, 100);
+    const fillEl = document.getElementById('ltvBarFill');
+    fillEl.style.width = barPct + '%';
+    fillEl.style.background = ltvColor(ltvRatio);
 
-    // USD
-    document.getElementById('colUsd').textContent = fmtUsd(totalColUsd);
-    document.getElementById('debtUsd').textContent = fmtUsd(totalDebtUsd);
-    document.getElementById('availUsd').textContent = fmtUsd(availUsd);
-    document.getElementById('netUsd').textContent = fmtUsd(netWorth);
-    document.getElementById('netUsd').style.color = netWorth >= 0 ? 'var(--green)' : 'var(--red)';
+    document.getElementById('ltvBarLabel').textContent = fmtPct(actualLtv);
+    document.getElementById('ltvBarThresh').textContent = 'Liq: ' + fmtPct(liqThreshPct);
+
+    // Show liquidation threshold marker on bar (always at 100% of bar since bar represents 0 to liqThresh)
+    const marker = document.getElementById('ltvBarMarker');
+    marker.style.display = 'block';
+    marker.style.left = 'calc(100% - 1px)';
 
     // Protocol params
     document.getElementById('avgLtv').textContent = fmtPct(currentLtvBps / 100);
     document.getElementById('liqThresh').textContent = fmtPct(liqThreshPct);
-    document.getElementById('leverage').textContent = leverage === Infinity ? '∞' : leverage.toFixed(2) + 'x';
-    document.getElementById('distLiq').textContent = distToLiq > 0 ? fmtPct(distToLiq) : '—';
-    document.getElementById('distLiq').style.color = distToLiq < 3 && distToLiq > 0 ? 'var(--red)' : distToLiq < 10 && distToLiq > 0 ? 'var(--yellow)' : 'var(--text)';
+    document.getElementById('leverage').textContent = leverage === Infinity ? '\u221E' : leverage.toFixed(2) + 'x';
+
+    const distLiqEl = document.getElementById('distLiq');
+    distLiqEl.textContent = distToLiq > 0 ? fmtPct(distToLiq) : '\u2014';
+    distLiqEl.style.color = distToLiq < 3 && distToLiq > 0 ? 'var(--red)' : distToLiq < 10 && distToLiq > 0 ? 'var(--yellow)' : 'var(--text)';
+
+    // Position (default: USD)
+    document.getElementById('colVal').textContent = fmtUsd(totalColUsd);
+    document.getElementById('debtVal').textContent = fmtUsd(totalDebtUsd);
+    document.getElementById('availVal').textContent = fmtUsd(availUsd);
+
+    const netEl = document.getElementById('netVal');
+    netEl.textContent = fmtUsd(netWorth);
+    netEl.style.color = netWorth >= 0 ? 'var(--green)' : 'var(--red)';
+
+    // Rates & Yield
+    const stakeEl = document.getElementById('stakeRate');
+    stakeEl.textContent = (lidoEstimated ? '~' : '') + fmtPct(lidoApr);
+    if (lidoEstimated) stakeEl.title = 'Estimated (CORS blocked)';
+
+    document.getElementById('borrowRate').textContent = fmtPct(wethBorrowApr);
+    document.getElementById('supplyRate').textContent = fmtPct(wstethSupplyApr);
+
+    const netApyEl = document.getElementById('netApy');
+    if (netApy !== null) {
+      netApyEl.textContent = fmtPct(netApy);
+      netApyEl.style.color = netApy >= 0 ? 'var(--green)' : 'var(--red)';
+    } else {
+      netApyEl.textContent = '\u2014';
+      netApyEl.style.color = 'var(--text-dim)';
+    }
 
     statusEl.style.display = 'none';
     resultsEl.style.display = 'block';
