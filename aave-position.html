@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aave V3 Position Explorer</title>
+  <title>Twyne Position Simulator</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <style>
     :root {
       --bg: #0d1117;
@@ -30,6 +31,8 @@
     }
     h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem; }
     .subtitle { color: var(--text-dim); font-size: 0.875rem; margin-bottom: 1.5rem; }
+    .mono { font-family: 'SF Mono', 'Fira Code', monospace; }
+    .container { max-width: 960px; }
 
     /* Input area */
     .input-row {
@@ -65,94 +68,29 @@
     #status.loading { display: block; background: #1a2332; border: 1px solid var(--accent); color: var(--accent); }
     #status.error { display: block; background: #2d1117; border: 1px solid var(--red); color: var(--red); }
 
-    /* Card & metrics */
-    .card {
+    /* Position bar */
+    .pos-bar {
+      display: flex; justify-content: space-around; align-items: center;
       background: var(--surface); border: 1px solid var(--border);
-      border-radius: 8px; padding: 1.25rem;
+      border-radius: 8px; padding: 0.75rem 1.25rem; margin-bottom: 1rem;
     }
-    .card-title {
-      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;
-      color: var(--text-dim); margin-bottom: 0.75rem; font-weight: 600;
+    .pos-item { text-align: center; }
+    .pos-label {
+      font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--text-dim); margin-bottom: 0.125rem; font-weight: 600;
     }
-    .mono { font-family: 'SF Mono', 'Fira Code', monospace; }
-    .metric-label { font-size: 0.75rem; color: var(--text-dim); margin-bottom: 0.125rem; }
-    .metric-value { font-size: 1.1rem; font-weight: 600; font-family: 'SF Mono', 'Fira Code', monospace; }
-    .metric-value.large { font-size: 1.6rem; }
-    .metric-unit { font-weight: 400; color: var(--text-dim); font-size: 0.8em; }
-
-    /* Layout */
-    .container { max-width: 960px; }
-
-    /* Overview card */
-    .overview {
-      display: grid; grid-template-columns: 1fr auto 1fr; gap: 1.5rem;
-      align-items: center; margin-bottom: 1rem;
+    .pos-value {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.95rem; font-weight: 600;
     }
-    .overview-side { text-align: center; }
-    .overview-side.twyne { color: var(--twyne); }
-    .overview-vs {
-      font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;
-      letter-spacing: 0.1em; padding: 0.5rem;
+    .pos-sep {
+      width: 1px; height: 2rem; background: var(--border);
     }
-    .overview-hf { font-size: 2rem; font-weight: 700; font-family: 'SF Mono', 'Fira Code', monospace; }
-    .overview-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.25rem; }
-    .overview-metric {
-      font-size: 1rem; font-weight: 600; font-family: 'SF Mono', 'Fira Code', monospace;
-      margin-top: 0.25rem;
-    }
-
-    /* Two-column cards */
-    .columns {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
-      margin-bottom: 1rem;
-    }
-    .column { display: flex; flex-direction: column; gap: 1rem; }
-    .twyne-col .card { border-color: var(--twyne-border); }
-    .twyne-col .card-title { color: var(--twyne); }
-
-    /* Param grid */
-    .param-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 1.25rem; }
-
-    /* LTV bar */
-    .ltv-bar-container { margin-top: 0.625rem; }
-    .ltv-bar-labels {
-      display: flex; justify-content: space-between;
-      font-size: 0.65rem; color: var(--text-dim); margin-bottom: 0.2rem;
-    }
-    .ltv-bar {
-      height: 8px; background: var(--border); border-radius: 4px;
-      overflow: hidden; position: relative;
-    }
-    .ltv-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
-
-    /* Clickable values */
-    .flippable { cursor: pointer; transition: color 0.15s; user-select: none; }
-    .flippable:hover { color: var(--accent); }
-    .flip-hint {
-      font-size: 0.6rem; color: var(--text-dim); font-weight: 400;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-    }
-
-    /* Position rows */
-    .pos-row {
-      display: flex; justify-content: space-between; align-items: baseline;
-      padding: 0.375rem 0; border-bottom: 1px solid var(--border);
-    }
-    .pos-row:last-child { border-bottom: none; }
-
-    /* Spread pill */
-    .spread-pill {
-      display: inline-block; padding: 0.25rem 0.625rem; border-radius: 4px;
-      font-size: 0.8rem; font-weight: 600; font-family: 'SF Mono', 'Fira Code', monospace;
-    }
-    .spread-pos { background: #0d2818; color: var(--green); }
-    .spread-neg { background: #2d1117; color: var(--red); }
 
     /* Tabs */
-    .tabs { margin-top: 1.5rem; }
+    .tabs { margin-bottom: 0; }
     .tab-buttons {
       display: flex; gap: 0; border-bottom: 1px solid var(--border);
-      margin-bottom: 0;
     }
     .tab-btn {
       background: transparent; color: var(--text-dim); border: none;
@@ -161,9 +99,7 @@
       transition: all 0.15s;
     }
     .tab-btn:hover { color: var(--text); background: var(--surface); }
-    .tab-btn.active {
-      color: var(--accent); border-bottom-color: var(--accent);
-    }
+    .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
     .tab-content { display: none; }
     .tab-content.active { display: block; }
     .tab-panel {
@@ -171,47 +107,103 @@
       border-top: none; border-radius: 0 0 8px 8px; padding: 1.5rem;
     }
 
-    /* Yield table */
-    .yield-table {
-      width: 100%; border-collapse: collapse; font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 0.8rem;
+    /* Slider row */
+    .slider-row {
+      display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;
     }
-    .yield-table th {
-      background: var(--bg); color: var(--text-dim); padding: 0.6rem 0.75rem;
+    .slider-label {
+      font-size: 0.75rem; color: var(--text-dim); white-space: nowrap;
+      text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600;
+    }
+    .slider-row input[type="range"] {
+      flex: 1; accent-color: var(--twyne); height: 6px;
+    }
+    .slider-value {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 1rem; font-weight: 700; color: var(--twyne);
+      min-width: 4rem; text-align: right;
+    }
+
+    /* Comparison cards */
+    .compare-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;
+    }
+    .compare-card {
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1.25rem;
+    }
+    .compare-card.twyne { border-color: var(--twyne-border); }
+    .card-label {
+      font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em;
+      color: var(--text-dim); margin-bottom: 0.75rem; font-weight: 600;
+    }
+    .compare-card.twyne .card-label { color: var(--twyne); }
+    .hero-apy {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 2rem; font-weight: 700; margin-bottom: 0.125rem;
+    }
+    .hero-label { font-size: 0.65rem; color: var(--text-dim); margin-bottom: 0.75rem; }
+    .sub-metrics {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem;
+      border-top: 1px solid var(--border); padding-top: 0.75rem;
+    }
+    .sub-metric-label { font-size: 0.6rem; color: var(--text-dim); text-transform: uppercase; }
+    .sub-metric-value {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.9rem; font-weight: 600;
+    }
+
+    /* Delta callout */
+    .delta-callout {
+      text-align: center; padding: 0.75rem; margin-bottom: 1.25rem;
+      border-radius: 8px; font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 1rem; font-weight: 700;
+    }
+    .delta-callout.positive { background: #0d2818; color: var(--green); border: 1px solid #1a4d2e; }
+    .delta-callout.negative { background: #2d1117; color: var(--red); border: 1px solid #5c1a1a; }
+
+    /* Chart */
+    .chart-wrap { position: relative; height: 280px; margin-bottom: 1.25rem; }
+
+    /* Rate table */
+    .rate-table {
+      width: 100%; border-collapse: collapse;
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.8rem;
+    }
+    .rate-table th {
+      background: var(--bg); color: var(--text-dim); padding: 0.55rem 0.75rem;
       font-weight: 600; text-align: right; font-size: 0.65rem;
       text-transform: uppercase; letter-spacing: 0.03em;
       border-bottom: 2px solid var(--border);
     }
-    .yield-table th:first-child { text-align: left; }
-    .yield-table td {
-      padding: 0.55rem 0.75rem; text-align: right;
+    .rate-table th:first-child { text-align: left; }
+    .rate-table td {
+      padding: 0.5rem 0.75rem; text-align: right;
       border-bottom: 1px solid var(--border);
-      transition: background 0.1s;
     }
-    .yield-table td:first-child {
-      text-align: left; font-weight: 600; font-size: 0.9rem;
+    .rate-table td:first-child { text-align: left; color: var(--text-dim); font-weight: 500; }
+    .rate-table tr.total-row td {
+      border-top: 2px solid var(--border); font-weight: 700; font-size: 0.9rem;
     }
-    .yield-table tr { cursor: pointer; }
-    .yield-table tr:hover td { background: #1c2333; }
-    .yield-table tr.yield-current td {
-      background: #1a2332; border-top: 1px solid var(--accent);
-      border-bottom: 1px solid var(--accent);
+
+    /* No-debt message */
+    .no-debt-msg {
+      text-align: center; padding: 1.25rem; margin-bottom: 1rem;
+      background: var(--twyne-bg); border: 1px solid var(--twyne-border);
+      border-radius: 8px; font-size: 0.875rem; color: var(--twyne);
     }
-    .yield-table tr.yield-current td:first-child {
-      border-left: 3px solid var(--accent);
-    }
-    .yield-bar-cell { position: relative; }
-    .yield-bar {
-      position: absolute; left: 0; top: 4px; bottom: 4px;
-      border-radius: 2px; opacity: 0.25;
+
+    /* Leverage note */
+    .lev-note {
+      font-size: 0.8rem; color: var(--text-dim); margin-top: 1rem; line-height: 1.5;
+      padding: 0.75rem 1rem; background: var(--bg); border-radius: 6px;
+      border-left: 3px solid var(--twyne);
     }
 
     /* Unwind simulator */
     .unwind-comparison {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
-      margin-bottom: 1rem;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1rem;
     }
-    .unwind-side { }
     .unwind-side-title {
       font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
       letter-spacing: 0.05em; margin-bottom: 0.75rem;
@@ -222,8 +214,6 @@
       font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;
     }
     .unwind-summary-label { font-size: 0.75rem; color: var(--text-dim); }
-
-    /* Waterfall bars */
     .waterfall { margin-top: 0.75rem; }
     .waterfall-step {
       display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;
@@ -242,8 +232,6 @@
       font-family: 'SF Mono', 'Fira Code', monospace; color: var(--text);
       white-space: nowrap; overflow: hidden;
     }
-
-    /* Step detail table */
     .step-table {
       width: 100%; border-collapse: collapse; margin-top: 0.75rem;
       font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.7rem;
@@ -254,13 +242,10 @@
     }
     .step-table th:first-child { text-align: center; }
     .step-table td {
-      padding: 0.35rem 0.5rem; text-align: right;
-      border: 1px solid var(--border);
+      padding: 0.35rem 0.5rem; text-align: right; border: 1px solid var(--border);
     }
     .step-table td:first-child { text-align: center; color: var(--text-dim); }
     .step-table tr:last-child td { font-weight: 600; }
-
-    /* Unwind note */
     .unwind-note {
       font-size: 0.8rem; color: var(--text-dim); margin-top: 1rem; line-height: 1.5;
       padding: 0.75rem 1rem; background: var(--bg); border-radius: 6px;
@@ -271,18 +256,19 @@
 
     @media (max-width: 700px) {
       body { padding: 1rem; }
-      .columns, .overview, .unwind-comparison { grid-template-columns: 1fr; }
-      .overview { gap: 0.5rem; }
-      .overview-vs { display: none; }
-      .param-grid { grid-template-columns: 1fr; }
+      .compare-grid, .unwind-comparison { grid-template-columns: 1fr; }
+      .pos-bar { flex-wrap: wrap; gap: 0.5rem; }
+      .pos-sep { display: none; }
+      .sub-metrics { grid-template-columns: 1fr; }
       .input-row { flex-direction: column; }
+      .slider-row { flex-wrap: wrap; }
     }
   </style>
 </head>
 <body>
 
-<h1>Aave V3 Position Explorer</h1>
-<p class="subtitle">wstETH / WETH &mdash; single RPC call via Multicall3</p>
+<h1>Twyne Position Simulator</h1>
+<p class="subtitle">wstETH / WETH &mdash; paste your Aave address, see what Twyne unlocks</p>
 
 <div class="rpc-row">
   <span>RPC:</span>
@@ -298,212 +284,84 @@
 
 <div id="results" class="container">
 
-  <!-- ========== OVERVIEW ========== -->
-  <div class="card" style="margin-bottom: 1rem;">
-    <div class="card-title">Position Overview</div>
-    <div class="overview">
-      <div class="overview-side">
-        <div class="overview-label">Aave Health Factor</div>
-        <div class="overview-hf" id="ovHf">&mdash;</div>
-        <div class="overview-metric" id="ovAaveApy">&mdash;</div>
-        <div class="overview-label" style="margin-top:0.125rem;">Net APY</div>
-      </div>
-      <div class="overview-vs">vs</div>
-      <div class="overview-side twyne">
-        <div class="overview-label">Twyne Health Factor</div>
-        <div class="overview-hf" id="ovTwyneHf">&mdash;</div>
-        <div class="overview-metric" id="ovTwyneApy">&mdash;</div>
-        <div class="overview-label" style="margin-top:0.125rem;">Net APY</div>
-      </div>
+  <!-- Position Bar -->
+  <div class="pos-bar">
+    <div class="pos-item">
+      <div class="pos-label">Collateral</div>
+      <div class="pos-value" id="pbCol">&mdash;</div>
     </div>
-    <!-- Balances row -->
-    <div style="display: flex; justify-content: space-around; border-top: 1px solid var(--border); padding-top: 0.75rem; margin-top: 0.25rem;">
-      <div style="text-align: center;">
-        <div class="metric-label">Collateral <span class="flip-hint">(click)</span></div>
-        <div class="metric-value flippable" id="ovCol" onclick="flip('col')">&mdash;</div>
-      </div>
-      <div style="text-align: center;">
-        <div class="metric-label">Debt <span class="flip-hint">(click)</span></div>
-        <div class="metric-value flippable" id="ovDebt" onclick="flip('debt')">&mdash;</div>
-      </div>
-      <div style="text-align: center;">
-        <div class="metric-label">Spread</div>
-        <span id="ovSpread">&mdash;</span>
-      </div>
-      <div style="text-align: center;">
-        <div class="metric-label">Leverage</div>
-        <div class="metric-value" id="ovLev">&mdash;</div>
-      </div>
+    <div class="pos-sep"></div>
+    <div class="pos-item">
+      <div class="pos-label">Debt</div>
+      <div class="pos-value" id="pbDebt">&mdash;</div>
+    </div>
+    <div class="pos-sep"></div>
+    <div class="pos-item">
+      <div class="pos-label">Leverage</div>
+      <div class="pos-value" id="pbLev">&mdash;</div>
+    </div>
+    <div class="pos-sep"></div>
+    <div class="pos-item">
+      <div class="pos-label">Health Factor</div>
+      <div class="pos-value" id="pbHf">&mdash;</div>
     </div>
   </div>
 
-  <!-- ========== AAVE / TWYNE DETAIL CARDS ========== -->
-  <div class="columns">
-    <!-- LEFT: Aave -->
-    <div class="column">
-      <div class="card">
-        <div class="card-title">Aave Position</div>
-        <div class="metric-label">Health Factor</div>
-        <div class="metric-value large" id="hf">&mdash;</div>
-        <div style="margin-top: 0.375rem;">
-          <span class="metric-label">LTV: </span>
-          <span class="metric-value" style="font-size: 0.95rem;" id="actualLtv">&mdash;</span>
-        </div>
-        <div class="ltv-bar-container">
-          <div class="ltv-bar-labels">
-            <span id="ltvBarLabel">0%</span>
-            <span id="ltvBarThresh">&mdash;</span>
-          </div>
-          <div class="ltv-bar">
-            <div class="ltv-bar-fill" id="ltvBarFill"></div>
-          </div>
-        </div>
-        <div class="param-grid" style="margin-top: 0.75rem;">
-          <div>
-            <div class="metric-label">Max LTV</div>
-            <div class="metric-value" id="avgLtv">&mdash;</div>
-          </div>
-          <div>
-            <div class="metric-label">Liq Threshold</div>
-            <div class="metric-value" id="liqThresh">&mdash;</div>
-          </div>
-          <div>
-            <div class="metric-label">Leverage</div>
-            <div class="metric-value" id="leverage">&mdash;</div>
-          </div>
-          <div>
-            <div class="metric-label">Dist to Liq</div>
-            <div class="metric-value" id="distLiq">&mdash;</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- RIGHT: Twyne -->
-    <div class="column twyne-col">
-      <div class="card">
-        <div class="card-title">With Twyne</div>
-        <div class="metric-label">Health Factor</div>
-        <div class="metric-value large" id="twyneHf">&mdash;</div>
-        <div style="margin-top: 0.375rem;">
-          <span class="metric-label">LTV: </span>
-          <span class="metric-value" style="font-size: 0.95rem;" id="twyneActualLtv">&mdash;</span>
-        </div>
-        <div class="ltv-bar-container">
-          <div class="ltv-bar-labels">
-            <span id="twyneLtvBarLabel">0%</span>
-            <span id="twyneLtvBarThresh">&mdash;</span>
-          </div>
-          <div class="ltv-bar">
-            <div class="ltv-bar-fill" id="twyneLtvBarFill"></div>
-          </div>
-        </div>
-        <div class="param-grid" style="margin-top: 0.75rem;">
-          <div>
-            <div class="metric-label">Liq Threshold</div>
-            <div class="metric-value" style="color: var(--twyne);">98.00%</div>
-          </div>
-          <div>
-            <div class="metric-label">Max Leverage</div>
-            <div class="metric-value" id="twyneMaxLev">&mdash;</div>
-          </div>
-          <div>
-            <div class="metric-label">Dist to Liq</div>
-            <div class="metric-value" id="twyneDistLiq">&mdash;</div>
-          </div>
-          <div>
-            <div class="metric-label">Days to Liq</div>
-            <div class="metric-value" id="twyneDaysLiq">&mdash;</div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ========== TABS ========== -->
+  <!-- Tabs -->
   <div class="tabs">
     <div class="tab-buttons">
-      <button class="tab-btn active" onclick="switchTab('yield')">Yield Explorer</button>
-      <button class="tab-btn" onclick="switchTab('unwind')">Unwinding Simulator</button>
+      <button class="tab-btn active" onclick="switchTab('projection')">30-Day Projection</button>
+      <button class="tab-btn" onclick="switchTab('unwind')">Unwind Simulator</button>
     </div>
 
-    <!-- TAB 1: Yield Explorer -->
-    <div class="tab-content active" id="tab-yield">
+    <!-- Tab 1: 30-Day Projection -->
+    <div class="tab-content active" id="tab-projection">
       <div class="tab-panel">
-        <div style="display:flex; align-items:end; gap:1.5rem; margin-bottom:1.25rem; flex-wrap:wrap;">
-          <div>
-            <label style="font-size:0.65rem; color:var(--text-dim); display:block; margin-bottom:0.25rem; text-transform:uppercase; letter-spacing:0.05em;">Staking APR</label>
-            <div style="display:flex; align-items:center; gap:0.25rem;">
-              <input type="number" id="yieldStake" step="0.1" min="0" max="30" style="width:70px; background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:0.4rem 0.5rem; color:var(--green); font-family:'SF Mono','Fira Code',monospace; font-size:0.85rem; font-weight:600; outline:none;" oninput="updateYieldGrid()">
-              <span style="font-size:0.8rem; color:var(--text-dim);">%</span>
-            </div>
-          </div>
-          <div>
-            <label style="font-size:0.65rem; color:var(--text-dim); display:block; margin-bottom:0.25rem; text-transform:uppercase; letter-spacing:0.05em;">Borrow APR</label>
-            <div style="display:flex; align-items:center; gap:0.25rem;">
-              <input type="number" id="yieldBorrow" step="0.1" min="0" max="30" style="width:70px; background:var(--bg); border:1px solid var(--border); border-radius:4px; padding:0.4rem 0.5rem; color:var(--red); font-family:'SF Mono','Fira Code',monospace; font-size:0.85rem; font-weight:600; outline:none;" oninput="updateYieldGrid()">
-              <span style="font-size:0.8rem; color:var(--text-dim);">%</span>
-            </div>
-          </div>
-          <div style="font-size:0.7rem; color:var(--text-dim); padding-bottom:0.4rem;">
-            Spread: <span class="mono" id="yieldSpreadInfo" style="font-weight:600;">&mdash;</span>
-          </div>
-          <button id="yieldResetBtn" style="background:transparent; border:1px solid var(--border); color:var(--text-dim); font-size:0.7rem; padding:0.35rem 0.75rem; border-radius:4px; cursor:pointer; margin-left:auto;" onclick="resetYieldRates()">Reset to live</button>
+        <div id="noDebtMsg" class="no-debt-msg" style="display:none;">
+          You're not looping yet &mdash; here's what you could earn with Twyne leverage.
         </div>
-        <div style="overflow-x: auto;">
-          <table class="yield-table" id="yieldTable"></table>
+        <div class="slider-row">
+          <span class="slider-label">Twyne Leverage</span>
+          <input type="range" id="twyneSlider" min="15" max="500" step="5" value="50">
+          <span class="slider-value" id="sliderVal">5.0x</span>
         </div>
-        <div style="margin-top:0.75rem; font-size:0.7rem; color:var(--text-dim); line-height:1.5;">
-          <span style="display:inline-block; width:8px; height:8px; background:var(--accent); border-radius:2px; margin-right:4px;"></span> = your current position &nbsp;&middot;&nbsp;
-          Staking = stETH yield &nbsp;&middot;&nbsp;
-          Borrow = WETH cost &times; LTV &nbsp;&middot;&nbsp;
-          Credit = Twyne fee &nbsp;&middot;&nbsp;
-          Net APY = return on deposit
-        </div>
+        <div class="compare-grid" id="compareCards"></div>
+        <div class="delta-callout" id="deltaCallout" style="display:none;"></div>
+        <div class="chart-wrap"><canvas id="projChart"></canvas></div>
+        <div id="rateTableWrap"></div>
+        <div class="lev-note" id="levNote" style="display:none;"></div>
       </div>
     </div>
 
-    <!-- TAB 2: Unwinding Simulator -->
+    <!-- Tab 2: Unwind Simulator -->
     <div class="tab-content" id="tab-unwind">
       <div class="tab-panel">
-        <div style="margin-bottom:1rem;">
-          <div style="font-size:0.8rem; color:var(--text-dim); margin-bottom:0.75rem;">
-            Withdraw &rarr; swap &rarr; repay cycle. Higher LTV = more collateral freed per step.
-          </div>
-          <div style="display:flex; align-items:center; gap:1rem; max-width:400px;">
-            <label style="font-size:0.75rem; color:var(--text-dim); white-space:nowrap;">Leverage</label>
-            <input type="range" id="uwLev" min="15" max="130" value="40" step="1" style="flex:1; accent-color:var(--accent);" oninput="updateUnwindSim()">
-            <span class="mono" style="font-size:0.9rem; min-width:3rem;" id="uwLevVal">4.0x</span>
-          </div>
+        <div style="font-size:0.8rem; color:var(--text-dim); margin-bottom:0.75rem;">
+          Withdraw &rarr; swap &rarr; repay cycle. Higher liquidation LTV = more collateral freed per step = fewer loops.
         </div>
-
+        <div class="slider-row">
+          <span class="slider-label">Leverage</span>
+          <input type="range" id="uwSlider" min="15" max="500" step="5" value="50">
+          <span class="slider-value" id="uwSliderVal" style="color:var(--accent);">5.0x</span>
+        </div>
         <div class="unwind-comparison">
-          <!-- Aave side -->
-          <div class="unwind-side">
-            <div class="unwind-side-title" style="color: var(--accent);">Aave</div>
+          <div>
+            <div class="unwind-side-title" style="color:var(--accent);">Aave</div>
             <div class="unwind-summary" id="uwAaveSteps">&mdash;</div>
             <div class="unwind-summary-label">steps to unwind</div>
             <div class="waterfall" id="uwAaveWaterfall"></div>
           </div>
-          <!-- Twyne side -->
-          <div class="unwind-side">
+          <div>
             <div class="unwind-side-title twyne">Twyne</div>
-            <div class="unwind-summary" id="uwTwyneSteps" style="color: var(--twyne);">&mdash;</div>
+            <div class="unwind-summary" id="uwTwyneSteps" style="color:var(--twyne);">&mdash;</div>
             <div class="unwind-summary-label">steps to unwind</div>
             <div class="waterfall" id="uwTwyneWaterfall"></div>
           </div>
         </div>
-
-        <!-- Step detail tables -->
-        <div class="unwind-comparison" style="margin-top: 0.5rem;">
-          <div>
-            <table class="step-table" id="uwAaveTable"></table>
-          </div>
-          <div>
-            <table class="step-table" id="uwTwyneTable"></table>
-          </div>
+        <div class="unwind-comparison" style="margin-top:0.5rem;">
+          <div><table class="step-table" id="uwAaveTable"></table></div>
+          <div><table class="step-table" id="uwTwyneTable"></table></div>
         </div>
-
         <div class="unwind-note" id="uwNote"></div>
       </div>
     </div>
@@ -511,7 +369,9 @@
 </div>
 
 <script>
-// --- Constants ---
+// =============================================
+// 1. CONSTANTS
+// =============================================
 const POOL         = '0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2';
 const MULTICALL3   = '0xcA11bde05977b3631167028862bE2a173976CA11';
 const A_WSTETH     = '0x0B925eD163218f6662a35e0f0371Ac234f9E9371';
@@ -525,24 +385,35 @@ const GET_RESERVE_DATA_SEL     = '35ea6a75';
 
 const RAY = 10n ** 27n;
 
-// Twyne protocol parameters (e-mode wstETH/WETH defaults)
+// Twyne protocol parameters
 const TWYNE_LIQ_LTV = 0.98;
 const TWYNE_BETA    = 0.95;
+const DEFAULT_UTIL  = 0.90;  // kink point u_0
 
-// Interest rate model defaults (from boosted-looping-economics DEFAULTS)
+// Interest rate model (from boosted-looping-economics DEFAULTS)
 const IR_MIN  = 0.00;
 const IR_0    = 0.008;
 const U_0     = 0.90;
 const IR_MAX  = 0.20;
 const GAMMA   = 32;
 
-// State
-const flipState = { col: false, debt: false };
-const flipData  = { col: { usd: 0, token: 0 }, debt: { usd: 0, token: 0 } };
-let liveRates = { rStake: 0.035, rSupply: 0, rBorrow: 0.02, aaveMaxLtvDec: 0.93, aaveLiqDec: 0.95 };
-let livePosition = { actualLtv: 0, collateral: 0, debt: 0, totalColUsd: 0, totalDebtUsd: 0, leverage: 1, hf: Infinity };
+// =============================================
+// 2. STATE
+// =============================================
+const state = {
+  totalColUsd: 0, totalDebtUsd: 0,
+  collateral: 0, debt: 0,
+  leverage: 1, hf: Infinity, actualLtv: 0,
+  rLido: 0.035, rSupply: 0, rBorrow: 0.02,
+  aaveMaxLtvDec: 0.93, aaveLiqDec: 0.95,
+  hasDebt: false, queried: false,
+};
 
-// --- ABI Encoding ---
+let projChart = null;
+
+// =============================================
+// 3. ABI ENCODING
+// =============================================
 function padAddr(a) { return a.slice(2).toLowerCase().padStart(64, '0'); }
 function toHex32(n) { return BigInt(n).toString(16).padStart(64, '0'); }
 function encodeBalanceOf(a) { return '0x' + BALANCE_OF_SEL + padAddr(a); }
@@ -571,7 +442,9 @@ function buildMulticallData(addr) {
   return '0x' + hex;
 }
 
-// --- ABI Decoding ---
+// =============================================
+// 4. ABI DECODING
+// =============================================
 function hexSlice(h, s, e) { return h.slice(s * 2, e * 2); }
 function hexToBI(h) { return BigInt('0x' + (h || '0')); }
 
@@ -593,7 +466,9 @@ function decodeMulticallResult(hexData) {
   return results;
 }
 
-// --- RPC ---
+// =============================================
+// 5. RPC + LIDO FETCH
+// =============================================
 async function ethCall(rpcUrl, to, data) {
   const r = await fetch(rpcUrl, {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -604,7 +479,6 @@ async function ethCall(rpcUrl, to, data) {
   return j.result;
 }
 
-// --- Lido staking APR ---
 async function fetchLidoApr() {
   try {
     const r = await fetch('https://eth-api.lido.fi/v1/protocol/steth/apr/sma');
@@ -613,237 +487,376 @@ async function fetchLidoApr() {
   } catch { return { apr: 3.5, estimated: true }; }
 }
 
-// --- Formatters ---
+// =============================================
+// 6. FORMATTERS & HELPERS
+// =============================================
 function fmtUsd(n) { return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
-function fmtToken(n, u) { return n.toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 6 }) + ' ' + u; }
 function fmtPct(n) { return n.toFixed(2) + '%'; }
 function fmtEth(n) { return n < 0.01 ? n.toFixed(6) : n < 1 ? n.toFixed(4) : n.toFixed(2); }
 function rayToPercent(v) { return Number(v * 10000n / RAY) / 100; }
 
-// --- Colors ---
-function ltvColor(ratio) {
-  if (ratio > 0.95) return 'var(--red)';
-  if (ratio > 0.90) return 'var(--orange)';
-  if (ratio > 0.75) return 'var(--yellow)';
-  return 'var(--green)';
-}
 function hfColor(hf) {
   if (hf >= 2) return 'var(--green)';
   if (hf >= 1.5) return 'var(--yellow)';
   if (hf >= 1.1) return 'var(--orange)';
   return 'var(--red)';
 }
-function yieldColor(y) {
-  // y is in decimal (0.05 = 5%)
-  if (y > 0.10) return '#3fb950';
-  if (y > 0.05) return '#2ea043';
-  if (y > 0.02) return '#238636';
-  if (y > 0.005) return '#1a4d2e';
-  if (y > 0) return '#15301f';
-  if (y > -0.01) return '#2a1a1a';
-  if (y > -0.05) return '#3d1117';
-  return '#f85149';
-}
-
-// --- Flip ---
-function flip(key) {
-  flipState[key] = !flipState[key];
-  const token = key === 'col' ? 'wstETH' : 'WETH';
-  const val = flipState[key] ? fmtToken(flipData[key].token, token) : fmtUsd(flipData[key].usd);
-  document.getElementById('ov' + key.charAt(0).toUpperCase() + key.slice(1)).textContent = val;
-}
-
-// --- Tabs ---
-function switchTab(name) {
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-  document.getElementById('tab-' + name).classList.add('active');
-  document.querySelector('[onclick="switchTab(\'' + name + '\')"]').classList.add('active');
-}
 
 // =============================================
-// ECONOMICS FUNCTIONS (from economics.py)
+// 7. ECONOMICS (matching economics.py)
 // =============================================
 
-// CLP cost factor Psi (same-asset simplified: lambda_e_C == lambda_e_CLP)
-function psiCalc(liqLtv, beta, extLiqLtv) {
-  return liqLtv / (beta * extLiqLtv) - 1;
+// CLP cost factor Psi — GENERAL form (Whitepaper Eq. 7)
+// Psi = liqLtv / (beta * liqLtvClp) - liqLtvC / liqLtvClp
+function psiCalc(liqLtv, beta, liqLtvClp, liqLtvC) {
+  return liqLtv / (beta * liqLtvClp) - liqLtvC / liqLtvClp;
 }
 
-// Interest rate model IR(u)
+// Interest rate model IR(u) — Whitepaper Section 5
 function interestRate(u, irMin, ir0, u0, irMax, gamma) {
+  irMin  = irMin  !== undefined ? irMin  : IR_MIN;
+  ir0    = ir0    !== undefined ? ir0    : IR_0;
+  u0     = u0     !== undefined ? u0     : U_0;
+  irMax  = irMax  !== undefined ? irMax  : IR_MAX;
+  gamma  = gamma  !== undefined ? gamma  : GAMMA;
   if (u <= 0) return irMin;
   if (u >= 1) return irMax;
-  return irMin + (ir0 - irMin) / u0 * u + (irMax - irMin - (ir0 - irMin) / u0) * Math.pow(u, gamma);
+  const linearSlope = (ir0 - irMin) / u0;
+  const nonlinearCoeff = irMax - irMin - linearSlope;
+  return irMin + linearSlope * u + nonlinearCoeff * Math.pow(u, gamma);
 }
 
-// Net yield Y = (r_stake - r_borrow * lambda_t - IR(u) * Psi) / (1 - lambda_t)
+// Net yield on deposit: Y = (r_stake - r_borrow * lambda_t - IR(u) * Psi) / (1 - lambda_t)
 function loopedYield(rStake, rBorrow, lambdaT, irU, psiVal) {
   if (lambdaT >= 1) return NaN;
   return (rStake - rBorrow * lambdaT - irU * psiVal) / (1 - lambdaT);
 }
 
-// Days to liquidation
+// Days to liquidation: T_liq = -365 * ln(HF_0) / ln(1 + r_net/(1 + r_borrow))
 function daysToLiq(hf0, rStake, rBorrow, psiIR) {
   if (hf0 <= 1) return 0;
   const rNet = rStake - rBorrow - psiIR;
   if (rNet >= 0) return Infinity;
   const decay = 1 + rNet / (1 + rBorrow);
-  if (decay >= 1) return Infinity;
+  if (decay >= 1 || decay <= 0) return Infinity;
   return -365 * Math.log(hf0) / Math.log(decay);
 }
 
-// Compute yield grid: returns { yields, daysToLiq } matrices
-function computeYieldGrid(rStake, rBorrow, hfValues, liqLtvValues, utilization, beta, extLiqLtv) {
-  const irU = interestRate(utilization, IR_MIN, IR_0, U_0, IR_MAX, GAMMA);
-  const yields = [];
-  const days = [];
+// =============================================
+// 8. PROJECTION ENGINE
+// =============================================
 
-  for (let hi = 0; hi < hfValues.length; hi++) {
-    const yRow = [];
-    const dRow = [];
-    for (let li = 0; li < liqLtvValues.length; li++) {
-      const hf = hfValues[hi];
-      const liqLtv = liqLtvValues[li];
-      const psiVal = psiCalc(liqLtv, beta, extLiqLtv);
-      const lambdaT = liqLtv / hf;
-      if (lambdaT >= 1) {
-        yRow.push(NaN);
-        dRow.push(0);
-      } else {
-        const y = loopedYield(rStake, rBorrow, lambdaT, irU, psiVal);
-        yRow.push(y);
-        const d = daysToLiq(hf, rStake, rBorrow, psiVal * irU);
-        dRow.push(d);
-      }
-    }
-    yields.push(yRow);
-    days.push(dRow);
+// Project equity over time: equity(t) = C0*(1+rCol)^(t/365) - B0*(1+rBorrow)^(t/365)
+function projectEquity(days, C0, B0, rCol, rBorrow) {
+  const points = [];
+  for (let t = 0; t <= days; t++) {
+    const Ct = C0 * Math.pow(1 + rCol, t / 365);
+    const Bt = B0 * Math.pow(1 + rBorrow, t / 365);
+    points.push(Ct - Bt);
   }
-  return { yields, days, irU };
+  return points;
+}
+
+function computeAaveMetrics() {
+  const deposit = state.totalColUsd - state.totalDebtUsd;
+  const rCol = state.rLido + state.rSupply;
+  const lambdaT = state.totalColUsd > 0 ? state.totalDebtUsd / state.totalColUsd : 0;
+  const L = lambdaT < 1 ? 1 / (1 - lambdaT) : Infinity;
+
+  let netApy = rCol;
+  if (state.hasDebt && lambdaT < 1) {
+    netApy = (rCol - state.rBorrow * lambdaT) / (1 - lambdaT);
+  }
+
+  const equity30pts = projectEquity(30, state.totalColUsd, state.totalDebtUsd, rCol, state.rBorrow);
+  const earnings30 = equity30pts[30] - deposit;
+
+  // Aave days-to-liq (no credit fee)
+  const dtl = state.hasDebt ? daysToLiq(state.hf, rCol, state.rBorrow, 0) : Infinity;
+
+  const maxLev = state.aaveMaxLtvDec < 1 ? 1 / (1 - state.aaveMaxLtvDec) : Infinity;
+
+  return { netApy, earnings30, hf: state.hf, maxLev, L, deposit, rCol, lambdaT, dtl, equity30pts };
+}
+
+function computeTwyneMetrics(leverageTwyne) {
+  const deposit = state.totalColUsd - state.totalDebtUsd;
+  if (deposit <= 0) return null;
+
+  const lambdaT = (leverageTwyne - 1) / leverageTwyne;
+  const C = deposit * leverageTwyne;
+  const B = deposit * (leverageTwyne - 1);
+  const hf = TWYNE_LIQ_LTV / lambdaT;
+
+  const rCol = state.rLido + state.rSupply;
+  const psiVal = psiCalc(TWYNE_LIQ_LTV, TWYNE_BETA, state.aaveLiqDec, state.aaveLiqDec);
+  const irU = interestRate(DEFAULT_UTIL);
+  const rColEff = rCol - psiVal * irU;  // effective collateral yield after credit fee
+
+  const netApy = loopedYield(rCol, state.rBorrow, lambdaT, irU, psiVal);
+
+  const equity30pts = projectEquity(30, C, B, rColEff, state.rBorrow);
+  const earnings30 = equity30pts[30] - deposit;
+
+  const dtl = daysToLiq(hf, rCol, state.rBorrow, psiVal * irU);
+
+  return { netApy, earnings30, hf, dtl, L: leverageTwyne, deposit, rCol, rColEff, psiVal, irU, lambdaT, C, B, equity30pts };
 }
 
 // =============================================
-// YIELD HEATMAP
+// 9. CHART RENDERING
 // =============================================
 
-function resetYieldRates() {
-  document.getElementById('yieldStake').value = (liveRates.rStake * 100).toFixed(1);
-  document.getElementById('yieldBorrow').value = (liveRates.rBorrow * 100).toFixed(1);
-  updateYieldGrid();
-}
+function renderChart(aavePoints, twynePoints) {
+  const ctx = document.getElementById('projChart');
+  if (projChart) projChart.destroy();
 
-function updateYieldGrid() {
-  // Fixed parameters matching boosted-looping-economics DEFAULTS
-  const util = 0.95;
-  const beta = 0.95;
-  const extLtv = 0.95;
-  const liqLtv = TWYNE_LIQ_LTV;  // 0.98
+  const labels = Array.from({ length: 31 }, (_, i) => i);
+  const cs = getComputedStyle(document.documentElement);
+  const accentColor = cs.getPropertyValue('--accent').trim();
+  const twyneColor = cs.getPropertyValue('--twyne').trim();
+  const gridColor = cs.getPropertyValue('--border').trim();
+  const dimColor = cs.getPropertyValue('--text-dim').trim();
 
-  // Read rates from inputs (fall back to live if empty)
-  const stakeInput = parseFloat(document.getElementById('yieldStake').value);
-  const borrowInput = parseFloat(document.getElementById('yieldBorrow').value);
-  const rStake = isNaN(stakeInput) ? liveRates.rStake : stakeInput / 100;
-  const rBorrow = isNaN(borrowInput) ? liveRates.rBorrow : borrowInput / 100;
-
-  const irU = interestRate(util, IR_MIN, IR_0, U_0, IR_MAX, GAMMA);
-  const psiVal = psiCalc(liqLtv, beta, extLtv);
-  const creditCostRate = irU * psiVal;
-
-  const spread = rStake - rBorrow;
-  const spreadEl = document.getElementById('yieldSpreadInfo');
-  spreadEl.textContent = (spread >= 0 ? '+' : '') + (spread * 100).toFixed(2) + '%';
-  spreadEl.style.color = spread >= 0 ? 'var(--green)' : 'var(--red)';
-
-  // Leverage levels — what users actually think in
-  const leverages = [1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 13, 15, 20, 30, 50];
-
-  // Find closest to current position
-  const curLev = livePosition.leverage;
-  let closestIdx = -1;
-  if (curLev > 1 && isFinite(curLev)) {
-    let best = Infinity;
-    for (let i = 0; i < leverages.length; i++) {
-      const d = Math.abs(leverages[i] - curLev);
-      if (d < best) { best = d; closestIdx = i; }
-    }
-  }
-
-  // Build table rows
-  const table = document.getElementById('yieldTable');
-  let html = '<tr>'
-    + '<th>Leverage</th>'
-    + '<th>LTV</th>'
-    + '<th>HF</th>'
-    + '<th style="color:var(--green);">Staking</th>'
-    + '<th style="color:var(--red);">Borrow</th>'
-    + '<th style="color:var(--twyne);">Credit</th>'
-    + '<th>Net APY</th>'
-    + '<th>Safety</th>'
-    + '</tr>';
-
-  // Track max net APY for bar sizing
-  let maxAbsApy = 0;
-  const rows = [];
-  for (let i = 0; i < leverages.length; i++) {
-    const L = leverages[i];
-    const lambdaT = (L - 1) / L;
-    const hf = liqLtv / lambdaT;
-
-    // Rate components (all annualized, on deposited capital)
-    const stakingOnDeposit = rStake * L;
-    const borrowOnDeposit = rBorrow * lambdaT * L;  // = rBorrow * (L-1)
-    const creditOnDeposit = creditCostRate * L;      // credit cost scales with position
-    const netApy = (rStake - rBorrow * lambdaT - creditCostRate) / (1 - lambdaT);
-
-    // Days to liquidation
-    const rNet = rStake - rBorrow - psiVal * irU;
-    const dtl = daysToLiq(hf, rStake, rBorrow, psiVal * irU);
-
-    rows.push({ L, lambdaT, hf, stakingOnDeposit, borrowOnDeposit, creditOnDeposit, netApy, dtl });
-    if (Math.abs(netApy) > maxAbsApy) maxAbsApy = Math.abs(netApy);
-  }
-
-  for (let i = 0; i < rows.length; i++) {
-    const r = rows[i];
-    const isCurrent = (i === closestIdx);
-    const netColor = r.netApy >= 0 ? 'var(--green)' : 'var(--red)';
-
-    // Safety column
-    let safety;
-    if (r.netApy > 0) {
-      safety = '<span style="color:var(--green);">\u221E safe</span>';
-    } else if (r.dtl > 365) {
-      safety = '<span style="color:var(--yellow);">' + Math.round(r.dtl) + 'd</span>';
-    } else if (r.dtl > 30) {
-      safety = '<span style="color:var(--orange);">' + Math.round(r.dtl) + 'd</span>';
-    } else {
-      safety = '<span style="color:var(--red);">' + Math.round(r.dtl) + 'd</span>';
-    }
-
-    // Net APY bar
-    const barPct = maxAbsApy > 0 ? Math.abs(r.netApy) / maxAbsApy * 100 : 0;
-    const barColor = r.netApy >= 0 ? 'var(--green)' : 'var(--red)';
-
-    html += '<tr' + (isCurrent ? ' class="yield-current"' : '') + '>'
-      + '<td>' + r.L.toFixed(1) + 'x</td>'
-      + '<td>' + (r.lambdaT * 100).toFixed(1) + '%</td>'
-      + '<td>' + r.hf.toFixed(2) + '</td>'
-      + '<td style="color:var(--green);">+' + (r.stakingOnDeposit * 100).toFixed(1) + '%</td>'
-      + '<td style="color:var(--red);">-' + (r.borrowOnDeposit * 100).toFixed(1) + '%</td>'
-      + '<td style="color:var(--twyne);">-' + (r.creditOnDeposit * 100).toFixed(1) + '%</td>'
-      + '<td class="yield-bar-cell" style="color:' + netColor + ';font-weight:700;">'
-      +   '<div class="yield-bar" style="width:' + barPct + '%;background:' + barColor + ';"></div>'
-      +   '<span style="position:relative;">' + (r.netApy >= 0 ? '+' : '') + (r.netApy * 100).toFixed(1) + '%</span></td>'
-      + '<td>' + safety + '</td>'
-      + '</tr>';
-  }
-
-  table.innerHTML = html;
+  projChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Aave (current)',
+          data: aavePoints,
+          borderColor: accentColor,
+          borderWidth: 2,
+          borderDash: [6, 4],
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointHoverBackgroundColor: accentColor,
+          tension: 0.3,
+          fill: false,
+        },
+        {
+          label: 'With Twyne',
+          data: twynePoints,
+          borderColor: twyneColor,
+          backgroundColor: twyneColor + '18',
+          borderWidth: 2.5,
+          pointRadius: 0,
+          pointHoverRadius: 4,
+          pointHoverBackgroundColor: twyneColor,
+          tension: 0.3,
+          fill: true,
+        },
+      ],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: {
+          labels: { font: { family: "'SF Mono','Fira Code',monospace", size: 11 }, color: dimColor, boxWidth: 14 },
+        },
+        tooltip: {
+          backgroundColor: 'rgba(22,27,34,0.95)',
+          titleFont: { family: "'SF Mono','Fira Code',monospace", size: 12 },
+          bodyFont: { family: "'SF Mono','Fira Code',monospace", size: 11 },
+          padding: 12,
+          callbacks: {
+            title: (items) => 'Day ' + items[0].label,
+            label: (item) => ' ' + item.dataset.label + ': ' + fmtUsd(item.parsed.y),
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: {
+            font: { family: "'SF Mono','Fira Code',monospace", size: 10 }, color: dimColor,
+            callback: (v) => [0, 5, 10, 15, 20, 25, 30].includes(v) ? 'd' + v : '',
+          },
+          title: { display: true, text: 'Day', font: { family: "'SF Mono','Fira Code',monospace", size: 11 }, color: dimColor },
+        },
+        y: {
+          grid: { color: gridColor, drawBorder: false },
+          ticks: {
+            font: { family: "'SF Mono','Fira Code',monospace", size: 10 }, color: dimColor,
+            callback: (v) => '$' + v.toLocaleString(),
+          },
+          title: { display: true, text: 'Equity (USD)', font: { family: "'SF Mono','Fira Code',monospace", size: 11 }, color: dimColor },
+        },
+      },
+    },
+  });
 }
 
 // =============================================
-// UNWINDING SIMULATOR (from unwinding-comparison.html)
+// 10. UI RENDERING
+// =============================================
+
+function renderPositionBar() {
+  document.getElementById('pbCol').textContent = fmtUsd(state.totalColUsd);
+  document.getElementById('pbDebt').textContent = fmtUsd(state.totalDebtUsd);
+  document.getElementById('pbLev').textContent = state.leverage === Infinity ? '\u221E' : state.leverage.toFixed(2) + 'x';
+  const pbHf = document.getElementById('pbHf');
+  pbHf.textContent = state.hf === Infinity ? '\u221E' : state.hf.toFixed(4);
+  pbHf.style.color = state.hf === Infinity ? 'var(--text-dim)' : hfColor(state.hf);
+}
+
+function renderCards(aave, twyne) {
+  const fmtApy = (v) => (v >= 0 ? '+' : '') + (v * 100).toFixed(2) + '%';
+  const apyColor = (v) => v >= 0 ? 'var(--green)' : 'var(--red)';
+  const fmtDtl = (d) => d === Infinity ? '\u221E (safe)' : d <= 0 ? '\u2014' : Math.round(d) + 'd';
+
+  const aaveApyStr = fmtApy(aave.netApy);
+  const twyneApyStr = twyne ? fmtApy(twyne.netApy) : '\u2014';
+
+  document.getElementById('compareCards').innerHTML = `
+    <div class="compare-card">
+      <div class="card-label">Current (Aave) &mdash; ${aave.L.toFixed(1)}x</div>
+      <div class="hero-apy" style="color:${apyColor(aave.netApy)}">${aaveApyStr}</div>
+      <div class="hero-label">Net APY on deposit</div>
+      <div class="sub-metrics">
+        <div>
+          <div class="sub-metric-label">30d Earnings</div>
+          <div class="sub-metric-value" style="color:${aave.earnings30 >= 0 ? 'var(--green)' : 'var(--red)'}">
+            ${aave.earnings30 >= 0 ? '+' : ''}${fmtUsd(aave.earnings30)}
+          </div>
+        </div>
+        <div>
+          <div class="sub-metric-label">Health Factor</div>
+          <div class="sub-metric-value" style="color:${state.hf === Infinity ? 'var(--text-dim)' : hfColor(state.hf)}">
+            ${state.hf === Infinity ? '\u221E' : state.hf.toFixed(2)}
+          </div>
+        </div>
+        <div>
+          <div class="sub-metric-label">Max Leverage</div>
+          <div class="sub-metric-value">${aave.maxLev.toFixed(1)}x</div>
+        </div>
+      </div>
+    </div>
+    <div class="compare-card twyne">
+      <div class="card-label">With Twyne &mdash; ${twyne ? twyne.L.toFixed(1) : '?'}x</div>
+      <div class="hero-apy" style="color:${twyne ? apyColor(twyne.netApy) : 'var(--text-dim)'}">${twyneApyStr}</div>
+      <div class="hero-label">Net APY on deposit</div>
+      <div class="sub-metrics">
+        <div>
+          <div class="sub-metric-label">30d Earnings</div>
+          <div class="sub-metric-value" style="color:${twyne && twyne.earnings30 >= 0 ? 'var(--green)' : 'var(--red)'}">
+            ${twyne ? ((twyne.earnings30 >= 0 ? '+' : '') + fmtUsd(twyne.earnings30)) : '\u2014'}
+          </div>
+        </div>
+        <div>
+          <div class="sub-metric-label">Health Factor</div>
+          <div class="sub-metric-value" style="color:${twyne ? (twyne.hf < 1.1 ? 'var(--red)' : hfColor(twyne.hf)) : 'var(--text-dim)'}">
+            ${twyne ? twyne.hf.toFixed(2) : '\u2014'}
+          </div>
+        </div>
+        <div>
+          <div class="sub-metric-label">Days to Liq</div>
+          <div class="sub-metric-value" style="color:${twyne && twyne.dtl < 365 ? 'var(--orange)' : 'var(--text)'}">
+            ${twyne ? fmtDtl(twyne.dtl) : '\u2014'}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderDelta(aaveEarnings, twyneEarnings) {
+  const el = document.getElementById('deltaCallout');
+  if (twyneEarnings === null) { el.style.display = 'none'; return; }
+  const delta = twyneEarnings - aaveEarnings;
+  el.style.display = 'block';
+  el.className = 'delta-callout ' + (delta >= 0 ? 'positive' : 'negative');
+  el.textContent = '30-day advantage: ' + (delta >= 0 ? '+' : '') + fmtUsd(delta);
+}
+
+function renderRateTable(aave, twyne) {
+  if (!twyne) { document.getElementById('rateTableWrap').innerHTML = ''; return; }
+
+  const rLido = state.rLido;
+  const rSupply = state.rSupply;
+  const rBorrow = state.rBorrow;
+  const La = aave.L;
+  const Lt = twyne.L;
+  const creditOnDep = twyne.psiVal * twyne.irU * Lt;
+
+  const fmtR = (v) => (v >= 0 ? '+' : '') + (v * 100).toFixed(1) + '%';
+  const rColor = (v) => v >= 0 ? 'color:var(--green)' : 'color:var(--red)';
+
+  const stakingA = rLido * La, stakingT = rLido * Lt;
+  const supplyA = rSupply * La, supplyT = rSupply * Lt;
+  const borrowA = rBorrow * (La - 1), borrowT = rBorrow * (Lt - 1);
+  const netA = aave.netApy, netT = twyne.netApy;
+
+  document.getElementById('rateTableWrap').innerHTML = `
+    <table class="rate-table">
+      <tr>
+        <th></th>
+        <th>Aave (${La.toFixed(1)}x)</th>
+        <th style="color:var(--twyne)">Twyne (${Lt.toFixed(1)}x)</th>
+      </tr>
+      <tr>
+        <td>Staking yield</td>
+        <td style="${rColor(stakingA)}">${fmtR(stakingA)}</td>
+        <td style="${rColor(stakingT)}">${fmtR(stakingT)}</td>
+      </tr>
+      <tr>
+        <td>Supply APR</td>
+        <td style="${rColor(supplyA)}">${fmtR(supplyA)}</td>
+        <td style="${rColor(supplyT)}">${fmtR(supplyT)}</td>
+      </tr>
+      <tr>
+        <td>Borrow cost</td>
+        <td style="color:var(--red)">${fmtR(-borrowA)}</td>
+        <td style="color:var(--red)">${fmtR(-borrowT)}</td>
+      </tr>
+      <tr>
+        <td>Credit fee</td>
+        <td style="color:var(--text-dim)">&mdash;</td>
+        <td style="color:var(--red)">${fmtR(-creditOnDep)}</td>
+      </tr>
+      <tr class="total-row">
+        <td>Net APY</td>
+        <td style="${rColor(netA)}">${fmtR(netA)}</td>
+        <td style="${rColor(netT)}">${fmtR(netT)}</td>
+      </tr>
+    </table>
+    <div style="margin-top:0.5rem; font-size:0.65rem; color:var(--text-dim);">
+      Rates on deposited capital &middot; Utilization: ${(DEFAULT_UTIL * 100).toFixed(0)}% &middot;
+      Psi: ${twyne.psiVal.toFixed(4)} &middot; IR(u): ${(twyne.irU * 100).toFixed(2)}%
+    </div>
+  `;
+}
+
+function renderLeverageNote(aaveMaxLev) {
+  const el = document.getElementById('levNote');
+  el.style.display = 'block';
+  el.innerHTML = `Aave caps leverage at <strong>~${aaveMaxLev.toFixed(0)}x</strong> (${(state.aaveMaxLtvDec * 100).toFixed(0)}% max LTV). `
+    + `Twyne enables up to <strong>~50x</strong> (98% liquidation threshold) by delegating credit from LPs.`;
+}
+
+// =============================================
+// 11. PROJECTION UPDATE (called on slider change)
+// =============================================
+
+function updateProjection(twyneL) {
+  if (!state.queried) return;
+
+  const aave = computeAaveMetrics();
+  const twyne = computeTwyneMetrics(twyneL);
+
+  renderCards(aave, twyne);
+  renderDelta(aave.earnings30, twyne ? twyne.earnings30 : null);
+  renderRateTable(aave, twyne);
+
+  if (twyne && aave.equity30pts && twyne.equity30pts) {
+    renderChart(aave.equity30pts, twyne.equity30pts);
+  }
+}
+
+// =============================================
+// 12. UNWIND SIMULATOR
 // =============================================
 
 function simUnloop(L, deposit, ltv) {
@@ -865,8 +878,7 @@ function simUnloop(L, deposit, ltv) {
 
 function renderWaterfall(containerId, steps, color, initialC) {
   const el = document.getElementById(containerId);
-  if (steps.length === 0) { el.innerHTML = '<div style="color:var(--text-dim); font-size:0.8rem;">No debt to unwind</div>'; return; }
-
+  if (steps.length === 0) { el.innerHTML = '<div style="color:var(--text-dim);font-size:0.8rem;">No debt to unwind</div>'; return; }
   const maxC = initialC;
   let html = '';
   for (let i = 0; i < steps.length; i++) {
@@ -884,7 +896,6 @@ function renderWaterfall(containerId, steps, color, initialC) {
 function renderStepTable(tableId, steps, ltv) {
   const el = document.getElementById(tableId);
   if (steps.length === 0) { el.innerHTML = ''; return; }
-
   let html = '<tr><th>#</th><th>C</th><th>B</th><th>Locked</th><th>Withdraw</th><th>Debt After</th></tr>';
   for (let i = 0; i < steps.length; i++) {
     const s = steps[i];
@@ -902,12 +913,12 @@ function renderStepTable(tableId, steps, ltv) {
 }
 
 function updateUnwindSim() {
-  const L = parseInt(document.getElementById('uwLev').value) / 10;
-  const deposit = 10;       // Fixed 10 ETH deposit for illustration
-  const aaveLtv = 0.93;     // Aave e-mode max LTV
-  const twyneLtv = 0.98;    // Twyne liq LTV
+  const L = parseInt(document.getElementById('uwSlider').value) / 10;
+  document.getElementById('uwSliderVal').textContent = L.toFixed(1) + 'x';
 
-  document.getElementById('uwLevVal').textContent = L.toFixed(1) + 'x';
+  const deposit = 10;  // Fixed 10 ETH for illustration
+  const aaveLtv = state.queried ? state.aaveLiqDec : 0.95;  // on-chain liquidation threshold
+  const twyneLtv = TWYNE_LIQ_LTV;  // 0.98
 
   const aaveSteps = simUnloop(L, deposit, aaveLtv);
   const twyneSteps = simUnloop(L, deposit, twyneLtv);
@@ -925,7 +936,8 @@ function updateUnwindSim() {
   const noteEl = document.getElementById('uwNote');
   if (saved > 0) {
     noteEl.innerHTML = '<strong>Twyne saves ' + saved + ' step' + (saved > 1 ? 's' : '') + '</strong> when unwinding. '
-      + 'Higher LTV ceiling (' + (twyneLtv * 100).toFixed(0) + '% vs ' + (aaveLtv * 100).toFixed(0) + '%) means you can withdraw '
+      + 'Higher liquidation threshold (' + (twyneLtv * 100).toFixed(0) + '% vs '
+      + (aaveLtv * 100).toFixed(0) + '%) means you can withdraw '
       + fmtEth(twyneSteps[0]?.W || 0) + ' ETH per step vs '
       + fmtEth(aaveSteps[0]?.W || 0) + ' ETH on Aave.';
   } else {
@@ -934,7 +946,18 @@ function updateUnwindSim() {
 }
 
 // =============================================
-// MAIN QUERY
+// 13. TABS
+// =============================================
+
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelector('[onclick="switchTab(\'' + name + '\')"]').classList.add('active');
+}
+
+// =============================================
+// 14. MAIN QUERY
 // =============================================
 
 async function queryPosition() {
@@ -957,7 +980,6 @@ async function queryPosition() {
   statusEl.style.display = 'block';
   resultsEl.style.display = 'none';
   btn.disabled = true;
-  flipState.col = false; flipState.debt = false;
 
   try {
     const [raw, lidoResult] = await Promise.all([
@@ -966,7 +988,7 @@ async function queryPosition() {
     ]);
     const decoded = decodeMulticallResult(raw);
 
-    // --- Decode ---
+    // --- Decode on-chain data ---
     if (!decoded[0].success) throw new Error('aWstETH balanceOf failed');
     const collateral = Number(hexToBI(decoded[0].data)) / 1e18;
 
@@ -983,160 +1005,69 @@ async function queryPosition() {
 
     const MAX_U256 = (1n << 256n) - 1n;
     const hf = hfRaw === MAX_U256 ? Infinity : Number(hfRaw) / 1e18;
-    const actualLtv = totalColUsd > 0 ? (totalDebtUsd / totalColUsd) * 100 : 0;
-    const ltvDec = actualLtv / 100;
-    const leverage = ltvDec < 1 ? 1 / (1 - ltvDec) : Infinity;
-    const liqThreshPct = liqThreshBps / 100;
-    const distToLiq = liqThreshPct - actualLtv;
-    const aaveMaxLtvDec = currentLtvBps / 10000;
-    const aaveLiqDec = liqThreshBps / 10000;
+    const actualLtv = totalColUsd > 0 ? totalDebtUsd / totalColUsd : 0;
+    const leverage = actualLtv < 1 ? 1 / (1 - actualLtv) : Infinity;
 
-    // Rates
+    // Aave parameters (use e-mode defaults if no position returns 0)
+    const aaveMaxLtvDec = currentLtvBps > 0 ? currentLtvBps / 10000 : 0.93;
+    const aaveLiqDec = liqThreshBps > 0 ? liqThreshBps / 10000 : 0.95;
+
+    // --- Decode rates ---
+    // r_stake = lido staking APR + Aave wstETH supply APR (matching live_rates.py line 40-42)
     let wstethSupplyApr = 0;
     if (decoded[3].success && decoded[3].data.length >= 192)
       wstethSupplyApr = rayToPercent(hexToBI(hexSlice(decoded[3].data, 64, 96)));
+
     let wethBorrowApr = 0;
     if (decoded[4].success && decoded[4].data.length >= 320)
       wethBorrowApr = rayToPercent(hexToBI(hexSlice(decoded[4].data, 128, 160)));
 
-    const lidoApr = lidoResult.apr;
-    const lidoEst = lidoResult.estimated;
-    const rStake = lidoApr / 100;
+    const rLido = lidoResult.apr / 100;
     const rSupply = wstethSupplyApr / 100;
     const rBorrow = wethBorrowApr / 100;
-    const spread = rStake - rBorrow;
 
-    // Store live rates for tabs
-    liveRates = { rStake, rSupply, rBorrow, aaveMaxLtvDec, aaveLiqDec };
-    livePosition = { actualLtv, collateral, debt, totalColUsd, totalDebtUsd, leverage, hf };
+    // --- Update state ---
+    state.totalColUsd = totalColUsd;
+    state.totalDebtUsd = totalDebtUsd;
+    state.collateral = collateral;
+    state.debt = debt;
+    state.leverage = leverage;
+    state.hf = hf;
+    state.actualLtv = actualLtv;
+    state.rLido = rLido;
+    state.rSupply = rSupply;
+    state.rBorrow = rBorrow;
+    state.aaveMaxLtvDec = aaveMaxLtvDec;
+    state.aaveLiqDec = aaveLiqDec;
+    state.hasDebt = totalDebtUsd > 0;
+    state.queried = true;
 
-    // Aave Net APY
-    let aaveNetApy = null;
-    if (totalDebtUsd > 0 && ltvDec < 1) {
-      aaveNetApy = ((rStake + rSupply - rBorrow * ltvDec) / (1 - ltvDec)) * 100;
-    }
-
-    // Twyne calculations
-    const psiVal = psiCalc(TWYNE_LIQ_LTV, TWYNE_BETA, aaveLiqDec);
-    const twyneLiqPct = TWYNE_LIQ_LTV * 100;
-    const twyneHfVal = ltvDec > 0 ? TWYNE_LIQ_LTV / ltvDec : Infinity;
-    const twyneDistToLiq = twyneLiqPct - actualLtv;
-    const twyneOpLtv = TWYNE_LIQ_LTV * aaveMaxLtvDec / aaveLiqDec;
-    const twyneMaxLev = 1 / (1 - Math.min(twyneOpLtv, 0.99));
-
-    // Twyne Net APY at current leverage
-    const irU = interestRate(0.5, IR_MIN, IR_0, U_0, IR_MAX, GAMMA);
-    let twyneNetApyVal = null;
-    if (totalDebtUsd > 0 && ltvDec < 1) {
-      twyneNetApyVal = ((rStake + rSupply - rBorrow * ltvDec - irU * psiVal) / (1 - ltvDec)) * 100;
-    }
-
-    // Days to liq
-    const twyneDaysVal = totalDebtUsd > 0
-      ? daysToLiq(twyneHfVal, rStake, rBorrow, psiVal * irU) : Infinity;
-
-    // Store flip data
-    flipData.col  = { usd: totalColUsd, token: collateral };
-    flipData.debt = { usd: totalDebtUsd, token: debt };
-
-    // ========== OVERVIEW ==========
-    const ovHf = document.getElementById('ovHf');
-    ovHf.textContent = hf === Infinity ? '\u221E' : hf.toFixed(4);
-    ovHf.style.color = hf === Infinity ? 'var(--text-dim)' : hfColor(hf);
-
-    const ovTwyneHf = document.getElementById('ovTwyneHf');
-    if (totalDebtUsd > 0) {
-      ovTwyneHf.textContent = twyneHfVal === Infinity ? '\u221E' : twyneHfVal.toFixed(4);
-      ovTwyneHf.style.color = twyneHfVal === Infinity ? 'var(--text-dim)' : hfColor(twyneHfVal);
+    // --- Set slider default ---
+    const slider = document.getElementById('twyneSlider');
+    if (state.hasDebt && leverage > 1 && isFinite(leverage)) {
+      const sliderVal = Math.round(Math.min(Math.max(leverage, 1.5), 50) * 10 / 5) * 5;
+      slider.value = sliderVal;
+      document.getElementById('sliderVal').textContent = (sliderVal / 10).toFixed(1) + 'x';
     } else {
-      ovTwyneHf.textContent = '\u221E';
-      ovTwyneHf.style.color = 'var(--text-dim)';
+      slider.value = 50; // Default 5.0x for non-loopers
+      document.getElementById('sliderVal').textContent = '5.0x';
     }
 
-    const ovAaveApy = document.getElementById('ovAaveApy');
-    if (aaveNetApy !== null) {
-      ovAaveApy.textContent = (aaveNetApy >= 0 ? '+' : '') + fmtPct(aaveNetApy);
-      ovAaveApy.style.color = aaveNetApy >= 0 ? 'var(--green)' : 'var(--red)';
-    } else {
-      ovAaveApy.textContent = '\u2014';
-      ovAaveApy.style.color = 'var(--text-dim)';
+    // --- Show/hide no-debt message ---
+    document.getElementById('noDebtMsg').style.display = state.hasDebt ? 'none' : 'block';
+
+    // --- Set unwind slider to match leverage ---
+    const uwSlider = document.getElementById('uwSlider');
+    if (state.hasDebt && leverage > 1 && isFinite(leverage)) {
+      const uwVal = Math.round(Math.min(Math.max(leverage, 1.5), 50) * 10 / 5) * 5;
+      uwSlider.value = uwVal;
     }
 
-    const ovTwyneApy = document.getElementById('ovTwyneApy');
-    if (twyneNetApyVal !== null) {
-      ovTwyneApy.textContent = (twyneNetApyVal >= 0 ? '+' : '') + fmtPct(twyneNetApyVal);
-      ovTwyneApy.style.color = twyneNetApyVal >= 0 ? 'var(--green)' : 'var(--red)';
-    } else {
-      ovTwyneApy.textContent = '\u2014';
-      ovTwyneApy.style.color = 'var(--text-dim)';
-    }
-
-    document.getElementById('ovCol').textContent = fmtUsd(totalColUsd);
-    document.getElementById('ovDebt').textContent = fmtUsd(totalDebtUsd);
-    document.getElementById('ovLev').textContent = leverage === Infinity ? '\u221E' : leverage.toFixed(2) + 'x';
-
-    const spreadPct = spread * 100;
-    const ovSpreadEl = document.getElementById('ovSpread');
-    ovSpreadEl.innerHTML = '<span class="spread-pill ' + (spread >= 0 ? 'spread-pos' : 'spread-neg') + '">'
-      + (spread >= 0 ? '+' : '') + fmtPct(spreadPct) + '</span>';
-
-    // ========== LEFT: Aave ==========
-    const hfEl = document.getElementById('hf');
-    hfEl.textContent = hf === Infinity ? '\u221E' : hf.toFixed(4);
-    hfEl.style.color = hf === Infinity ? 'var(--text-dim)' : hfColor(hf);
-
-    document.getElementById('actualLtv').textContent = fmtPct(actualLtv);
-    const ltvRatio = liqThreshPct > 0 ? actualLtv / liqThreshPct : 0;
-    document.getElementById('ltvBarFill').style.width = Math.min(ltvRatio * 100, 100) + '%';
-    document.getElementById('ltvBarFill').style.background = ltvColor(ltvRatio);
-    document.getElementById('ltvBarLabel').textContent = fmtPct(actualLtv);
-    document.getElementById('ltvBarThresh').textContent = 'Liq ' + fmtPct(liqThreshPct);
-
-    document.getElementById('avgLtv').textContent = fmtPct(currentLtvBps / 100);
-    document.getElementById('liqThresh').textContent = fmtPct(liqThreshPct);
-    document.getElementById('leverage').textContent = leverage === Infinity ? '\u221E' : leverage.toFixed(2) + 'x';
-    const dEl = document.getElementById('distLiq');
-    dEl.textContent = distToLiq > 0 ? fmtPct(distToLiq) : '\u2014';
-    dEl.style.color = distToLiq < 3 && distToLiq > 0 ? 'var(--red)' : distToLiq < 10 && distToLiq > 0 ? 'var(--yellow)' : 'var(--text)';
-
-    // ========== RIGHT: Twyne ==========
-    const tHfEl = document.getElementById('twyneHf');
-    if (totalDebtUsd > 0) {
-      tHfEl.textContent = twyneHfVal === Infinity ? '\u221E' : twyneHfVal.toFixed(4);
-      tHfEl.style.color = twyneHfVal === Infinity ? 'var(--text-dim)' : hfColor(twyneHfVal);
-    } else {
-      tHfEl.textContent = '\u221E';
-      tHfEl.style.color = 'var(--text-dim)';
-    }
-
-    document.getElementById('twyneActualLtv').textContent = fmtPct(actualLtv);
-    const twyneRatio = twyneLiqPct > 0 ? actualLtv / twyneLiqPct : 0;
-    document.getElementById('twyneLtvBarFill').style.width = Math.min(twyneRatio * 100, 100) + '%';
-    document.getElementById('twyneLtvBarFill').style.background = ltvColor(twyneRatio);
-    document.getElementById('twyneLtvBarLabel').textContent = fmtPct(actualLtv);
-    document.getElementById('twyneLtvBarThresh').textContent = 'Liq ' + fmtPct(twyneLiqPct);
-
-    document.getElementById('twyneMaxLev').textContent = twyneMaxLev.toFixed(1) + 'x';
-    const tdEl = document.getElementById('twyneDistLiq');
-    tdEl.textContent = twyneDistToLiq > 0 ? fmtPct(twyneDistToLiq) : '\u2014';
-    tdEl.style.color = 'var(--twyne)';
-
-    const fmtDays = (d) => d === Infinity ? '\u221E (safe)' : d <= 0 ? '\u2014' : Math.round(d) + ' days';
-    document.getElementById('twyneDaysLiq').textContent = fmtDays(twyneDaysVal);
-
-    // ========== RENDER TABS ==========
-    // Set unwind slider to match actual leverage
-    if (leverage > 1 && isFinite(leverage)) {
-      const levSlider = document.getElementById('uwLev');
-      const clampedLev = Math.min(Math.max(leverage * 10, 15), 130);
-      levSlider.value = Math.round(clampedLev);
-    }
-
-    // Populate yield inputs with live rates
-    document.getElementById('yieldStake').value = (rStake * 100).toFixed(1);
-    document.getElementById('yieldBorrow').value = (rBorrow * 100).toFixed(1);
-
-    updateYieldGrid();
+    // --- Render everything ---
+    renderPositionBar();
+    const twyneL = parseInt(slider.value) / 10;
+    updateProjection(twyneL);
+    renderLeverageNote(computeAaveMetrics().maxLev);
     updateUnwindSim();
 
     statusEl.style.display = 'none';
@@ -1151,11 +1082,30 @@ async function queryPosition() {
   }
 }
 
+// =============================================
+// 15. EVENTS
+// =============================================
+
+// Debounced Twyne leverage slider
+let sliderDebounce;
+document.getElementById('twyneSlider').addEventListener('input', function() {
+  const L = parseInt(this.value) / 10;
+  document.getElementById('sliderVal').textContent = L.toFixed(1) + 'x';
+  clearTimeout(sliderDebounce);
+  sliderDebounce = setTimeout(() => updateProjection(L), 30);
+});
+
+// Unwind slider
+document.getElementById('uwSlider').addEventListener('input', function() {
+  updateUnwindSim();
+});
+
+// Enter key to query
 document.getElementById('addressInput').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') queryPosition();
 });
 
-// Init unwind sim with defaults (before any query)
+// Init unwind sim with defaults
 updateUnwindSim();
 </script>
 
