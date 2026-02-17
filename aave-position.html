@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Aave V3 Position Explorer</title>
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-dim: #8b949e;
+      --accent: #58a6ff;
+      --green: #3fb950;
+      --yellow: #d29922;
+      --red: #f85149;
+      --orange: #db6d28;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 2rem;
+    }
+    h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .subtitle { color: var(--text-dim); font-size: 0.875rem; margin-bottom: 1.5rem; }
+    .input-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      max-width: 720px;
+    }
+    input[type="text"] {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0.625rem 0.875rem;
+      color: var(--text);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.875rem;
+      outline: none;
+    }
+    input[type="text"]:focus { border-color: var(--accent); }
+    input[type="text"]::placeholder { color: var(--text-dim); }
+    button {
+      background: #238636;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    button:hover { background: #2ea043; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .rpc-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+    .rpc-row input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.375rem 0.625rem;
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      width: 340px;
+      outline: none;
+    }
+    .rpc-row input:focus { color: var(--text); border-color: var(--accent); }
+
+    #status {
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      margin-bottom: 1.5rem;
+      font-size: 0.875rem;
+      display: none;
+    }
+    #status.loading { display: block; background: #1a2332; border: 1px solid var(--accent); color: var(--accent); }
+    #status.error { display: block; background: #2d1117; border: 1px solid var(--red); color: var(--red); }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1rem;
+      max-width: 720px;
+    }
+    .card-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      margin-bottom: 1rem;
+    }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem 2rem; }
+    .metric { }
+    .metric-label { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 0.125rem; }
+    .metric-value { font-size: 1.125rem; font-weight: 600; font-family: 'SF Mono', 'Fira Code', monospace; }
+    .metric-value.large { font-size: 1.5rem; }
+    .metric-unit { font-weight: 400; color: var(--text-dim); font-size: 0.8em; }
+
+    .health-bar {
+      height: 6px;
+      background: var(--border);
+      border-radius: 3px;
+      margin-top: 0.5rem;
+      overflow: hidden;
+    }
+    .health-bar-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.3s;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1rem 0;
+    }
+
+    #results { display: none; }
+
+    @media (max-width: 600px) {
+      body { padding: 1rem; }
+      .grid { grid-template-columns: 1fr; }
+      .input-row { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<h1>Aave V3 Position Explorer</h1>
+<p class="subtitle">wstETH / WETH positions &mdash; single RPC call via Multicall3</p>
+
+<div class="rpc-row">
+  <span>RPC:</span>
+  <input type="text" id="rpcUrl" value="https://eth.llamarpc.com">
+</div>
+
+<div class="input-row">
+  <input type="text" id="addressInput" placeholder="0x... Ethereum address" spellcheck="false">
+  <button id="queryBtn" onclick="queryPosition()">Query</button>
+</div>
+
+<div id="status"></div>
+
+<div id="results">
+  <div class="card">
+    <div class="card-title">Health</div>
+    <div class="grid">
+      <div class="metric">
+        <div class="metric-label">Health Factor</div>
+        <div class="metric-value large" id="hf">—</div>
+        <div class="health-bar"><div class="health-bar-fill" id="hfBar"></div></div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Actual LTV</div>
+        <div class="metric-value large" id="actualLtv">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Token Balances</div>
+    <div class="grid">
+      <div class="metric">
+        <div class="metric-label">aWstETH (collateral)</div>
+        <div class="metric-value" id="colBal">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">variableDebtWETH (debt)</div>
+        <div class="metric-value" id="debtBal">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">USD Aggregates <span style="font-size:0.7rem; text-transform:none; letter-spacing:0;">(from Aave oracle)</span></div>
+    <div class="grid">
+      <div class="metric">
+        <div class="metric-label">Total Collateral</div>
+        <div class="metric-value" id="colUsd">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Total Debt</div>
+        <div class="metric-value" id="debtUsd">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Available to Borrow</div>
+        <div class="metric-value" id="availUsd">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Net Worth</div>
+        <div class="metric-value" id="netUsd">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Protocol Parameters</div>
+    <div class="grid">
+      <div class="metric">
+        <div class="metric-label">Weighted Avg LTV (max borrow)</div>
+        <div class="metric-value" id="avgLtv">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Liquidation Threshold</div>
+        <div class="metric-value" id="liqThresh">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Leverage</div>
+        <div class="metric-value" id="leverage">—</div>
+      </div>
+      <div class="metric">
+        <div class="metric-label">Distance to Liquidation</div>
+        <div class="metric-value" id="distLiq">—</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- Constants ---
+const POOL         = '0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2';
+const MULTICALL3   = '0xcA11bde05977b3631167028862bE2a173976CA11';
+const A_WSTETH     = '0x0B925eD163218f6662a35e0f0371Ac234f9E9371';
+const VAR_DEBT_WETH= '0xeA51d7853EEFb32b6ee06b1C12E6dcCA88Be0fFe';
+
+// Function selectors
+const BALANCE_OF_SEL          = '70a08231';
+const GET_USER_ACCOUNT_DATA_SEL = 'bf92857c';
+
+// --- ABI Encoding helpers ---
+function padAddr(addr) {
+  return addr.slice(2).toLowerCase().padStart(64, '0');
+}
+
+function encodeBalanceOf(addr) {
+  return '0x' + BALANCE_OF_SEL + padAddr(addr);
+}
+
+function encodeGetUserAccountData(addr) {
+  return '0x' + GET_USER_ACCOUNT_DATA_SEL + padAddr(addr);
+}
+
+function toHex32(n) {
+  return BigInt(n).toString(16).padStart(64, '0');
+}
+
+function buildMulticallData(addr) {
+  // aggregate3((address target, bool allowFailure, bytes callData)[])
+  // selector: 0x82ad56cb
+  const calls = [
+    { target: A_WSTETH,      data: encodeBalanceOf(addr) },
+    { target: VAR_DEBT_WETH, data: encodeBalanceOf(addr) },
+    { target: POOL,          data: encodeGetUserAccountData(addr) },
+  ];
+
+  // Each call's calldata bytes (without 0x prefix)
+  const callBytes = calls.map(c => c.data.slice(2));
+
+  // We need to ABI encode: aggregate3((address,bool,bytes)[])
+  // Layout:
+  //   selector (4 bytes)
+  //   offset to array (32 bytes) = 0x20
+  //   array length (32 bytes)
+  //   offsets to each tuple (N * 32 bytes)
+  //   tuple data...
+
+  let hex = '82ad56cb';
+  // offset to array
+  hex += toHex32(0x20);
+  // array length
+  hex += toHex32(calls.length);
+
+  // Build tuple data and compute offsets
+  const tupleChunks = [];
+  for (let i = 0; i < calls.length; i++) {
+    const target = calls[i].target;
+    const cd = callBytes[i];
+    const cdLen = cd.length / 2;
+    const cdPadded = cd + '0'.repeat((32 - (cdLen % 32)) % 32 * 2);
+
+    let chunk = '';
+    chunk += padAddr(target);           // address
+    chunk += toHex32(1);                // allowFailure = true
+    chunk += toHex32(0x60);             // offset to bytes within tuple
+    chunk += toHex32(cdLen);            // bytes length
+    chunk += cdPadded;                  // bytes data (padded)
+    tupleChunks.push(chunk);
+  }
+
+  // Offsets to each tuple (relative to start of first offset word after array length)
+  const offsetBase = calls.length * 32;
+  let currentOffset = offsetBase;
+  for (let i = 0; i < tupleChunks.length; i++) {
+    hex += toHex32(currentOffset);
+    currentOffset += tupleChunks[i].length / 2;
+  }
+
+  // Append tuple data
+  for (const chunk of tupleChunks) {
+    hex += chunk;
+  }
+
+  return '0x' + hex;
+}
+
+// --- ABI Decoding ---
+function hexSlice(hex, byteStart, byteEnd) {
+  return hex.slice(byteStart * 2, byteEnd * 2);
+}
+
+function hexToBI(hex) {
+  return BigInt('0x' + (hex || '0'));
+}
+
+function decodeMulticallResult(hexData) {
+  // Strip 0x
+  const d = hexData.startsWith('0x') ? hexData.slice(2) : hexData;
+
+  const arrayOffset = Number(hexToBI(hexSlice(d, 0, 32)));
+  const arrayStart = arrayOffset;
+  const arrayLen = Number(hexToBI(hexSlice(d, arrayStart, arrayStart + 32)));
+
+  const results = [];
+  for (let i = 0; i < arrayLen; i++) {
+    const elemOffsetPos = arrayStart + 32 + i * 32;
+    const elemOffset = Number(hexToBI(hexSlice(d, elemOffsetPos, elemOffsetPos + 32)));
+    const elemStart = arrayStart + 32 + elemOffset;
+
+    const success = hexToBI(hexSlice(d, elemStart, elemStart + 32)) !== 0n;
+    const bytesOffset = Number(hexToBI(hexSlice(d, elemStart + 32, elemStart + 64)));
+    const bytesStart = elemStart + bytesOffset;
+    const bytesLen = Number(hexToBI(hexSlice(d, bytesStart, bytesStart + 32)));
+    const data = hexSlice(d, bytesStart + 32, bytesStart + 32 + bytesLen);
+
+    results.push({ success, data });
+  }
+  return results;
+}
+
+// --- RPC Call ---
+async function ethCall(rpcUrl, to, data) {
+  const resp = await fetch(rpcUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      jsonrpc: '2.0',
+      method: 'eth_call',
+      params: [{ to, data }, 'latest'],
+      id: 1,
+    }),
+  });
+  const json = await resp.json();
+  if (json.error) throw new Error(json.error.message);
+  return json.result;
+}
+
+// --- Format helpers ---
+function fmtUsd(n) {
+  return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function fmtToken(n, decimals = 6) {
+  return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function fmtPct(n) {
+  return n.toFixed(2) + '%';
+}
+
+// --- Health color ---
+function hfColor(hf) {
+  if (hf >= 2) return 'var(--green)';
+  if (hf >= 1.5) return 'var(--yellow)';
+  if (hf >= 1.1) return 'var(--orange)';
+  return 'var(--red)';
+}
+
+// --- Main ---
+async function queryPosition() {
+  const addr = document.getElementById('addressInput').value.trim();
+  const rpcUrl = document.getElementById('rpcUrl').value.trim();
+  const statusEl = document.getElementById('status');
+  const resultsEl = document.getElementById('results');
+  const btn = document.getElementById('queryBtn');
+
+  if (!/^0x[0-9a-fA-F]{40}$/.test(addr)) {
+    statusEl.className = 'error';
+    statusEl.textContent = 'Invalid Ethereum address';
+    statusEl.style.display = 'block';
+    resultsEl.style.display = 'none';
+    return;
+  }
+
+  statusEl.className = 'loading';
+  statusEl.textContent = 'Querying via Multicall3...';
+  statusEl.style.display = 'block';
+  resultsEl.style.display = 'none';
+  btn.disabled = true;
+
+  try {
+    const calldata = buildMulticallData(addr);
+    const raw = await ethCall(rpcUrl, MULTICALL3, calldata);
+    const decoded = decodeMulticallResult(raw);
+
+    // 1. aWstETH balance
+    if (!decoded[0].success) throw new Error('aWstETH balanceOf call failed');
+    const colRaw = hexToBI(decoded[0].data);
+    const collateral = Number(colRaw) / 1e18;
+
+    // 2. variableDebtWETH balance
+    if (!decoded[1].success) throw new Error('variableDebtWETH balanceOf call failed');
+    const debtRaw = hexToBI(decoded[1].data);
+    const debt = Number(debtRaw) / 1e18;
+
+    // 3. getUserAccountData
+    if (!decoded[2].success) throw new Error('getUserAccountData call failed');
+    const acct = decoded[2].data;
+    const totalColUsd   = Number(hexToBI(hexSlice(acct, 0, 32))) / 1e8;
+    const totalDebtUsd  = Number(hexToBI(hexSlice(acct, 32, 64))) / 1e8;
+    const availUsd      = Number(hexToBI(hexSlice(acct, 64, 96))) / 1e8;
+    const currentLtvBps = Number(hexToBI(hexSlice(acct, 96, 128)));
+    const liqThreshBps  = Number(hexToBI(hexSlice(acct, 128, 160)));
+    const hfRaw         = hexToBI(hexSlice(acct, 160, 192));
+
+    const MAX_UINT256 = (1n << 256n) - 1n;
+    const hf = hfRaw === MAX_UINT256 ? Infinity : Number(hfRaw) / 1e18;
+
+    const actualLtv = totalColUsd > 0 ? (totalDebtUsd / totalColUsd) * 100 : 0;
+    const leverage = actualLtv < 100 ? 1 / (1 - actualLtv / 100) : Infinity;
+    const netWorth = totalColUsd - totalDebtUsd;
+    const liqThreshPct = liqThreshBps / 100;
+    const distToLiq = liqThreshPct > 0 ? liqThreshPct - actualLtv : 0;
+
+    // Update UI
+    // Health
+    const hfStr = hf === Infinity ? '∞' : hf.toFixed(4);
+    document.getElementById('hf').textContent = hfStr;
+    document.getElementById('hf').style.color = hf === Infinity ? 'var(--text-dim)' : hfColor(hf);
+
+    const barEl = document.getElementById('hfBar');
+    if (hf === Infinity) {
+      barEl.style.width = '100%';
+      barEl.style.background = 'var(--text-dim)';
+    } else {
+      const barPct = Math.min(Math.max((hf / 3) * 100, 2), 100);
+      barEl.style.width = barPct + '%';
+      barEl.style.background = hfColor(hf);
+    }
+
+    document.getElementById('actualLtv').textContent = fmtPct(actualLtv);
+    document.getElementById('actualLtv').style.color = actualLtv > liqThreshPct ? 'var(--red)' : actualLtv > liqThreshPct * 0.9 ? 'var(--yellow)' : 'var(--text)';
+
+    // Token balances
+    document.getElementById('colBal').innerHTML = fmtToken(collateral) + ' <span class="metric-unit">wstETH</span>';
+    document.getElementById('debtBal').innerHTML = fmtToken(debt) + ' <span class="metric-unit">WETH</span>';
+
+    // USD
+    document.getElementById('colUsd').textContent = fmtUsd(totalColUsd);
+    document.getElementById('debtUsd').textContent = fmtUsd(totalDebtUsd);
+    document.getElementById('availUsd').textContent = fmtUsd(availUsd);
+    document.getElementById('netUsd').textContent = fmtUsd(netWorth);
+    document.getElementById('netUsd').style.color = netWorth >= 0 ? 'var(--green)' : 'var(--red)';
+
+    // Protocol params
+    document.getElementById('avgLtv').textContent = fmtPct(currentLtvBps / 100);
+    document.getElementById('liqThresh').textContent = fmtPct(liqThreshPct);
+    document.getElementById('leverage').textContent = leverage === Infinity ? '∞' : leverage.toFixed(2) + 'x';
+    document.getElementById('distLiq').textContent = distToLiq > 0 ? fmtPct(distToLiq) : '—';
+    document.getElementById('distLiq').style.color = distToLiq < 3 && distToLiq > 0 ? 'var(--red)' : distToLiq < 10 && distToLiq > 0 ? 'var(--yellow)' : 'var(--text)';
+
+    statusEl.style.display = 'none';
+    resultsEl.style.display = 'block';
+  } catch (err) {
+    statusEl.className = 'error';
+    statusEl.textContent = 'Error: ' + err.message;
+    statusEl.style.display = 'block';
+    resultsEl.style.display = 'none';
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Allow Enter key
+document.getElementById('addressInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') queryPosition();
+});
+</script>
+
+</body>
+</html>
