@@ -171,38 +171,39 @@
       border-top: none; border-radius: 0 0 8px 8px; padding: 1.5rem;
     }
 
-    /* Yield heatmap */
-    .heatmap-table {
+    /* Yield table */
+    .yield-table {
       width: 100%; border-collapse: collapse; font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
     }
-    .heatmap-table th {
-      background: var(--bg); color: var(--text-dim); padding: 0.5rem 0.4rem;
-      font-weight: 600; text-align: center; font-size: 0.65rem;
-      border: 1px solid var(--border); position: sticky; top: 0;
+    .yield-table th {
+      background: var(--bg); color: var(--text-dim); padding: 0.6rem 0.75rem;
+      font-weight: 600; text-align: right; font-size: 0.65rem;
+      text-transform: uppercase; letter-spacing: 0.03em;
+      border-bottom: 2px solid var(--border);
     }
-    .heatmap-table th.corner { background: var(--bg); }
-    .heatmap-table th.row-header {
-      text-align: right; padding-right: 0.6rem; white-space: nowrap;
-      position: sticky; left: 0;
+    .yield-table th:first-child { text-align: left; }
+    .yield-table td {
+      padding: 0.55rem 0.75rem; text-align: right;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s;
     }
-    .heatmap-table td {
-      padding: 0.4rem 0.35rem; text-align: center;
-      border: 1px solid var(--border); cursor: default;
-      transition: transform 0.1s;
+    .yield-table td:first-child {
+      text-align: left; font-weight: 600; font-size: 0.9rem;
     }
-    .heatmap-table td:hover { transform: scale(1.05); z-index: 1; }
-    .heatmap-legend {
-      display: flex; align-items: center; gap: 0.5rem;
-      margin-top: 0.75rem; font-size: 0.7rem; color: var(--text-dim);
+    .yield-table tr { cursor: pointer; }
+    .yield-table tr:hover td { background: #1c2333; }
+    .yield-table tr.yield-current td {
+      background: #1a2332; border-top: 1px solid var(--accent);
+      border-bottom: 1px solid var(--accent);
     }
-    .legend-bar {
-      width: 200px; height: 10px; border-radius: 3px;
-      background: linear-gradient(to right, #f85149, #d29922, #161b22, #238636, #3fb950);
+    .yield-table tr.yield-current td:first-child {
+      border-left: 3px solid var(--accent);
     }
-    .heatmap-marker {
-      outline: 2px solid var(--text); outline-offset: -1px;
-      font-weight: 700;
+    .yield-bar-cell { position: relative; }
+    .yield-bar {
+      position: absolute; left: 0; top: 4px; bottom: 4px;
+      border-radius: 2px; opacity: 0.25;
     }
 
     /* Unwind simulator */
@@ -429,22 +430,23 @@
     <!-- TAB 1: Yield Explorer -->
     <div class="tab-content active" id="tab-yield">
       <div class="tab-panel">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:1rem;">
           <div style="font-size:0.8rem; color:var(--text-dim);">
-            Net yield across Health Factor &times; Liquidation LTV combinations using live rates
+            Pick a leverage level to see the yield breakdown at current rates
           </div>
           <div style="font-size:0.7rem; color:var(--text-dim);">
-            <span class="mono" id="hmRatesInfo">r_stake=&mdash;, r_borrow=&mdash;</span>
+            <span class="mono" id="hmRatesInfo">&mdash;</span>
           </div>
         </div>
         <div style="overflow-x: auto;">
-          <table class="heatmap-table" id="yieldHeatmap"></table>
+          <table class="yield-table" id="yieldTable"></table>
         </div>
-        <div class="heatmap-legend">
-          <span>Negative</span>
-          <div class="legend-bar"></div>
-          <span>Positive yield</span>
-          <span style="margin-left:1rem;">&#9632; = current position</span>
+        <div style="margin-top:0.75rem; font-size:0.7rem; color:var(--text-dim); line-height:1.5;">
+          <span style="display:inline-block; width:8px; height:8px; background:var(--accent); border-radius:2px; margin-right:4px;"></span> = your current position &nbsp;&middot;&nbsp;
+          Staking = Lido stETH yield &nbsp;&middot;&nbsp;
+          Borrow = Aave WETH cost &times; LTV &nbsp;&middot;&nbsp;
+          Credit = Twyne delegation cost (IR &times; &Psi;) &nbsp;&middot;&nbsp;
+          Net APY = total return on your deposit
         </div>
       </div>
     </div>
@@ -715,66 +717,104 @@ function computeYieldGrid(rStake, rBorrow, hfValues, liqLtvValues, utilization, 
 
 function updateYieldGrid() {
   // Fixed parameters matching boosted-looping-economics DEFAULTS
-  const util = 0.95;       // DEFAULTS["utilization"]
-  const beta = 0.95;       // DEFAULTS["beta_safe"]
-  const extLtv = 0.95;     // DEFAULTS["liq_ltv_c"]
+  const util = 0.95;
+  const beta = 0.95;
+  const extLtv = 0.95;
+  const liqLtv = TWYNE_LIQ_LTV;  // 0.98
 
   const rStake = liveRates.rStake;
   const rBorrow = liveRates.rBorrow;
+  const irU = interestRate(util, IR_MIN, IR_0, U_0, IR_MAX, GAMMA);
+  const psiVal = psiCalc(liqLtv, beta, extLtv);
+  const creditCostRate = irU * psiVal;
+
   document.getElementById('hmRatesInfo').textContent =
-    'r_stake=' + (rStake * 100).toFixed(2) + '%, r_borrow=' + (rBorrow * 100).toFixed(2) + '%';
+    'staking ' + (rStake * 100).toFixed(2) + '% · borrow ' + (rBorrow * 100).toFixed(2) + '%';
 
-  // Grid: HF 1.10 (top) down to 1.01 (bottom), Liq LTV 95% to 98%
-  // Matching app.py: hf_values = np.linspace(hf_max, hf_min, n_hf)  # High to low
-  const n_hf = 15, n_ltv = 10;
-  const hfValues = [];
-  for (let i = 0; i < n_hf; i++) hfValues.push(1.10 - i * (1.10 - 1.00) / (n_hf - 1));
-  const liqLtvValues = [];
-  for (let i = 0; i < n_ltv; i++) liqLtvValues.push(0.95 + i * (0.98 - 0.95) / (n_ltv - 1));
+  // Leverage levels — what users actually think in
+  const leverages = [1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 13, 15, 20, 30, 50];
 
-  const { yields, days, irU } = computeYieldGrid(rStake, rBorrow, hfValues, liqLtvValues, util, beta, extLtv);
-
-  // Find closest cell to current position
-  const curLtv = livePosition.actualLtv / 100;
-  const curHf = livePosition.hf;
-  let closestHi = -1, closestLi = -1, closestDist = Infinity;
-  if (curLtv > 0 && isFinite(curHf) && curHf <= 1.15) {
-    for (let hi = 0; hi < hfValues.length; hi++) {
-      for (let li = 0; li < liqLtvValues.length; li++) {
-        const d = Math.abs(hfValues[hi] - curHf) * 10 + Math.abs(liqLtvValues[li] - TWYNE_LIQ_LTV);
-        if (d < closestDist) { closestDist = d; closestHi = hi; closestLi = li; }
-      }
+  // Find closest to current position
+  const curLev = livePosition.leverage;
+  let closestIdx = -1;
+  if (curLev > 1 && isFinite(curLev)) {
+    let best = Infinity;
+    for (let i = 0; i < leverages.length; i++) {
+      const d = Math.abs(leverages[i] - curLev);
+      if (d < best) { best = d; closestIdx = i; }
     }
   }
 
-  // Build table
-  const table = document.getElementById('yieldHeatmap');
-  let html = '<tr><th class="corner">HF \\ Liq LTV</th>';
-  for (const ltv of liqLtvValues) {
-    html += '<th>' + (ltv * 100).toFixed(1) + '%</th>';
-  }
-  html += '</tr>';
+  // Build table rows
+  const table = document.getElementById('yieldTable');
+  let html = '<tr>'
+    + '<th>Leverage</th>'
+    + '<th>LTV</th>'
+    + '<th>HF</th>'
+    + '<th style="color:var(--green);">Staking</th>'
+    + '<th style="color:var(--red);">Borrow</th>'
+    + '<th style="color:var(--twyne);">Credit</th>'
+    + '<th>Net APY</th>'
+    + '<th>Safety</th>'
+    + '</tr>';
 
-  for (let hi = 0; hi < hfValues.length; hi++) {
-    html += '<tr><th class="row-header">' + hfValues[hi].toFixed(2) + '</th>';
-    for (let li = 0; li < liqLtvValues.length; li++) {
-      const y = yields[hi][li];
-      const d = days[hi][li];
-      const isMarker = (hi === closestHi && li === closestLi);
-      if (isNaN(y)) {
-        html += '<td style="background:var(--bg);color:var(--text-dim);"' + (isMarker ? ' class="heatmap-marker"' : '') + '>&mdash;</td>';
-      } else {
-        const bg = yieldColor(y);
-        const textColor = Math.abs(y) < 0.005 ? 'var(--text-dim)' : 'var(--text)';
-        const yPct = (y * 100).toFixed(1) + '%';
-        const title = 'Yield: ' + yPct + (d !== Infinity && d > 0 ? '\nDays to liq: ' + Math.round(d) : '\nSafe (yield > 0)');
-        html += '<td style="background:' + bg + ';color:' + textColor + ';" title="' + title + '"'
-          + (isMarker ? ' class="heatmap-marker"' : '')
-          + '>' + yPct + '</td>';
-      }
-    }
-    html += '</tr>';
+  // Track max net APY for bar sizing
+  let maxAbsApy = 0;
+  const rows = [];
+  for (let i = 0; i < leverages.length; i++) {
+    const L = leverages[i];
+    const lambdaT = (L - 1) / L;
+    const hf = liqLtv / lambdaT;
+
+    // Rate components (all annualized, on deposited capital)
+    const stakingOnDeposit = rStake * L;
+    const borrowOnDeposit = rBorrow * lambdaT * L;  // = rBorrow * (L-1)
+    const creditOnDeposit = creditCostRate * L;      // credit cost scales with position
+    const netApy = (rStake - rBorrow * lambdaT - creditCostRate) / (1 - lambdaT);
+
+    // Days to liquidation
+    const rNet = rStake - rBorrow - psiVal * irU;
+    const dtl = daysToLiq(hf, rStake, rBorrow, psiVal * irU);
+
+    rows.push({ L, lambdaT, hf, stakingOnDeposit, borrowOnDeposit, creditOnDeposit, netApy, dtl });
+    if (Math.abs(netApy) > maxAbsApy) maxAbsApy = Math.abs(netApy);
   }
+
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
+    const isCurrent = (i === closestIdx);
+    const netColor = r.netApy >= 0 ? 'var(--green)' : 'var(--red)';
+
+    // Safety column
+    let safety;
+    if (r.netApy > 0) {
+      safety = '<span style="color:var(--green);">\u221E safe</span>';
+    } else if (r.dtl > 365) {
+      safety = '<span style="color:var(--yellow);">' + Math.round(r.dtl) + 'd</span>';
+    } else if (r.dtl > 30) {
+      safety = '<span style="color:var(--orange);">' + Math.round(r.dtl) + 'd</span>';
+    } else {
+      safety = '<span style="color:var(--red);">' + Math.round(r.dtl) + 'd</span>';
+    }
+
+    // Net APY bar
+    const barPct = maxAbsApy > 0 ? Math.abs(r.netApy) / maxAbsApy * 100 : 0;
+    const barColor = r.netApy >= 0 ? 'var(--green)' : 'var(--red)';
+
+    html += '<tr' + (isCurrent ? ' class="yield-current"' : '') + '>'
+      + '<td>' + r.L.toFixed(1) + 'x</td>'
+      + '<td>' + (r.lambdaT * 100).toFixed(1) + '%</td>'
+      + '<td>' + r.hf.toFixed(2) + '</td>'
+      + '<td style="color:var(--green);">+' + (r.stakingOnDeposit * 100).toFixed(1) + '%</td>'
+      + '<td style="color:var(--red);">-' + (r.borrowOnDeposit * 100).toFixed(1) + '%</td>'
+      + '<td style="color:var(--twyne);">-' + (r.creditOnDeposit * 100).toFixed(1) + '%</td>'
+      + '<td class="yield-bar-cell" style="color:' + netColor + ';font-weight:700;">'
+      +   '<div class="yield-bar" style="width:' + barPct + '%;background:' + barColor + ';"></div>'
+      +   '<span style="position:relative;">' + (r.netApy >= 0 ? '+' : '') + (r.netApy * 100).toFixed(1) + '%</span></td>'
+      + '<td>' + safety + '</td>'
+      + '</tr>';
+  }
+
   table.innerHTML = html;
 }
 
