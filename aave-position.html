@@ -170,6 +170,64 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
     }
 
+    /* Twyne Advantage card */
+    .twyne-card {
+      border-color: #7c3aed44;
+    }
+    .twyne-card .card-title {
+      color: #a78bfa;
+    }
+    .twyne-tagline {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      margin-bottom: 1rem;
+      line-height: 1.4;
+    }
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.9rem;
+    }
+    .compare-table th {
+      text-align: right;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      font-weight: 500;
+      padding: 0.25rem 0.75rem 0.5rem;
+    }
+    .compare-table th:first-child { text-align: left; }
+    .compare-table td {
+      padding: 0.375rem 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+    .compare-table td:first-child {
+      font-size: 0.8rem;
+      color: var(--text-dim);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    }
+    .compare-table td:nth-child(2) { text-align: right; }
+    .compare-table td:nth-child(3) { text-align: right; color: #a78bfa; font-weight: 600; }
+    .spread-line {
+      margin-top: 1rem;
+      padding: 0.625rem 0.75rem;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+    .spread-positive {
+      background: #0d2818;
+      border: 1px solid #1a4d2e;
+      color: var(--green);
+    }
+    .spread-negative {
+      background: #2d1117;
+      border: 1px solid #4d1f1f;
+      color: var(--red);
+    }
+
     #results { display: none; }
 
     @media (max-width: 700px) {
@@ -287,6 +345,42 @@
       </div>
     </div>
   </div>
+
+  <!-- Row 4: Twyne Advantage -->
+  <div class="card full-card twyne-card" id="twyneCard" style="display:none;">
+    <div class="card-title">Twyne Advantage</div>
+    <div class="twyne-tagline">
+      Higher LTV ceiling &mdash; in good times, earn more. In bad times, exit faster.
+    </div>
+    <table class="compare-table">
+      <tr>
+        <th></th>
+        <th>Aave</th>
+        <th>Twyne</th>
+      </tr>
+      <tr>
+        <td>Max Leverage</td>
+        <td id="aaveMaxLev">&mdash;</td>
+        <td id="twyneMaxLev">&mdash;</td>
+      </tr>
+      <tr>
+        <td>Unwind Steps</td>
+        <td id="aaveUnwind">&mdash;</td>
+        <td id="twyneUnwind">&mdash;</td>
+      </tr>
+      <tr>
+        <td>Distance to Liq</td>
+        <td id="aaveDistLiq2">&mdash;</td>
+        <td id="twyneDistLiq">&mdash;</td>
+      </tr>
+      <tr>
+        <td>Days to Liq</td>
+        <td id="aaveDaysLiq">&mdash;</td>
+        <td id="twyneDaysLiq">&mdash;</td>
+      </tr>
+    </table>
+    <div id="spreadAdvice" class="spread-line spread-positive"></div>
+  </div>
 </div>
 
 <script>
@@ -305,6 +399,11 @@ const GET_RESERVE_DATA_SEL     = '35ea6a75';
 
 // RAY = 1e27
 const RAY = 10n ** 27n;
+
+// Twyne protocol parameters (e-mode wstETH/WETH defaults)
+const TWYNE_LIQ_LTV = 0.98;   // Max boosted liquidation LTV (lambda_t_tilde_max)
+const TWYNE_BETA    = 0.95;    // Safety buffer
+const TWYNE_IR      = 0.008;   // Interest rate at kink utilization (0.8%)
 
 // Flip state
 const flipState = { col: false, debt: false };
@@ -487,6 +586,39 @@ function rayToPercent(bigintVal) {
   return Number(bigintVal * 10000n / RAY) / 100;
 }
 
+// --- Unwind step counter (from unwinding-comparison.html) ---
+function countUnwindSteps(C, B, maxLtv) {
+  let steps = 0;
+  while (B > 0.0001 && steps < 500) {
+    const Wmax = C - B / maxLtv;
+    if (Wmax <= 0) break;
+    const W = Math.min(Wmax, B);
+    const isFinal = Wmax >= B;
+    C -= Wmax;
+    B -= W;
+    steps++;
+    if (isFinal) break;
+  }
+  return steps;
+}
+
+// --- Days to liquidation (from economics.py) ---
+// T_liq = -365 * ln(HF_0) / ln(1 + r_net / (1 + r_borrow))
+function daysToLiq(hf0, rStake, rBorrow, psiIR) {
+  if (hf0 <= 1) return 0;
+  const rNet = rStake - rBorrow - psiIR;
+  if (rNet >= 0) return Infinity;
+  const decay = 1 + rNet / (1 + rBorrow);
+  if (decay >= 1) return Infinity;
+  return -365 * Math.log(hf0) / Math.log(decay);
+}
+
+// --- CLP cost factor Psi (from economics.py) ---
+// Psi = lambda_t_tilde / (beta * lambda_e_tilde) - 1  (same-asset simplified)
+function psi(twyneLiqLtv, beta, extLiqLtv) {
+  return twyneLiqLtv / (beta * extLiqLtv) - 1;
+}
+
 // --- Main ---
 async function queryPosition() {
   const addr = document.getElementById('addressInput').value.trim();
@@ -539,8 +671,8 @@ async function queryPosition() {
     const totalColUsd   = Number(hexToBI(hexSlice(acct, 0, 32))) / 1e8;
     const totalDebtUsd  = Number(hexToBI(hexSlice(acct, 32, 64))) / 1e8;
     const availUsd      = Number(hexToBI(hexSlice(acct, 64, 96))) / 1e8;
-    const currentLtvBps = Number(hexToBI(hexSlice(acct, 96, 128)));
-    const liqThreshBps  = Number(hexToBI(hexSlice(acct, 128, 160)));
+    const liqThreshBps  = Number(hexToBI(hexSlice(acct, 96, 128)));
+    const currentLtvBps = Number(hexToBI(hexSlice(acct, 128, 160)));
     const hfRaw         = hexToBI(hexSlice(acct, 160, 192));
 
     const MAX_UINT256 = (1n << 256n) - 1n;
@@ -645,6 +777,71 @@ async function queryPosition() {
     } else {
       netApyEl.textContent = '\u2014';
       netApyEl.style.color = 'var(--text-dim)';
+    }
+
+    // ========== Twyne Advantage ==========
+    const twyneCard = document.getElementById('twyneCard');
+    if (totalDebtUsd > 0) {
+      twyneCard.style.display = '';
+
+      const aaveMaxLtvDec = currentLtvBps / 10000;  // e.g. 0.93
+      const aaveLiqDec    = liqThreshBps / 10000;    // e.g. 0.95
+      const rStake  = lidoApr / 100;
+      const rBorrow = wethBorrowApr / 100;
+      const spread  = rStake - rBorrow;
+
+      // Max leverage: same HF margin as Aave's max borrow
+      // Aave HF at max borrow = liqThresh / maxLtv
+      // Twyne max LTV at same HF = twyneLiqLtv * maxLtv / liqThresh
+      const aaveMaxLev = 1 / (1 - aaveMaxLtvDec);
+      const twyneOpLtv = TWYNE_LIQ_LTV * aaveMaxLtvDec / aaveLiqDec;
+      const twyneMaxLev = 1 / (1 - Math.min(twyneOpLtv, 0.99));
+
+      document.getElementById('aaveMaxLev').textContent = aaveMaxLev.toFixed(1) + 'x';
+      document.getElementById('twyneMaxLev').textContent = twyneMaxLev.toFixed(1) + 'x';
+
+      // Unwind steps (using token balances, approximate 1:1 for wstETH/WETH)
+      const aaveSteps  = countUnwindSteps(collateral, debt, aaveMaxLtvDec);
+      const twyneSteps = countUnwindSteps(collateral, debt, TWYNE_LIQ_LTV);
+
+      document.getElementById('aaveUnwind').textContent = aaveSteps + (aaveSteps === 1 ? ' step' : ' steps');
+      document.getElementById('twyneUnwind').textContent = twyneSteps + (twyneSteps === 1 ? ' step' : ' steps');
+
+      // Distance to liquidation
+      const aaveDist  = liqThreshPct - actualLtv;
+      const twyneDist = TWYNE_LIQ_LTV * 100 - actualLtv;
+
+      document.getElementById('aaveDistLiq2').textContent = aaveDist > 0 ? fmtPct(aaveDist) : '\u2014';
+      const twyneDistEl = document.getElementById('twyneDistLiq');
+      twyneDistEl.textContent = twyneDist > 0 ? fmtPct(twyneDist) : '\u2014';
+
+      // Days to liquidation
+      const aaveHf0 = aaveLiqDec / ltvDecimal;
+      const psiVal  = psi(TWYNE_LIQ_LTV, TWYNE_BETA, aaveLiqDec);
+      const twyneHf0 = TWYNE_LIQ_LTV / ltvDecimal;
+
+      const aaveDays  = daysToLiq(aaveHf0, rStake, rBorrow, 0);
+      const twyneDays = daysToLiq(twyneHf0, rStake, rBorrow, psiVal * TWYNE_IR);
+
+      const fmtDays = (d) => d === Infinity ? '\u221E (safe)' : d <= 0 ? '\u2014' : Math.round(d) + 'd';
+      document.getElementById('aaveDaysLiq').textContent = fmtDays(aaveDays);
+      document.getElementById('twyneDaysLiq').textContent = fmtDays(twyneDays);
+
+      // Spread advice
+      const adviceEl = document.getElementById('spreadAdvice');
+      const spreadPct = (spread * 100).toFixed(2);
+      if (spread >= 0) {
+        adviceEl.className = 'spread-line spread-positive';
+        adviceEl.innerHTML = '<strong>Spread: +' + spreadPct + '%</strong> (staking ' + fmtPct(lidoApr) + ' \u2212 borrow ' + fmtPct(wethBorrowApr) + ')'
+          + '<br>Positive spread \u2192 Twyne lets you leverage up to ' + twyneMaxLev.toFixed(1) + 'x and earn more on the spread.';
+      } else {
+        adviceEl.className = 'spread-line spread-negative';
+        adviceEl.innerHTML = '<strong>Spread: ' + spreadPct + '%</strong> (staking ' + fmtPct(lidoApr) + ' \u2212 borrow ' + fmtPct(wethBorrowApr) + ')'
+          + '<br>Negative spread \u2192 Twyne gives you ' + fmtPct(twyneDist - aaveDist) + ' more room and '
+          + (aaveSteps - twyneSteps) + ' fewer unwind steps to exit faster.';
+      }
+    } else {
+      twyneCard.style.display = 'none';
     }
 
     statusEl.style.display = 'none';
