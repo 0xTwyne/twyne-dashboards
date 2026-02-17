@@ -18,6 +18,7 @@
       --orange: #db6d28;
       --twyne: #a78bfa;
       --twyne-border: #7c3aed44;
+      --twyne-bg: #7c3aed11;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -32,7 +33,7 @@
 
     /* Input area */
     .input-row {
-      display: flex; gap: 0.75rem; margin-bottom: 1.5rem; max-width: 900px;
+      display: flex; gap: 0.75rem; margin-bottom: 1.5rem; max-width: 960px;
     }
     input[type="text"] {
       flex: 1; background: var(--surface); border: 1px solid var(--border);
@@ -79,21 +80,38 @@
     .metric-value.large { font-size: 1.6rem; }
     .metric-unit { font-weight: 400; color: var(--text-dim); font-size: 0.8em; }
 
-    /* Two-column main layout */
+    /* Layout */
+    .container { max-width: 960px; }
+
+    /* Overview card */
+    .overview {
+      display: grid; grid-template-columns: 1fr auto 1fr; gap: 1.5rem;
+      align-items: center; margin-bottom: 1rem;
+    }
+    .overview-side { text-align: center; }
+    .overview-side.twyne { color: var(--twyne); }
+    .overview-vs {
+      font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase;
+      letter-spacing: 0.1em; padding: 0.5rem;
+    }
+    .overview-hf { font-size: 2rem; font-weight: 700; font-family: 'SF Mono', 'Fira Code', monospace; }
+    .overview-label { font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase; margin-bottom: 0.25rem; }
+    .overview-metric {
+      font-size: 1rem; font-weight: 600; font-family: 'SF Mono', 'Fira Code', monospace;
+      margin-top: 0.25rem;
+    }
+
+    /* Two-column cards */
     .columns {
       display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
-      max-width: 900px; margin-bottom: 1rem;
+      margin-bottom: 1rem;
     }
     .column { display: flex; flex-direction: column; gap: 1rem; }
-
-    /* Twyne column accent */
     .twyne-col .card { border-color: var(--twyne-border); }
     .twyne-col .card-title { color: var(--twyne); }
 
-    /* Param grid inside cards */
-    .param-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 1.25rem;
-    }
+    /* Param grid */
+    .param-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem 1.25rem; }
 
     /* LTV bar */
     .ltv-bar-container { margin-top: 0.625rem; }
@@ -122,30 +140,6 @@
     }
     .pos-row:last-child { border-bottom: none; }
 
-    /* Full-width bottom card */
-    .full-card { max-width: 900px; margin-bottom: 1rem; }
-
-    /* Unwind bars */
-    .unwind-row {
-      display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;
-    }
-    .unwind-label {
-      font-size: 0.8rem; color: var(--text-dim); width: 50px; text-align: right;
-    }
-    .unwind-bar-track {
-      flex: 1; height: 20px; background: var(--border); border-radius: 4px;
-      overflow: hidden; position: relative;
-    }
-    .unwind-bar-fill {
-      height: 100%; border-radius: 4px; display: flex; align-items: center;
-      padding-left: 0.5rem; font-size: 0.75rem; font-weight: 600;
-      font-family: 'SF Mono', 'Fira Code', monospace; min-width: fit-content;
-      transition: width 0.3s;
-    }
-    .unwind-note {
-      font-size: 0.75rem; color: var(--text-dim); margin-top: 0.5rem; line-height: 1.4;
-    }
-
     /* Spread pill */
     .spread-pill {
       display: inline-block; padding: 0.25rem 0.625rem; border-radius: 4px;
@@ -154,11 +148,158 @@
     .spread-pos { background: #0d2818; color: var(--green); }
     .spread-neg { background: #2d1117; color: var(--red); }
 
+    /* Tabs */
+    .tabs { margin-top: 1.5rem; }
+    .tab-buttons {
+      display: flex; gap: 0; border-bottom: 1px solid var(--border);
+      margin-bottom: 0;
+    }
+    .tab-btn {
+      background: transparent; color: var(--text-dim); border: none;
+      padding: 0.75rem 1.5rem; font-size: 0.875rem; font-weight: 600;
+      cursor: pointer; border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { color: var(--text); background: var(--surface); }
+    .tab-btn.active {
+      color: var(--accent); border-bottom-color: var(--accent);
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .tab-panel {
+      background: var(--surface); border: 1px solid var(--border);
+      border-top: none; border-radius: 0 0 8px 8px; padding: 1.5rem;
+    }
+
+    /* Yield heatmap */
+    .heatmap-controls {
+      display: flex; gap: 1.5rem; align-items: end; flex-wrap: wrap;
+      margin-bottom: 1.25rem;
+    }
+    .heatmap-controls label {
+      font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 0.25rem;
+    }
+    .heatmap-controls input[type="range"] {
+      width: 140px; accent-color: var(--accent);
+    }
+    .heatmap-controls .ctrl-val {
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85rem;
+      color: var(--text); margin-left: 0.5rem;
+    }
+    .heatmap-table {
+      width: 100%; border-collapse: collapse; font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.75rem;
+    }
+    .heatmap-table th {
+      background: var(--bg); color: var(--text-dim); padding: 0.5rem 0.4rem;
+      font-weight: 600; text-align: center; font-size: 0.65rem;
+      border: 1px solid var(--border); position: sticky; top: 0;
+    }
+    .heatmap-table th.corner { background: var(--bg); }
+    .heatmap-table th.row-header {
+      text-align: right; padding-right: 0.6rem; white-space: nowrap;
+      position: sticky; left: 0;
+    }
+    .heatmap-table td {
+      padding: 0.4rem 0.35rem; text-align: center;
+      border: 1px solid var(--border); cursor: default;
+      transition: transform 0.1s;
+    }
+    .heatmap-table td:hover { transform: scale(1.05); z-index: 1; }
+    .heatmap-legend {
+      display: flex; align-items: center; gap: 0.5rem;
+      margin-top: 0.75rem; font-size: 0.7rem; color: var(--text-dim);
+    }
+    .legend-bar {
+      width: 200px; height: 10px; border-radius: 3px;
+      background: linear-gradient(to right, #f85149, #d29922, #161b22, #238636, #3fb950);
+    }
+    .heatmap-marker {
+      outline: 2px solid var(--text); outline-offset: -1px;
+      font-weight: 700;
+    }
+
+    /* Unwind simulator */
+    .unwind-controls {
+      display: flex; gap: 1.5rem; align-items: end; flex-wrap: wrap;
+      margin-bottom: 1.25rem;
+    }
+    .unwind-controls label {
+      font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 0.25rem;
+    }
+    .unwind-controls input[type="range"] { width: 160px; accent-color: var(--accent); }
+    .unwind-controls .ctrl-val {
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85rem;
+      color: var(--text); margin-left: 0.5rem;
+    }
+
+    .unwind-comparison {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .unwind-side { }
+    .unwind-side-title {
+      font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.05em; margin-bottom: 0.75rem;
+    }
+    .unwind-side-title.twyne { color: var(--twyne); }
+    .unwind-summary {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;
+    }
+    .unwind-summary-label { font-size: 0.75rem; color: var(--text-dim); }
+
+    /* Waterfall bars */
+    .waterfall { margin-top: 0.75rem; }
+    .waterfall-step {
+      display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;
+    }
+    .waterfall-label {
+      width: 24px; font-size: 0.65rem; color: var(--text-dim);
+      text-align: right; font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+    .waterfall-track {
+      flex: 1; height: 14px; background: var(--border); border-radius: 3px;
+      overflow: hidden;
+    }
+    .waterfall-fill {
+      height: 100%; border-radius: 3px; display: flex; align-items: center;
+      padding-left: 0.4rem; font-size: 0.6rem; font-weight: 600;
+      font-family: 'SF Mono', 'Fira Code', monospace; color: var(--text);
+      white-space: nowrap; overflow: hidden;
+    }
+
+    /* Step detail table */
+    .step-table {
+      width: 100%; border-collapse: collapse; margin-top: 0.75rem;
+      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.7rem;
+    }
+    .step-table th {
+      background: var(--bg); color: var(--text-dim); padding: 0.35rem 0.5rem;
+      font-weight: 600; text-align: right; border: 1px solid var(--border);
+    }
+    .step-table th:first-child { text-align: center; }
+    .step-table td {
+      padding: 0.35rem 0.5rem; text-align: right;
+      border: 1px solid var(--border);
+    }
+    .step-table td:first-child { text-align: center; color: var(--text-dim); }
+    .step-table tr:last-child td { font-weight: 600; }
+
+    /* Unwind note */
+    .unwind-note {
+      font-size: 0.8rem; color: var(--text-dim); margin-top: 1rem; line-height: 1.5;
+      padding: 0.75rem 1rem; background: var(--bg); border-radius: 6px;
+      border-left: 3px solid var(--twyne);
+    }
+
     #results { display: none; }
 
     @media (max-width: 700px) {
       body { padding: 1rem; }
-      .columns { grid-template-columns: 1fr; }
+      .columns, .overview, .unwind-comparison { grid-template-columns: 1fr; }
+      .overview { gap: 0.5rem; }
+      .overview-vs { display: none; }
       .param-grid { grid-template-columns: 1fr; }
       .input-row { flex-direction: column; }
     }
@@ -181,13 +322,51 @@
 
 <div id="status"></div>
 
-<div id="results">
-  <!-- Two-column layout: Aave | Twyne -->
-  <div class="columns">
+<div id="results" class="container">
 
-    <!-- LEFT: Aave Position -->
+  <!-- ========== OVERVIEW ========== -->
+  <div class="card" style="margin-bottom: 1rem;">
+    <div class="card-title">Position Overview</div>
+    <div class="overview">
+      <div class="overview-side">
+        <div class="overview-label">Aave Health Factor</div>
+        <div class="overview-hf" id="ovHf">&mdash;</div>
+        <div class="overview-metric" id="ovAaveApy">&mdash;</div>
+        <div class="overview-label" style="margin-top:0.125rem;">Net APY</div>
+      </div>
+      <div class="overview-vs">vs</div>
+      <div class="overview-side twyne">
+        <div class="overview-label">Twyne Health Factor</div>
+        <div class="overview-hf" id="ovTwyneHf">&mdash;</div>
+        <div class="overview-metric" id="ovTwyneApy">&mdash;</div>
+        <div class="overview-label" style="margin-top:0.125rem;">Net APY</div>
+      </div>
+    </div>
+    <!-- Balances row -->
+    <div style="display: flex; justify-content: space-around; border-top: 1px solid var(--border); padding-top: 0.75rem; margin-top: 0.25rem;">
+      <div style="text-align: center;">
+        <div class="metric-label">Collateral <span class="flip-hint">(click)</span></div>
+        <div class="metric-value flippable" id="ovCol" onclick="flip('col')">&mdash;</div>
+      </div>
+      <div style="text-align: center;">
+        <div class="metric-label">Debt <span class="flip-hint">(click)</span></div>
+        <div class="metric-value flippable" id="ovDebt" onclick="flip('debt')">&mdash;</div>
+      </div>
+      <div style="text-align: center;">
+        <div class="metric-label">Spread</div>
+        <span id="ovSpread">&mdash;</span>
+      </div>
+      <div style="text-align: center;">
+        <div class="metric-label">Leverage</div>
+        <div class="metric-value" id="ovLev">&mdash;</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== AAVE / TWYNE DETAIL CARDS ========== -->
+  <div class="columns">
+    <!-- LEFT: Aave -->
     <div class="column">
-      <!-- Health -->
       <div class="card">
         <div class="card-title">Aave Position</div>
         <div class="metric-label">Health Factor</div>
@@ -224,37 +403,10 @@
           </div>
         </div>
       </div>
-
-      <!-- Position -->
-      <div class="card">
-        <div class="card-title">Balances <span class="flip-hint">(click to flip)</span></div>
-        <div class="pos-row">
-          <span class="metric-label">Collateral</span>
-          <span class="metric-value flippable" id="colVal" onclick="flip('col')">&mdash;</span>
-        </div>
-        <div class="pos-row">
-          <span class="metric-label">Debt</span>
-          <span class="metric-value flippable" id="debtVal" onclick="flip('debt')">&mdash;</span>
-        </div>
-      </div>
-
-      <!-- Yield -->
-      <div class="card">
-        <div class="card-title">Yield</div>
-        <div class="pos-row">
-          <span class="metric-label">Spread</span>
-          <span id="aaveSpread">&mdash;</span>
-        </div>
-        <div class="pos-row">
-          <span class="metric-label">Net APY</span>
-          <span class="metric-value" id="aaveNetApy">&mdash;</span>
-        </div>
-      </div>
     </div>
 
-    <!-- RIGHT: With Twyne -->
+    <!-- RIGHT: Twyne -->
     <div class="column twyne-col">
-      <!-- Health (Twyne) -->
       <div class="card">
         <div class="card-title">With Twyne</div>
         <div class="metric-label">Health Factor</div>
@@ -291,55 +443,107 @@
           </div>
         </div>
       </div>
-
-      <!-- Position (Twyne) — same balances -->
-      <div class="card">
-        <div class="card-title">Balances</div>
-        <div class="pos-row">
-          <span class="metric-label">Collateral</span>
-          <span class="metric-value" id="twyneCol">&mdash;</span>
-        </div>
-        <div class="pos-row">
-          <span class="metric-label">Debt</span>
-          <span class="metric-value" id="twyneDebt">&mdash;</span>
-        </div>
-      </div>
-
-      <!-- Yield (Twyne) -->
-      <div class="card">
-        <div class="card-title">Yield</div>
-        <div class="pos-row">
-          <span class="metric-label">Spread</span>
-          <span id="twyneSpread">&mdash;</span>
-        </div>
-        <div class="pos-row">
-          <span class="metric-label">Net APY</span>
-          <span class="metric-value" id="twyneNetApy">&mdash;</span>
-        </div>
-        <div class="pos-row" id="twyneMaxApyRow" style="display:none;">
-          <span class="metric-label">Net APY @ max lev</span>
-          <span class="metric-value" id="twyneMaxApy">&mdash;</span>
-        </div>
-      </div>
     </div>
   </div>
 
-  <!-- Bottom: Unwinding comparison -->
-  <div class="card full-card" id="unwindCard" style="display:none;">
-    <div class="card-title">Unwinding Comparison</div>
-    <div class="unwind-row">
-      <span class="unwind-label">Aave</span>
-      <div class="unwind-bar-track">
-        <div class="unwind-bar-fill" id="aaveUnwindBar" style="background: var(--accent);"></div>
+  <!-- ========== TABS ========== -->
+  <div class="tabs">
+    <div class="tab-buttons">
+      <button class="tab-btn active" onclick="switchTab('yield')">Yield Explorer</button>
+      <button class="tab-btn" onclick="switchTab('unwind')">Unwinding Simulator</button>
+    </div>
+
+    <!-- TAB 1: Yield Explorer -->
+    <div class="tab-content active" id="tab-yield">
+      <div class="tab-panel">
+        <div class="heatmap-controls">
+          <div>
+            <label>Utilization</label>
+            <input type="range" id="hmUtil" min="0" max="100" value="50" oninput="updateYieldGrid()">
+            <span class="ctrl-val" id="hmUtilVal">50%</span>
+          </div>
+          <div>
+            <label>Safety Buffer (&beta;)</label>
+            <input type="range" id="hmBeta" min="80" max="100" value="95" oninput="updateYieldGrid()">
+            <span class="ctrl-val" id="hmBetaVal">0.95</span>
+          </div>
+          <div>
+            <label>Ext Liq LTV</label>
+            <input type="range" id="hmExtLtv" min="70" max="97" value="95" oninput="updateYieldGrid()">
+            <span class="ctrl-val" id="hmExtLtvVal">95%</span>
+          </div>
+          <div style="font-size:0.7rem; color:var(--text-dim); align-self: center;">
+            Rates: <span class="mono" id="hmRatesInfo">r_stake=&mdash;, r_borrow=&mdash;</span>
+          </div>
+        </div>
+        <div style="overflow-x: auto;">
+          <table class="heatmap-table" id="yieldHeatmap"></table>
+        </div>
+        <div class="heatmap-legend">
+          <span>Negative</span>
+          <div class="legend-bar"></div>
+          <span>Positive yield</span>
+          <span style="margin-left:1rem;">&#9632; = current position</span>
+        </div>
       </div>
     </div>
-    <div class="unwind-row">
-      <span class="unwind-label">Twyne</span>
-      <div class="unwind-bar-track">
-        <div class="unwind-bar-fill" id="twyneUnwindBar" style="background: var(--twyne);"></div>
+
+    <!-- TAB 2: Unwinding Simulator -->
+    <div class="tab-content" id="tab-unwind">
+      <div class="tab-panel">
+        <div class="unwind-controls">
+          <div>
+            <label>Leverage</label>
+            <input type="range" id="uwLev" min="15" max="130" value="40" step="1" oninput="updateUnwindSim()">
+            <span class="ctrl-val" id="uwLevVal">4.0x</span>
+          </div>
+          <div>
+            <label>Deposit (ETH)</label>
+            <input type="range" id="uwDeposit" min="1" max="100" value="10" oninput="updateUnwindSim()">
+            <span class="ctrl-val" id="uwDepositVal">10</span>
+          </div>
+          <div>
+            <label>Aave Max LTV</label>
+            <input type="range" id="uwAaveLtv" min="70" max="97" value="93" oninput="updateUnwindSim()">
+            <span class="ctrl-val" id="uwAaveLtvVal">93%</span>
+          </div>
+          <div>
+            <label>Twyne Liq LTV</label>
+            <input type="range" id="uwTwyneLtv" min="94" max="99" value="98" oninput="updateUnwindSim()">
+            <span class="ctrl-val" id="uwTwyneLtvVal">98%</span>
+          </div>
+        </div>
+
+        <div class="unwind-comparison">
+          <!-- Aave side -->
+          <div class="unwind-side">
+            <div class="unwind-side-title" style="color: var(--accent);">Aave</div>
+            <div class="unwind-summary" id="uwAaveSteps">&mdash;</div>
+            <div class="unwind-summary-label">steps to unwind</div>
+            <div class="waterfall" id="uwAaveWaterfall"></div>
+          </div>
+          <!-- Twyne side -->
+          <div class="unwind-side">
+            <div class="unwind-side-title twyne">Twyne</div>
+            <div class="unwind-summary" id="uwTwyneSteps" style="color: var(--twyne);">&mdash;</div>
+            <div class="unwind-summary-label">steps to unwind</div>
+            <div class="waterfall" id="uwTwyneWaterfall"></div>
+          </div>
+        </div>
+
+        <!-- Step detail tables -->
+        <div class="unwind-comparison" style="margin-top: 0.5rem;">
+          <div>
+            <table class="step-table" id="uwAaveTable"></table>
+          </div>
+          <div>
+            <table class="step-table" id="uwTwyneTable"></table>
+          </div>
+        </div>
+
+        <div class="unwind-note" id="uwNote"></div>
       </div>
     </div>
-    <div class="unwind-note" id="unwindNote"></div>
   </div>
 </div>
 
@@ -352,7 +556,6 @@ const VAR_DEBT_WETH= '0xeA51d7853EEFb32b6ee06b1C12E6dcCA88Be0fFe';
 const WSTETH       = '0x7f39C581F595B53c5cb19bD0b3f8dA6c935E2Ca0';
 const WETH         = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2';
 
-// Function selectors
 const BALANCE_OF_SEL           = '70a08231';
 const GET_USER_ACCOUNT_DATA_SEL = 'bf92857c';
 const GET_RESERVE_DATA_SEL     = '35ea6a75';
@@ -362,11 +565,19 @@ const RAY = 10n ** 27n;
 // Twyne protocol parameters (e-mode wstETH/WETH defaults)
 const TWYNE_LIQ_LTV = 0.98;
 const TWYNE_BETA    = 0.95;
-const TWYNE_IR      = 0.008;
 
-// Flip state
+// Interest rate model defaults (from boosted-looping-economics DEFAULTS)
+const IR_MIN  = 0.00;
+const IR_0    = 0.008;
+const U_0     = 0.90;
+const IR_MAX  = 0.20;
+const GAMMA   = 32;
+
+// State
 const flipState = { col: false, debt: false };
 const flipData  = { col: { usd: 0, token: 0 }, debt: { usd: 0, token: 0 } };
+let liveRates = { rStake: 0.035, rSupply: 0, rBorrow: 0.02, aaveMaxLtvDec: 0.93, aaveLiqDec: 0.95 };
+let livePosition = { actualLtv: 0, collateral: 0, debt: 0, totalColUsd: 0, totalDebtUsd: 0, leverage: 1, hf: Infinity };
 
 // --- ABI Encoding ---
 function padAddr(a) { return a.slice(2).toLowerCase().padStart(64, '0'); }
@@ -383,7 +594,6 @@ function buildMulticallData(addr) {
     { target: POOL,          data: encodeGetReserveData(WSTETH) },
     { target: POOL,          data: encodeGetReserveData(WETH) },
   ];
-  const callBytes = calls.map(c => c.data.slice(2));
   let hex = '82ad56cb' + toHex32(0x20) + toHex32(calls.length);
   const tupleChunks = [];
   for (const call of calls) {
@@ -444,6 +654,7 @@ async function fetchLidoApr() {
 function fmtUsd(n) { return '$' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function fmtToken(n, u) { return n.toLocaleString('en-US', { minimumFractionDigits: 6, maximumFractionDigits: 6 }) + ' ' + u; }
 function fmtPct(n) { return n.toFixed(2) + '%'; }
+function fmtEth(n) { return n < 0.01 ? n.toFixed(6) : n < 1 ? n.toFixed(4) : n.toFixed(2); }
 function rayToPercent(v) { return Number(v * 10000n / RAY) / 100; }
 
 // --- Colors ---
@@ -459,33 +670,57 @@ function hfColor(hf) {
   if (hf >= 1.1) return 'var(--orange)';
   return 'var(--red)';
 }
+function yieldColor(y) {
+  // y is in decimal (0.05 = 5%)
+  if (y > 0.10) return '#3fb950';
+  if (y > 0.05) return '#2ea043';
+  if (y > 0.02) return '#238636';
+  if (y > 0.005) return '#1a4d2e';
+  if (y > 0) return '#15301f';
+  if (y > -0.01) return '#2a1a1a';
+  if (y > -0.05) return '#3d1117';
+  return '#f85149';
+}
 
 // --- Flip ---
 function flip(key) {
   flipState[key] = !flipState[key];
-  const el = document.getElementById(key + 'Val');
-  if (flipState[key]) {
-    el.textContent = fmtToken(flipData[key].token, key === 'col' ? 'wstETH' : 'WETH');
-  } else {
-    el.textContent = fmtUsd(flipData[key].usd);
-  }
+  const token = key === 'col' ? 'wstETH' : 'WETH';
+  const val = flipState[key] ? fmtToken(flipData[key].token, token) : fmtUsd(flipData[key].usd);
+  document.getElementById('ov' + key.charAt(0).toUpperCase() + key.slice(1)).textContent = val;
 }
 
-// --- Unwind step counter (from unwinding-comparison.html) ---
-function countUnwindSteps(C, B, maxLtv) {
-  let steps = 0;
-  while (B > 0.0001 && steps < 500) {
-    const Wmax = C - B / maxLtv;
-    if (Wmax <= 0) break;
-    const W = Math.min(Wmax, B);
-    const isFinal = Wmax >= B;
-    C -= Wmax; B -= W; steps++;
-    if (isFinal) break;
-  }
-  return steps;
+// --- Tabs ---
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  document.querySelector('[onclick="switchTab(\'' + name + '\')"]').classList.add('active');
 }
 
-// --- Days to liquidation (from economics.py) ---
+// =============================================
+// ECONOMICS FUNCTIONS (from economics.py)
+// =============================================
+
+// CLP cost factor Psi (same-asset simplified: lambda_e_C == lambda_e_CLP)
+function psiCalc(liqLtv, beta, extLiqLtv) {
+  return liqLtv / (beta * extLiqLtv) - 1;
+}
+
+// Interest rate model IR(u)
+function interestRate(u, irMin, ir0, u0, irMax, gamma) {
+  if (u <= 0) return irMin;
+  if (u >= 1) return irMax;
+  return irMin + (ir0 - irMin) / u0 * u + (irMax - irMin - (ir0 - irMin) / u0) * Math.pow(u, gamma);
+}
+
+// Net yield Y = (r_stake - r_borrow * lambda_t - IR(u) * Psi) / (1 - lambda_t)
+function loopedYield(rStake, rBorrow, lambdaT, irU, psiVal) {
+  if (lambdaT >= 1) return NaN;
+  return (rStake - rBorrow * lambdaT - irU * psiVal) / (1 - lambdaT);
+}
+
+// Days to liquidation
 function daysToLiq(hf0, rStake, rBorrow, psiIR) {
   if (hf0 <= 1) return 0;
   const rNet = rStake - rBorrow - psiIR;
@@ -495,12 +730,204 @@ function daysToLiq(hf0, rStake, rBorrow, psiIR) {
   return -365 * Math.log(hf0) / Math.log(decay);
 }
 
-// --- CLP cost factor Psi (same-asset simplified) ---
-function psi(twyneLiqLtv, beta, extLiqLtv) {
-  return twyneLiqLtv / (beta * extLiqLtv) - 1;
+// Compute yield grid: returns { yields, daysToLiq } matrices
+function computeYieldGrid(rStake, rBorrow, hfValues, liqLtvValues, utilization, beta, extLiqLtv) {
+  const irU = interestRate(utilization, IR_MIN, IR_0, U_0, IR_MAX, GAMMA);
+  const yields = [];
+  const days = [];
+
+  for (let hi = 0; hi < hfValues.length; hi++) {
+    const yRow = [];
+    const dRow = [];
+    for (let li = 0; li < liqLtvValues.length; li++) {
+      const hf = hfValues[hi];
+      const liqLtv = liqLtvValues[li];
+      const psiVal = psiCalc(liqLtv, beta, extLiqLtv);
+      const lambdaT = liqLtv / hf;
+      if (lambdaT >= 1) {
+        yRow.push(NaN);
+        dRow.push(0);
+      } else {
+        const y = loopedYield(rStake, rBorrow, lambdaT, irU, psiVal);
+        yRow.push(y);
+        const d = daysToLiq(hf, rStake, rBorrow, psiVal * irU);
+        dRow.push(d);
+      }
+    }
+    yields.push(yRow);
+    days.push(dRow);
+  }
+  return { yields, days, irU };
 }
 
-// --- Main ---
+// =============================================
+// YIELD HEATMAP
+// =============================================
+
+function updateYieldGrid() {
+  const util = parseInt(document.getElementById('hmUtil').value) / 100;
+  const beta = parseInt(document.getElementById('hmBeta').value) / 100;
+  const extLtv = parseInt(document.getElementById('hmExtLtv').value) / 100;
+
+  document.getElementById('hmUtilVal').textContent = (util * 100).toFixed(0) + '%';
+  document.getElementById('hmBetaVal').textContent = beta.toFixed(2);
+  document.getElementById('hmExtLtvVal').textContent = (extLtv * 100).toFixed(0) + '%';
+
+  const rStake = liveRates.rStake;
+  const rBorrow = liveRates.rBorrow;
+  document.getElementById('hmRatesInfo').textContent =
+    'r_stake=' + (rStake * 100).toFixed(2) + '%, r_borrow=' + (rBorrow * 100).toFixed(2) + '%';
+
+  // Grid dimensions
+  const hfValues = [1.01, 1.02, 1.03, 1.05, 1.08, 1.10, 1.15, 1.20, 1.30, 1.50];
+  const liqLtvValues = [0.80, 0.85, 0.90, 0.93, 0.95, 0.96, 0.97, 0.98];
+
+  const { yields, days, irU } = computeYieldGrid(rStake, rBorrow, hfValues, liqLtvValues, util, beta, extLtv);
+
+  // Find closest cell to current position
+  const curLtv = livePosition.actualLtv / 100;
+  const curHf = livePosition.hf;
+  let closestHi = -1, closestLi = -1, closestDist = Infinity;
+  if (curLtv > 0 && isFinite(curHf)) {
+    for (let hi = 0; hi < hfValues.length; hi++) {
+      for (let li = 0; li < liqLtvValues.length; li++) {
+        const d = Math.abs(hfValues[hi] - curHf) + Math.abs(liqLtvValues[li] - TWYNE_LIQ_LTV);
+        if (d < closestDist) { closestDist = d; closestHi = hi; closestLi = li; }
+      }
+    }
+  }
+
+  // Build table
+  const table = document.getElementById('yieldHeatmap');
+  let html = '<tr><th class="corner">HF \\ Liq LTV</th>';
+  for (const ltv of liqLtvValues) {
+    html += '<th>' + (ltv * 100).toFixed(0) + '%</th>';
+  }
+  html += '</tr>';
+
+  for (let hi = 0; hi < hfValues.length; hi++) {
+    html += '<tr><th class="row-header">' + hfValues[hi].toFixed(2) + '</th>';
+    for (let li = 0; li < liqLtvValues.length; li++) {
+      const y = yields[hi][li];
+      const d = days[hi][li];
+      const isMarker = (hi === closestHi && li === closestLi);
+      if (isNaN(y)) {
+        html += '<td style="background:var(--bg);color:var(--text-dim);"' + (isMarker ? ' class="heatmap-marker"' : '') + '>&mdash;</td>';
+      } else {
+        const bg = yieldColor(y);
+        const textColor = Math.abs(y) < 0.005 ? 'var(--text-dim)' : 'var(--text)';
+        const yPct = (y * 100).toFixed(1) + '%';
+        const dStr = d === Infinity ? '' : d <= 0 ? '' : ' (' + Math.round(d) + 'd)';
+        const title = 'Yield: ' + yPct + (d !== Infinity && d > 0 ? '\nDays to liq: ' + Math.round(d) : '\nSafe (yield > 0)');
+        html += '<td style="background:' + bg + ';color:' + textColor + ';" title="' + title + '"'
+          + (isMarker ? ' class="heatmap-marker"' : '')
+          + '>' + yPct + '</td>';
+      }
+    }
+    html += '</tr>';
+  }
+  table.innerHTML = html;
+}
+
+// =============================================
+// UNWINDING SIMULATOR (from unwinding-comparison.html)
+// =============================================
+
+function simUnloop(L, deposit, ltv) {
+  let C = L * deposit;
+  let B = (L - 1) * deposit;
+  const steps = [];
+  while (B > 0.0001 && steps.length < 500) {
+    const Wmax = C - B / ltv;
+    if (Wmax <= 0) break;
+    const W = Math.min(Wmax, B);
+    const isFinal = Wmax >= B;
+    steps.push({ C: +C.toFixed(6), B: +B.toFixed(6), W: +W.toFixed(6), final: isFinal });
+    C -= Wmax;
+    B -= W;
+    if (isFinal) break;
+  }
+  return steps;
+}
+
+function renderWaterfall(containerId, steps, color, initialC) {
+  const el = document.getElementById(containerId);
+  if (steps.length === 0) { el.innerHTML = '<div style="color:var(--text-dim); font-size:0.8rem;">No debt to unwind</div>'; return; }
+
+  const maxC = initialC;
+  let html = '';
+  for (let i = 0; i < steps.length; i++) {
+    const s = steps[i];
+    const pct = Math.max((s.W / maxC) * 100, 2);
+    html += '<div class="waterfall-step">'
+      + '<span class="waterfall-label">' + (i + 1) + '</span>'
+      + '<div class="waterfall-track">'
+      + '<div class="waterfall-fill" style="width:' + pct + '%;background:' + color + ';">'
+      + fmtEth(s.W) + '</div></div></div>';
+  }
+  el.innerHTML = html;
+}
+
+function renderStepTable(tableId, steps) {
+  const el = document.getElementById(tableId);
+  if (steps.length === 0) { el.innerHTML = ''; return; }
+
+  let html = '<tr><th>#</th><th>C</th><th>B</th><th>Locked</th><th>Withdraw</th><th>Debt After</th></tr>';
+  for (let i = 0; i < steps.length; i++) {
+    const s = steps[i];
+    const locked = s.B > 0 ? s.C - (s.C - s.B / 0.93) : 0; // approximate lock using max LTV
+    const debtAfter = Math.max(s.B - s.W, 0);
+    html += '<tr>'
+      + '<td>' + (i + 1) + '</td>'
+      + '<td>' + fmtEth(s.C) + '</td>'
+      + '<td>' + fmtEth(s.B) + '</td>'
+      + '<td>' + fmtEth(s.B / 0.93) + '</td>'
+      + '<td>' + fmtEth(s.W) + '</td>'
+      + '<td>' + fmtEth(debtAfter) + '</td>'
+      + '</tr>';
+  }
+  el.innerHTML = html;
+}
+
+function updateUnwindSim() {
+  const L = parseInt(document.getElementById('uwLev').value) / 10;
+  const deposit = parseInt(document.getElementById('uwDeposit').value);
+  const aaveLtv = parseInt(document.getElementById('uwAaveLtv').value) / 100;
+  const twyneLtv = parseInt(document.getElementById('uwTwyneLtv').value) / 100;
+
+  document.getElementById('uwLevVal').textContent = L.toFixed(1) + 'x';
+  document.getElementById('uwDepositVal').textContent = deposit;
+  document.getElementById('uwAaveLtvVal').textContent = (aaveLtv * 100).toFixed(0) + '%';
+  document.getElementById('uwTwyneLtvVal').textContent = (twyneLtv * 100).toFixed(0) + '%';
+
+  const aaveSteps = simUnloop(L, deposit, aaveLtv);
+  const twyneSteps = simUnloop(L, deposit, twyneLtv);
+  const initialC = L * deposit;
+
+  document.getElementById('uwAaveSteps').textContent = aaveSteps.length;
+  document.getElementById('uwTwyneSteps').textContent = twyneSteps.length;
+
+  renderWaterfall('uwAaveWaterfall', aaveSteps, 'var(--accent)', initialC);
+  renderWaterfall('uwTwyneWaterfall', twyneSteps, 'var(--twyne)', initialC);
+  renderStepTable('uwAaveTable', aaveSteps);
+  renderStepTable('uwTwyneTable', twyneSteps);
+
+  const saved = aaveSteps.length - twyneSteps.length;
+  const noteEl = document.getElementById('uwNote');
+  if (saved > 0) {
+    noteEl.innerHTML = '<strong>Twyne saves ' + saved + ' step' + (saved > 1 ? 's' : '') + '</strong> when unwinding. '
+      + 'Higher LTV ceiling (' + (twyneLtv * 100).toFixed(0) + '% vs ' + (aaveLtv * 100).toFixed(0) + '%) means you can withdraw '
+      + fmtEth(twyneSteps[0]?.W || 0) + ' ETH per step vs '
+      + fmtEth(aaveSteps[0]?.W || 0) + ' ETH on Aave.';
+  } else {
+    noteEl.textContent = 'Both unwind in the same number of steps at this leverage.';
+  }
+}
+
+// =============================================
+// MAIN QUERY
+// =============================================
+
 async function queryPosition() {
   const addr = document.getElementById('addressInput').value.trim();
   const rpcUrl = document.getElementById('rpcUrl').value.trim();
@@ -570,6 +997,10 @@ async function queryPosition() {
     const rBorrow = wethBorrowApr / 100;
     const spread = rStake - rBorrow;
 
+    // Store live rates for tabs
+    liveRates = { rStake, rSupply, rBorrow, aaveMaxLtvDec, aaveLiqDec };
+    livePosition = { actualLtv, collateral, debt, totalColUsd, totalDebtUsd, leverage, hf };
+
     // Aave Net APY
     let aaveNetApy = null;
     if (totalDebtUsd > 0 && ltvDec < 1) {
@@ -577,45 +1008,74 @@ async function queryPosition() {
     }
 
     // Twyne calculations
-    const psiVal = psi(TWYNE_LIQ_LTV, TWYNE_BETA, aaveLiqDec);
+    const psiVal = psiCalc(TWYNE_LIQ_LTV, TWYNE_BETA, aaveLiqDec);
     const twyneLiqPct = TWYNE_LIQ_LTV * 100;
     const twyneHfVal = ltvDec > 0 ? TWYNE_LIQ_LTV / ltvDec : Infinity;
     const twyneDistToLiq = twyneLiqPct - actualLtv;
     const twyneOpLtv = TWYNE_LIQ_LTV * aaveMaxLtvDec / aaveLiqDec;
     const twyneMaxLev = 1 / (1 - Math.min(twyneOpLtv, 0.99));
 
-    // Twyne Net APY at current position (same leverage, minus credit cost)
+    // Twyne Net APY at current leverage
+    const irU = interestRate(0.5, IR_MIN, IR_0, U_0, IR_MAX, GAMMA);
     let twyneNetApyVal = null;
     if (totalDebtUsd > 0 && ltvDec < 1) {
-      twyneNetApyVal = ((rStake + rSupply - rBorrow * ltvDec - TWYNE_IR * psiVal) / (1 - ltvDec)) * 100;
-    }
-
-    // Twyne Net APY at max leverage
-    let twyneMaxApyVal = null;
-    if (totalDebtUsd > 0 && twyneOpLtv < 1) {
-      twyneMaxApyVal = ((rStake + rSupply - rBorrow * twyneOpLtv - TWYNE_IR * psiVal) / (1 - twyneOpLtv)) * 100;
+      twyneNetApyVal = ((rStake + rSupply - rBorrow * ltvDec - irU * psiVal) / (1 - ltvDec)) * 100;
     }
 
     // Days to liq
     const twyneDaysVal = totalDebtUsd > 0
-      ? daysToLiq(twyneHfVal, rStake, rBorrow, psiVal * TWYNE_IR) : Infinity;
-
-    // Unwind
-    const aaveSteps = countUnwindSteps(collateral, debt, aaveMaxLtvDec);
-    const twyneSteps = countUnwindSteps(collateral, debt, TWYNE_LIQ_LTV);
+      ? daysToLiq(twyneHfVal, rStake, rBorrow, psiVal * irU) : Infinity;
 
     // Store flip data
     flipData.col  = { usd: totalColUsd, token: collateral };
     flipData.debt = { usd: totalDebtUsd, token: debt };
 
-    // ========== LEFT: Aave ==========
+    // ========== OVERVIEW ==========
+    const ovHf = document.getElementById('ovHf');
+    ovHf.textContent = hf === Infinity ? '\u221E' : hf.toFixed(4);
+    ovHf.style.color = hf === Infinity ? 'var(--text-dim)' : hfColor(hf);
 
-    // HF
+    const ovTwyneHf = document.getElementById('ovTwyneHf');
+    if (totalDebtUsd > 0) {
+      ovTwyneHf.textContent = twyneHfVal === Infinity ? '\u221E' : twyneHfVal.toFixed(4);
+      ovTwyneHf.style.color = twyneHfVal === Infinity ? 'var(--text-dim)' : hfColor(twyneHfVal);
+    } else {
+      ovTwyneHf.textContent = '\u221E';
+      ovTwyneHf.style.color = 'var(--text-dim)';
+    }
+
+    const ovAaveApy = document.getElementById('ovAaveApy');
+    if (aaveNetApy !== null) {
+      ovAaveApy.textContent = (aaveNetApy >= 0 ? '+' : '') + fmtPct(aaveNetApy);
+      ovAaveApy.style.color = aaveNetApy >= 0 ? 'var(--green)' : 'var(--red)';
+    } else {
+      ovAaveApy.textContent = '\u2014';
+      ovAaveApy.style.color = 'var(--text-dim)';
+    }
+
+    const ovTwyneApy = document.getElementById('ovTwyneApy');
+    if (twyneNetApyVal !== null) {
+      ovTwyneApy.textContent = (twyneNetApyVal >= 0 ? '+' : '') + fmtPct(twyneNetApyVal);
+      ovTwyneApy.style.color = twyneNetApyVal >= 0 ? 'var(--green)' : 'var(--red)';
+    } else {
+      ovTwyneApy.textContent = '\u2014';
+      ovTwyneApy.style.color = 'var(--text-dim)';
+    }
+
+    document.getElementById('ovCol').textContent = fmtUsd(totalColUsd);
+    document.getElementById('ovDebt').textContent = fmtUsd(totalDebtUsd);
+    document.getElementById('ovLev').textContent = leverage === Infinity ? '\u221E' : leverage.toFixed(2) + 'x';
+
+    const spreadPct = spread * 100;
+    const ovSpreadEl = document.getElementById('ovSpread');
+    ovSpreadEl.innerHTML = '<span class="spread-pill ' + (spread >= 0 ? 'spread-pos' : 'spread-neg') + '">'
+      + (spread >= 0 ? '+' : '') + fmtPct(spreadPct) + '</span>';
+
+    // ========== LEFT: Aave ==========
     const hfEl = document.getElementById('hf');
     hfEl.textContent = hf === Infinity ? '\u221E' : hf.toFixed(4);
     hfEl.style.color = hf === Infinity ? 'var(--text-dim)' : hfColor(hf);
 
-    // LTV
     document.getElementById('actualLtv').textContent = fmtPct(actualLtv);
     const ltvRatio = liqThreshPct > 0 ? actualLtv / liqThreshPct : 0;
     document.getElementById('ltvBarFill').style.width = Math.min(ltvRatio * 100, 100) + '%';
@@ -623,7 +1083,6 @@ async function queryPosition() {
     document.getElementById('ltvBarLabel').textContent = fmtPct(actualLtv);
     document.getElementById('ltvBarThresh').textContent = 'Liq ' + fmtPct(liqThreshPct);
 
-    // Params
     document.getElementById('avgLtv').textContent = fmtPct(currentLtvBps / 100);
     document.getElementById('liqThresh').textContent = fmtPct(liqThreshPct);
     document.getElementById('leverage').textContent = leverage === Infinity ? '\u221E' : leverage.toFixed(2) + 'x';
@@ -631,30 +1090,7 @@ async function queryPosition() {
     dEl.textContent = distToLiq > 0 ? fmtPct(distToLiq) : '\u2014';
     dEl.style.color = distToLiq < 3 && distToLiq > 0 ? 'var(--red)' : distToLiq < 10 && distToLiq > 0 ? 'var(--yellow)' : 'var(--text)';
 
-    // Balances
-    document.getElementById('colVal').textContent = fmtUsd(totalColUsd);
-    document.getElementById('debtVal').textContent = fmtUsd(totalDebtUsd);
-
-    // Spread + Net APY
-    const spreadPct = spread * 100;
-    const spreadEl = document.getElementById('aaveSpread');
-    spreadEl.innerHTML = '<span class="spread-pill ' + (spread >= 0 ? 'spread-pos' : 'spread-neg') + '">'
-      + (spread >= 0 ? '+' : '') + fmtPct(spreadPct) + '</span>'
-      + ' <span style="font-size:0.7rem; color:var(--text-dim);">'
-      + (lidoEst ? '~' : '') + fmtPct(lidoApr) + ' \u2212 ' + fmtPct(wethBorrowApr) + '</span>';
-
-    const aaveApyEl = document.getElementById('aaveNetApy');
-    if (aaveNetApy !== null) {
-      aaveApyEl.textContent = (aaveNetApy >= 0 ? '+' : '') + fmtPct(aaveNetApy);
-      aaveApyEl.style.color = aaveNetApy >= 0 ? 'var(--green)' : 'var(--red)';
-    } else {
-      aaveApyEl.textContent = '\u2014';
-      aaveApyEl.style.color = 'var(--text-dim)';
-    }
-
     // ========== RIGHT: Twyne ==========
-
-    // HF
     const tHfEl = document.getElementById('twyneHf');
     if (totalDebtUsd > 0) {
       tHfEl.textContent = twyneHfVal === Infinity ? '\u221E' : twyneHfVal.toFixed(4);
@@ -664,7 +1100,6 @@ async function queryPosition() {
       tHfEl.style.color = 'var(--text-dim)';
     }
 
-    // LTV bar (against 98% ceiling)
     document.getElementById('twyneActualLtv').textContent = fmtPct(actualLtv);
     const twyneRatio = twyneLiqPct > 0 ? actualLtv / twyneLiqPct : 0;
     document.getElementById('twyneLtvBarFill').style.width = Math.min(twyneRatio * 100, 100) + '%';
@@ -672,7 +1107,6 @@ async function queryPosition() {
     document.getElementById('twyneLtvBarLabel').textContent = fmtPct(actualLtv);
     document.getElementById('twyneLtvBarThresh').textContent = 'Liq ' + fmtPct(twyneLiqPct);
 
-    // Params
     document.getElementById('twyneMaxLev').textContent = twyneMaxLev.toFixed(1) + 'x';
     const tdEl = document.getElementById('twyneDistLiq');
     tdEl.textContent = twyneDistToLiq > 0 ? fmtPct(twyneDistToLiq) : '\u2014';
@@ -681,59 +1115,18 @@ async function queryPosition() {
     const fmtDays = (d) => d === Infinity ? '\u221E (safe)' : d <= 0 ? '\u2014' : Math.round(d) + ' days';
     document.getElementById('twyneDaysLiq').textContent = fmtDays(twyneDaysVal);
 
-    // Balances (same position)
-    document.getElementById('twyneCol').textContent = fmtUsd(totalColUsd);
-    document.getElementById('twyneDebt').textContent = fmtUsd(totalDebtUsd);
-
-    // Spread (same) + Net APY
-    const tSpreadEl = document.getElementById('twyneSpread');
-    tSpreadEl.innerHTML = '<span class="spread-pill ' + (spread >= 0 ? 'spread-pos' : 'spread-neg') + '">'
-      + (spread >= 0 ? '+' : '') + fmtPct(spreadPct) + '</span>'
-      + ' <span style="font-size:0.7rem; color:var(--text-dim);">same rates</span>';
-
-    const tApyEl = document.getElementById('twyneNetApy');
-    if (twyneNetApyVal !== null) {
-      tApyEl.textContent = (twyneNetApyVal >= 0 ? '+' : '') + fmtPct(twyneNetApyVal);
-      tApyEl.style.color = twyneNetApyVal >= 0 ? 'var(--green)' : 'var(--red)';
-    } else {
-      tApyEl.textContent = '\u2014';
-      tApyEl.style.color = 'var(--text-dim)';
+    // ========== RENDER TABS ==========
+    // Set unwind slider to match actual leverage
+    if (leverage > 1 && isFinite(leverage)) {
+      const levSlider = document.getElementById('uwLev');
+      const clampedLev = Math.min(Math.max(leverage * 10, 15), 130);
+      levSlider.value = Math.round(clampedLev);
     }
+    // Set ext LTV slider to match actual
+    document.getElementById('hmExtLtv').value = Math.round(aaveLiqDec * 100);
 
-    // Max leverage APY row
-    const maxApyRow = document.getElementById('twyneMaxApyRow');
-    const maxApyEl = document.getElementById('twyneMaxApy');
-    if (twyneMaxApyVal !== null && totalDebtUsd > 0) {
-      maxApyRow.style.display = '';
-      maxApyEl.textContent = (twyneMaxApyVal >= 0 ? '+' : '') + fmtPct(twyneMaxApyVal);
-      maxApyEl.style.color = twyneMaxApyVal >= 0 ? 'var(--green)' : 'var(--red)';
-    } else {
-      maxApyRow.style.display = 'none';
-    }
-
-    // ========== BOTTOM: Unwind ==========
-    const unwindCard = document.getElementById('unwindCard');
-    if (totalDebtUsd > 0 && aaveSteps > 0) {
-      unwindCard.style.display = '';
-      const maxSteps = Math.max(aaveSteps, twyneSteps, 1);
-      const aaveBar = document.getElementById('aaveUnwindBar');
-      const twyneBar = document.getElementById('twyneUnwindBar');
-      aaveBar.style.width = (aaveSteps / maxSteps * 100) + '%';
-      aaveBar.textContent = aaveSteps + (aaveSteps === 1 ? ' step' : ' steps');
-      twyneBar.style.width = (twyneSteps / maxSteps * 100) + '%';
-      twyneBar.textContent = twyneSteps + (twyneSteps === 1 ? ' step' : ' steps');
-
-      const saved = aaveSteps - twyneSteps;
-      const noteEl = document.getElementById('unwindNote');
-      if (saved > 0) {
-        noteEl.textContent = 'Twyne\u2019s higher LTV ceiling lets you withdraw more per step \u2192 '
-          + saved + ' fewer step' + (saved > 1 ? 's' : '') + ' to fully unwind.';
-      } else {
-        noteEl.textContent = 'Both unwind in the same number of steps at this leverage.';
-      }
-    } else {
-      unwindCard.style.display = 'none';
-    }
+    updateYieldGrid();
+    updateUnwindSim();
 
     statusEl.style.display = 'none';
     resultsEl.style.display = 'block';
@@ -750,6 +1143,9 @@ async function queryPosition() {
 document.getElementById('addressInput').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') queryPosition();
 });
+
+// Init unwind sim with defaults (before any query)
+updateUnwindSim();
 </script>
 
 </body>
