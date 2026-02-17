@@ -172,20 +172,6 @@
     }
 
     /* Yield heatmap */
-    .heatmap-controls {
-      display: flex; gap: 1.5rem; align-items: end; flex-wrap: wrap;
-      margin-bottom: 1.25rem;
-    }
-    .heatmap-controls label {
-      font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 0.25rem;
-    }
-    .heatmap-controls input[type="range"] {
-      width: 140px; accent-color: var(--accent);
-    }
-    .heatmap-controls .ctrl-val {
-      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85rem;
-      color: var(--text); margin-left: 0.5rem;
-    }
     .heatmap-table {
       width: 100%; border-collapse: collapse; font-family: 'SF Mono', 'Fira Code', monospace;
       font-size: 0.75rem;
@@ -220,19 +206,6 @@
     }
 
     /* Unwind simulator */
-    .unwind-controls {
-      display: flex; gap: 1.5rem; align-items: end; flex-wrap: wrap;
-      margin-bottom: 1.25rem;
-    }
-    .unwind-controls label {
-      font-size: 0.75rem; color: var(--text-dim); display: block; margin-bottom: 0.25rem;
-    }
-    .unwind-controls input[type="range"] { width: 160px; accent-color: var(--accent); }
-    .unwind-controls .ctrl-val {
-      font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85rem;
-      color: var(--text); margin-left: 0.5rem;
-    }
-
     .unwind-comparison {
       display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;
       margin-bottom: 1rem;
@@ -456,24 +429,12 @@
     <!-- TAB 1: Yield Explorer -->
     <div class="tab-content active" id="tab-yield">
       <div class="tab-panel">
-        <div class="heatmap-controls">
-          <div>
-            <label>Utilization</label>
-            <input type="range" id="hmUtil" min="0" max="100" value="50" oninput="updateYieldGrid()">
-            <span class="ctrl-val" id="hmUtilVal">50%</span>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+          <div style="font-size:0.8rem; color:var(--text-dim);">
+            Net yield across Health Factor &times; Liquidation LTV combinations using live rates
           </div>
-          <div>
-            <label>Safety Buffer (&beta;)</label>
-            <input type="range" id="hmBeta" min="80" max="100" value="95" oninput="updateYieldGrid()">
-            <span class="ctrl-val" id="hmBetaVal">0.95</span>
-          </div>
-          <div>
-            <label>Ext Liq LTV</label>
-            <input type="range" id="hmExtLtv" min="70" max="97" value="95" oninput="updateYieldGrid()">
-            <span class="ctrl-val" id="hmExtLtvVal">95%</span>
-          </div>
-          <div style="font-size:0.7rem; color:var(--text-dim); align-self: center;">
-            Rates: <span class="mono" id="hmRatesInfo">r_stake=&mdash;, r_borrow=&mdash;</span>
+          <div style="font-size:0.7rem; color:var(--text-dim);">
+            <span class="mono" id="hmRatesInfo">r_stake=&mdash;, r_borrow=&mdash;</span>
           </div>
         </div>
         <div style="overflow-x: auto;">
@@ -491,26 +452,14 @@
     <!-- TAB 2: Unwinding Simulator -->
     <div class="tab-content" id="tab-unwind">
       <div class="tab-panel">
-        <div class="unwind-controls">
-          <div>
-            <label>Leverage</label>
-            <input type="range" id="uwLev" min="15" max="130" value="40" step="1" oninput="updateUnwindSim()">
-            <span class="ctrl-val" id="uwLevVal">4.0x</span>
+        <div style="margin-bottom:1rem;">
+          <div style="font-size:0.8rem; color:var(--text-dim); margin-bottom:0.75rem;">
+            Withdraw &rarr; swap &rarr; repay cycle. Higher LTV = more collateral freed per step.
           </div>
-          <div>
-            <label>Deposit (ETH)</label>
-            <input type="range" id="uwDeposit" min="1" max="100" value="10" oninput="updateUnwindSim()">
-            <span class="ctrl-val" id="uwDepositVal">10</span>
-          </div>
-          <div>
-            <label>Aave Max LTV</label>
-            <input type="range" id="uwAaveLtv" min="70" max="97" value="93" oninput="updateUnwindSim()">
-            <span class="ctrl-val" id="uwAaveLtvVal">93%</span>
-          </div>
-          <div>
-            <label>Twyne Liq LTV</label>
-            <input type="range" id="uwTwyneLtv" min="94" max="99" value="98" oninput="updateUnwindSim()">
-            <span class="ctrl-val" id="uwTwyneLtvVal">98%</span>
+          <div style="display:flex; align-items:center; gap:1rem; max-width:400px;">
+            <label style="font-size:0.75rem; color:var(--text-dim); white-space:nowrap;">Leverage</label>
+            <input type="range" id="uwLev" min="15" max="130" value="40" step="1" style="flex:1; accent-color:var(--accent);" oninput="updateUnwindSim()">
+            <span class="mono" style="font-size:0.9rem; min-width:3rem;" id="uwLevVal">4.0x</span>
           </div>
         </div>
 
@@ -765,22 +714,23 @@ function computeYieldGrid(rStake, rBorrow, hfValues, liqLtvValues, utilization, 
 // =============================================
 
 function updateYieldGrid() {
-  const util = parseInt(document.getElementById('hmUtil').value) / 100;
-  const beta = parseInt(document.getElementById('hmBeta').value) / 100;
-  const extLtv = parseInt(document.getElementById('hmExtLtv').value) / 100;
-
-  document.getElementById('hmUtilVal').textContent = (util * 100).toFixed(0) + '%';
-  document.getElementById('hmBetaVal').textContent = beta.toFixed(2);
-  document.getElementById('hmExtLtvVal').textContent = (extLtv * 100).toFixed(0) + '%';
+  // Fixed parameters matching boosted-looping-economics DEFAULTS
+  const util = 0.95;       // DEFAULTS["utilization"]
+  const beta = 0.95;       // DEFAULTS["beta_safe"]
+  const extLtv = 0.95;     // DEFAULTS["liq_ltv_c"]
 
   const rStake = liveRates.rStake;
   const rBorrow = liveRates.rBorrow;
   document.getElementById('hmRatesInfo').textContent =
     'r_stake=' + (rStake * 100).toFixed(2) + '%, r_borrow=' + (rBorrow * 100).toFixed(2) + '%';
 
-  // Grid dimensions
-  const hfValues = [1.01, 1.02, 1.03, 1.05, 1.08, 1.10, 1.15, 1.20, 1.30, 1.50];
-  const liqLtvValues = [0.80, 0.85, 0.90, 0.93, 0.95, 0.96, 0.97, 0.98];
+  // Grid: HF 1.10 (top) down to 1.01 (bottom), Liq LTV 95% to 98%
+  // Matching app.py: hf_values = np.linspace(hf_max, hf_min, n_hf)  # High to low
+  const n_hf = 15, n_ltv = 10;
+  const hfValues = [];
+  for (let i = 0; i < n_hf; i++) hfValues.push(1.10 - i * (1.10 - 1.00) / (n_hf - 1));
+  const liqLtvValues = [];
+  for (let i = 0; i < n_ltv; i++) liqLtvValues.push(0.95 + i * (0.98 - 0.95) / (n_ltv - 1));
 
   const { yields, days, irU } = computeYieldGrid(rStake, rBorrow, hfValues, liqLtvValues, util, beta, extLtv);
 
@@ -788,10 +738,10 @@ function updateYieldGrid() {
   const curLtv = livePosition.actualLtv / 100;
   const curHf = livePosition.hf;
   let closestHi = -1, closestLi = -1, closestDist = Infinity;
-  if (curLtv > 0 && isFinite(curHf)) {
+  if (curLtv > 0 && isFinite(curHf) && curHf <= 1.15) {
     for (let hi = 0; hi < hfValues.length; hi++) {
       for (let li = 0; li < liqLtvValues.length; li++) {
-        const d = Math.abs(hfValues[hi] - curHf) + Math.abs(liqLtvValues[li] - TWYNE_LIQ_LTV);
+        const d = Math.abs(hfValues[hi] - curHf) * 10 + Math.abs(liqLtvValues[li] - TWYNE_LIQ_LTV);
         if (d < closestDist) { closestDist = d; closestHi = hi; closestLi = li; }
       }
     }
@@ -801,7 +751,7 @@ function updateYieldGrid() {
   const table = document.getElementById('yieldHeatmap');
   let html = '<tr><th class="corner">HF \\ Liq LTV</th>';
   for (const ltv of liqLtvValues) {
-    html += '<th>' + (ltv * 100).toFixed(0) + '%</th>';
+    html += '<th>' + (ltv * 100).toFixed(1) + '%</th>';
   }
   html += '</tr>';
 
@@ -817,7 +767,6 @@ function updateYieldGrid() {
         const bg = yieldColor(y);
         const textColor = Math.abs(y) < 0.005 ? 'var(--text-dim)' : 'var(--text)';
         const yPct = (y * 100).toFixed(1) + '%';
-        const dStr = d === Infinity ? '' : d <= 0 ? '' : ' (' + Math.round(d) + 'd)';
         const title = 'Yield: ' + yPct + (d !== Infinity && d > 0 ? '\nDays to liq: ' + Math.round(d) : '\nSafe (yield > 0)');
         html += '<td style="background:' + bg + ';color:' + textColor + ';" title="' + title + '"'
           + (isMarker ? ' class="heatmap-marker"' : '')
@@ -868,20 +817,19 @@ function renderWaterfall(containerId, steps, color, initialC) {
   el.innerHTML = html;
 }
 
-function renderStepTable(tableId, steps) {
+function renderStepTable(tableId, steps, ltv) {
   const el = document.getElementById(tableId);
   if (steps.length === 0) { el.innerHTML = ''; return; }
 
   let html = '<tr><th>#</th><th>C</th><th>B</th><th>Locked</th><th>Withdraw</th><th>Debt After</th></tr>';
   for (let i = 0; i < steps.length; i++) {
     const s = steps[i];
-    const locked = s.B > 0 ? s.C - (s.C - s.B / 0.93) : 0; // approximate lock using max LTV
     const debtAfter = Math.max(s.B - s.W, 0);
     html += '<tr>'
       + '<td>' + (i + 1) + '</td>'
       + '<td>' + fmtEth(s.C) + '</td>'
       + '<td>' + fmtEth(s.B) + '</td>'
-      + '<td>' + fmtEth(s.B / 0.93) + '</td>'
+      + '<td>' + fmtEth(s.B / ltv) + '</td>'
       + '<td>' + fmtEth(s.W) + '</td>'
       + '<td>' + fmtEth(debtAfter) + '</td>'
       + '</tr>';
@@ -891,14 +839,11 @@ function renderStepTable(tableId, steps) {
 
 function updateUnwindSim() {
   const L = parseInt(document.getElementById('uwLev').value) / 10;
-  const deposit = parseInt(document.getElementById('uwDeposit').value);
-  const aaveLtv = parseInt(document.getElementById('uwAaveLtv').value) / 100;
-  const twyneLtv = parseInt(document.getElementById('uwTwyneLtv').value) / 100;
+  const deposit = 10;       // Fixed 10 ETH deposit for illustration
+  const aaveLtv = 0.93;     // Aave e-mode max LTV
+  const twyneLtv = 0.98;    // Twyne liq LTV
 
   document.getElementById('uwLevVal').textContent = L.toFixed(1) + 'x';
-  document.getElementById('uwDepositVal').textContent = deposit;
-  document.getElementById('uwAaveLtvVal').textContent = (aaveLtv * 100).toFixed(0) + '%';
-  document.getElementById('uwTwyneLtvVal').textContent = (twyneLtv * 100).toFixed(0) + '%';
 
   const aaveSteps = simUnloop(L, deposit, aaveLtv);
   const twyneSteps = simUnloop(L, deposit, twyneLtv);
@@ -909,8 +854,8 @@ function updateUnwindSim() {
 
   renderWaterfall('uwAaveWaterfall', aaveSteps, 'var(--accent)', initialC);
   renderWaterfall('uwTwyneWaterfall', twyneSteps, 'var(--twyne)', initialC);
-  renderStepTable('uwAaveTable', aaveSteps);
-  renderStepTable('uwTwyneTable', twyneSteps);
+  renderStepTable('uwAaveTable', aaveSteps, aaveLtv);
+  renderStepTable('uwTwyneTable', twyneSteps, twyneLtv);
 
   const saved = aaveSteps.length - twyneSteps.length;
   const noteEl = document.getElementById('uwNote');
@@ -1122,8 +1067,6 @@ async function queryPosition() {
       const clampedLev = Math.min(Math.max(leverage * 10, 15), 130);
       levSlider.value = Math.round(clampedLev);
     }
-    // Set ext LTV slider to match actual
-    document.getElementById('hmExtLtv').value = Math.round(aaveLiqDec * 100);
 
     updateYieldGrid();
     updateUnwindSim();
