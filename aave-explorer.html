@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aave V3 Data Explorer</title>
+    <title>Aave V3 Looping Simulator</title>
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -588,11 +588,11 @@
         .yield-matrix {
             border-collapse: collapse;
             font-family: var(--font-mono);
-            font-size: 0.62rem;
+            font-size: 0.72rem;
         }
         .yield-matrix th {
-            font-size: 0.58rem;
-            padding: 4px 6px;
+            font-size: 0.62rem;
+            padding: 5px 7px;
             white-space: nowrap;
             position: sticky;
             top: 0;
@@ -630,21 +630,51 @@
         }
         .yield-matrix td.ym-cell {
             text-align: center;
-            padding: 3px 2px;
+            padding: 4px 3px;
             font-weight: 600;
-            font-size: 0.58rem;
+            font-size: 0.68rem;
             font-variant-numeric: tabular-nums;
-            min-width: 44px;
-            cursor: default;
+            min-width: 48px;
+            cursor: pointer;
             border: 1px solid transparent;
-            transition: border-color 0.12s;
+            transition: border-color 0.12s, background 0.1s;
         }
         .yield-matrix td.ym-cell:hover { border-color: var(--text-muted); }
         .yield-matrix td.ym-cell--empty {
             color: var(--text-muted);
             opacity: 0.25;
-            font-size: 0.5rem;
+            font-size: 0.55rem;
+            cursor: default;
         }
+        .yield-matrix td.ym-cell--best { font-weight: 800; text-decoration: underline; text-underline-offset: 2px; }
+        .yield-matrix tr.ym-row-hover td { background: var(--purple-dim) !important; }
+        .yield-matrix .ym-col-hover { background: var(--purple-dim) !important; }
+
+        /* Top opportunities */
+        .top-opps {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border);
+            font-family: var(--font-mono);
+            font-size: 0.68rem;
+        }
+        .top-opp {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--teal-dim);
+            border: 1px solid var(--teal-border);
+            border-radius: 16px;
+            padding: 3px 10px;
+            color: var(--teal);
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .top-opp:hover { background: var(--teal-border); }
+        .top-opp-label { color: var(--text-secondary); font-weight: 400; font-size: 0.62rem; }
         .yield-matrix .ym-group-sep-col {
             border-left: 2px solid var(--border-strong);
         }
@@ -712,17 +742,183 @@
         }
         .addr:hover { color: var(--purple); text-decoration: underline; }
 
+        /* Simulator panel */
+        .sim-panel {
+            background: var(--bg-elevated);
+            border: 1px solid var(--purple-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow);
+            margin-bottom: 28px;
+            padding: 24px 28px;
+            display: none;
+        }
+        .sim-panel--visible { display: block; }
+        .sim-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .sim-title {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            font-weight: 700;
+        }
+        .sim-close {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            padding: 4px 12px;
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            background: none;
+            transition: all 0.15s;
+        }
+        .sim-close:hover { color: var(--coral); border-color: var(--coral-border); }
+        .sim-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .sim-control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .sim-control-label {
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+        }
+        .sim-slider-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+            min-width: 200px;
+        }
+        .sim-slider {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: var(--border-strong);
+            border-radius: 3px;
+            outline: none;
+        }
+        .sim-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--purple);
+            cursor: pointer;
+            border: 2px solid var(--bg-elevated);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+        .sim-slider::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--purple);
+            cursor: pointer;
+            border: 2px solid var(--bg-elevated);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+        .sim-lev-display {
+            font-family: var(--font-mono);
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--purple);
+            min-width: 48px;
+            text-align: right;
+        }
+        .sim-strategy {
+            font-family: var(--font-mono);
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--text);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 8px 14px;
+        }
+        .sim-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+        }
+        .sim-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 12px 14px;
+        }
+        .sim-card-label {
+            font-family: var(--font-mono);
+            font-size: 0.58rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+        .sim-card-value {
+            font-family: var(--font-mono);
+            font-size: 1rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+        }
+        .sim-card-sub {
+            font-family: var(--font-mono);
+            font-size: 0.62rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        /* Category badge pills */
+        .cat-badge {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 0.55rem;
+            font-weight: 600;
+            padding: 1px 7px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            white-space: nowrap;
+        }
+        .cat-badge--eth { background: var(--teal-dim); color: var(--teal); border: 1px solid var(--teal-border); }
+        .cat-badge--btc { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber-border); }
+        .cat-badge--pt { background: var(--purple-dim); color: var(--purple); border: 1px solid var(--purple-border); }
+        .cat-badge--stable { background: var(--bg-card); color: var(--text-muted); border: 1px solid var(--border); }
+
+        /* Flow details chevron */
+        .flow-details summary::-webkit-details-marker { display: none; }
+        .flow-details[open] .flow-chevron { transform: rotate(90deg); }
+
         /* Responsive */
         @media (max-width: 900px) {
             body { padding: 20px 20px 48px; }
             .emode-grid { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
             .emode-detail-grid { grid-template-columns: 1fr; }
             .search-input { width: 200px; }
+            .sim-controls { flex-direction: column; align-items: stretch; }
+            .sim-results { grid-template-columns: repeat(2, 1fr); }
+            .top-opps { flex-direction: column; }
         }
         @media (max-width: 600px) {
             .emode-grid { grid-template-columns: 1fr; }
             .header { flex-direction: column; gap: 12px; }
             .header-right { width: 100%; justify-content: space-between; }
+            .sim-results { grid-template-columns: 1fr; }
+            .sim-slider-wrap { flex-direction: column; align-items: stretch; }
         }
     </style>
 </head>
@@ -730,9 +926,9 @@
 
 <div class="header">
     <div>
-        <h1>Aave V3 Data Explorer</h1>
+        <h1>Aave V3 Looping Simulator</h1>
         <div style="font-size:0.85rem; color:var(--text-muted); max-width:680px; line-height:1.5;">
-            Live on-chain data from Aave V3 Ethereum mainnet. E-modes, reserves, rates, LTVs.
+            Net annual yield from looping strategies on Aave V3. Green = profitable at max E-mode leverage.
         </div>
     </div>
     <div class="header-right">
@@ -750,21 +946,49 @@
 <!-- Error banner -->
 <div class="error-banner" id="errorBanner"></div>
 
-<!-- Section 0: Flow Diagram -->
-<div class="section-title">Collateral &rarr; Borrow Flows</div>
-<div id="flowLoading">
-    <div class="skeleton" style="height:340px; border-radius:var(--radius-lg);"></div>
-</div>
-<div id="flowDiagram" class="flow-diagram" style="display:none;"></div>
-
-<hr class="section-divider">
-
-<!-- Section 0.5: Yield Matrix -->
-<div class="section-title">Yield Matrix (Net Loop APY by Pair)</div>
+<!-- Section 0: Yield Matrix (lead with value) -->
 <div id="yieldMatrixLoading">
     <div class="skeleton" style="height:300px; border-radius:var(--radius-lg);"></div>
 </div>
 <div id="yieldMatrix" style="display:none;"></div>
+
+<!-- Simulator Panel -->
+<div class="sim-panel" id="simPanel">
+    <div class="sim-header">
+        <div class="sim-title" id="simTitle">Looping Simulator</div>
+        <button class="sim-close" onclick="closeSimulator()">Close</button>
+    </div>
+    <div class="sim-controls">
+        <div class="sim-control-group">
+            <span class="sim-control-label">Strategy</span>
+            <div class="sim-strategy" id="simStrategy">—</div>
+        </div>
+        <div class="sim-control-group" style="flex:1;">
+            <span class="sim-control-label">Leverage</span>
+            <div class="sim-slider-wrap">
+                <span style="font-family:var(--font-mono); font-size:0.68rem; color:var(--text-muted);">1x</span>
+                <input type="range" class="sim-slider" id="simSlider" min="1" max="20" step="0.1" value="1" oninput="updateSimulator()">
+                <span style="font-family:var(--font-mono); font-size:0.68rem; color:var(--text-muted);" id="simMaxLabel">20x</span>
+                <div class="sim-lev-display" id="simLevDisplay">1.0x</div>
+            </div>
+        </div>
+    </div>
+    <div class="sim-results" id="simResults"></div>
+</div>
+
+<hr class="section-divider">
+
+<!-- Section 0.5: Flow Diagram (collapsible) -->
+<details class="flow-details" id="flowDetails">
+    <summary class="section-title" style="cursor:pointer; margin-bottom:0; list-style:none; display:flex; align-items:center; gap:8px;">
+        <span style="font-size:0.65rem; transition:transform 0.2s;" class="flow-chevron">&#9654;</span>
+        Collateral &rarr; Borrow Flow Map
+    </summary>
+    <div id="flowLoading" style="margin-top:14px;">
+        <div class="skeleton" style="height:340px; border-radius:var(--radius-lg);"></div>
+    </div>
+    <div id="flowDiagram" class="flow-diagram" style="display:none; margin-top:14px;"></div>
+</details>
 
 <hr class="section-divider">
 
@@ -855,7 +1079,7 @@
 </div>
 
 <div class="note">
-    Data sourced directly from Aave V3 UiPoolDataProvider on Ethereum mainnet. Rates are live on-chain values.
+    Data sourced directly from Aave V3 UiPoolDataProvider on Ethereum mainnet. Staking yields via DeFiLlama.
     Open browser console and inspect <code>window._aaveData</code> for full raw data.
 </div>
 
@@ -1104,8 +1328,8 @@ async function fetchStakingYields() {
 // For non-PT: netYield = (stakingYield * L - borrowAPY * (L-1)) where L = 1/(1-LTV)
 // For PT: netYield ≈ (ptFixedYield * L - borrowAPY * (L-1))
 //   where ptFixedYield is annualized discount to par
-function computeNetLoopYield(em) {
-    const lev = em.maxLeverage;
+function computeNetLoopYield(em, overrideLev) {
+    const lev = overrideLev || em.maxLeverage;
     if (lev <= 1) return null;
 
     // Best collateral yield (highest staking/fixed yield among collateral assets)
@@ -1145,7 +1369,7 @@ function computeNetLoopYield(em) {
     if (bestEffBorrCost === Infinity) return null;
 
     const netYield = bestCollYield * lev - bestEffBorrCost * (lev - 1);
-    return { netYield, collYield: bestCollYield, collSymbol: bestCollSymbol, borrowCost: bestEffBorrCost, borrowAaveRate: bestBorrAaveRate, borrowNativeYield: bestBorrNativeYield, borrSymbol: bestBorrSymbol, lev };
+    return { netYield, collYield: bestCollYield, collSymbol: bestCollSymbol, borrowCost: bestEffBorrCost, borrowAaveRate: bestBorrAaveRate, borrowNativeYield: bestBorrNativeYield, borrSymbol: bestBorrSymbol, lev, maxLeverage: em.maxLeverage };
 }
 
 function computePTFixedYield(reserve) {
@@ -1560,26 +1784,36 @@ function renderYieldMatrix() {
         }
         html += '</tr></thead><tbody>';
 
-        // Rows
+        // Rows — find best yield per row for bold highlighting
         for (const c of collAssets) {
+            let bestInRow = -Infinity;
+            for (const b of borrAssets) {
+                const info = pairMap.get(`${c}|${b}`);
+                if (info && info.netYield !== undefined && info.netYield > bestInRow) bestInRow = info.netYield;
+            }
+
             html += '<tr>';
             html += `<td class="ym-row-header">${esc(c)}</td>`;
-            for (const b of borrAssets) {
+            for (let bi = 0; bi < borrAssets.length; bi++) {
+                const b = borrAssets[bi];
                 const key = `${c}|${b}`;
                 const info = pairMap.get(key);
                 if (!info || info.netYield === undefined) {
-                    html += '<td class="ym-cell ym-cell--empty">&middot;</td>';
+                    html += `<td class="ym-cell ym-cell--empty" data-col="${bi}">&middot;</td>`;
                 } else {
                     const bg = yieldColor(info.netYield);
                     const fg = yieldTextColor(info.netYield);
+                    const isBest = info.netYield > 0 && Math.abs(info.netYield - bestInRow) < 0.05;
                     const tip = `${c} / ${b}` +
                         `\nE-Mode ${info.emodeId}: ${info.label}` +
                         `\nLeverage: ${fmt(info.leverage, 1)}x (LTV ${fmt(info.ltv, 1)}%)` +
                         `\nColl yield: ${fmt(info.collYield, 2)}%` +
                         `\nBorr cost: ${fmt(info.effBorrCost, 2)}%` +
                         (info.borrNativeYield > 0 ? ` (${fmt(info.borrAaveRate, 2)}% + ${fmt(info.borrNativeYield, 2)}% native)` : '') +
-                        `\nNet yield: ${fmt(info.netYield, 1)}% at ${fmt(info.leverage, 1)}x`;
-                    html += `<td class="ym-cell" style="background:${bg}; color:${fg};" title="${esc(tip)}">${fmt(info.netYield, 1)}</td>`;
+                        `\nNet yield: ${fmt(info.netYield, 1)}% at ${fmt(info.leverage, 1)}x` +
+                        `\n\nClick to simulate`;
+                    const bestCls = isBest ? ' ym-cell--best' : '';
+                    html += `<td class="ym-cell${bestCls}" data-col="${bi}" data-coll="${esc(c)}" data-borr="${esc(b)}" data-lev="${info.leverage}" style="background:${bg}; color:${fg};" title="${esc(tip)}" onclick="openSimFromMatrix('${esc(c)}','${esc(b)}',${info.leverage})">${fmt(info.netYield, 1)}</td>`;
                 }
             }
             html += '</tr>';
@@ -1589,8 +1823,24 @@ function renderYieldMatrix() {
         return html;
     }
 
-    // 5) Assemble all universe tables
-    let html = '';
+    // 5) Build top opportunities list (across all universes)
+    const topOpps = [...pairMap.entries()]
+        .filter(([, info]) => info.netYield !== undefined && info.netYield > 0)
+        .sort(([, a], [, b]) => b.netYield - a.netYield)
+        .slice(0, 5);
+
+    let topHtml = '';
+    if (topOpps.length > 0) {
+        topHtml = '<div class="top-opps"><span class="top-opp-label">Top yields:</span>';
+        topOpps.forEach(([key, info]) => {
+            const [c, b] = key.split('|');
+            topHtml += `<span class="top-opp" onclick="openSimFromMatrix('${esc(c)}','${esc(b)}',${info.leverage})">${esc(c)}/${esc(b)}: +${fmt(info.netYield, 1)}% at ${fmt(info.leverage, 0)}x</span>`;
+        });
+        topHtml += '</div>';
+    }
+
+    // 6) Assemble all universe tables
+    let html = topHtml;
     for (const u of UNIVERSES) {
         html += renderMatrixTable(u);
     }
@@ -1604,10 +1854,34 @@ function renderYieldMatrix() {
     }
     html += '</div>';
     html += '<span>+30%</span>';
-    html += '<span style="margin-left:12px; opacity:0.6;">Net APY at max E-mode leverage &middot; hover for details</span>';
+    html += '<span style="margin-left:12px; opacity:0.6;">Net APY at max E-mode leverage &middot; click cell to simulate</span>';
     html += '</div>';
 
     container.innerHTML = html;
+
+    // 7) Attach row/column hover highlighting
+    container.querySelectorAll('.yield-matrix').forEach(table => {
+        table.addEventListener('mouseover', (e) => {
+            const td = e.target.closest('td.ym-cell');
+            if (!td) return;
+            const colIdx = td.dataset.col;
+            const row = td.closest('tr');
+            if (row) row.classList.add('ym-row-hover');
+            if (colIdx !== undefined) {
+                table.querySelectorAll(`td[data-col="${colIdx}"], th:nth-child(${parseInt(colIdx) + 2})`).forEach(el => el.classList.add('ym-col-hover'));
+            }
+        });
+        table.addEventListener('mouseout', (e) => {
+            const td = e.target.closest('td.ym-cell');
+            if (!td) return;
+            const colIdx = td.dataset.col;
+            const row = td.closest('tr');
+            if (row) row.classList.remove('ym-row-hover');
+            if (colIdx !== undefined) {
+                table.querySelectorAll('.ym-col-hover').forEach(el => el.classList.remove('ym-col-hover'));
+            }
+        });
+    });
 }
 
 /* ═══════ Rendering ═══════ */
@@ -1615,8 +1889,8 @@ function renderAll() {
     // Assign categories to each emode
     _parsedEmodes.forEach(em => { em.category = categorizeEmode(em); });
 
-    renderFlowDiagram();
     renderYieldMatrix();
+    renderFlowDiagram();
     renderCatTabs();
     renderEmodeGrouped();
     renderReservesTable();
@@ -1626,10 +1900,10 @@ function renderAll() {
     document.getElementById('reserveCountSummary').textContent = `(${_parsedReserves.length} assets)`;
 
     // Hide loading, show content
-    document.getElementById('flowLoading').style.display = 'none';
-    document.getElementById('flowDiagram').style.display = '';
     document.getElementById('yieldMatrixLoading').style.display = 'none';
     document.getElementById('yieldMatrix').style.display = '';
+    document.getElementById('flowLoading').style.display = 'none';
+    document.getElementById('flowDiagram').style.display = '';
     document.getElementById('emodeLoading').style.display = 'none';
     document.getElementById('catTabs').style.display = '';
     document.getElementById('emodeGrouped').style.display = '';
@@ -1945,153 +2219,141 @@ function renderCatTabs() {
     }
 }
 
-/* --- Grouped E-Mode Tables --- */
+/* --- Unified E-Mode Table (flat, sorted by net yield) --- */
+function catBadgeClass(catKey) {
+    if (catKey.startsWith('pt')) return 'cat-badge cat-badge--pt';
+    if (catKey.startsWith('eth')) return 'cat-badge cat-badge--eth';
+    if (catKey === 'btc') return 'cat-badge cat-badge--btc';
+    return 'cat-badge cat-badge--stable';
+}
+
 function renderEmodeGrouped() {
     const container = document.getElementById('emodeGrouped');
     container.innerHTML = '';
 
     const visible = getVisibleEmodes();
-    const catsToShow = _activeCat === 'all' ? CAT_ORDER : [_activeCat];
+    const filtered = _activeCat === 'all' ? visible : visible.filter(em => em.category === _activeCat);
 
-    catsToShow.forEach(catKey => {
-        const cat = CATEGORIES[catKey];
-        const emodes = visible.filter(em => em.category === catKey);
-        if (emodes.length === 0) return;
+    if (filtered.length === 0) {
+        container.innerHTML = '<div style="padding:20px; text-align:center; color:var(--text-muted); font-family:var(--font-mono); font-size:0.72rem;">No E-modes match the current filter</div>';
+        return;
+    }
 
-        // Sort: highest net yield first, fall back to leverage
-        emodes.sort((a, b) => {
-            const ya = computeNetLoopYield(a);
-            const yb = computeNetLoopYield(b);
-            const na = ya ? ya.netYield : -999;
-            const nb = yb ? yb.netYield : -999;
-            if (Math.abs(na - nb) > 0.1) return nb - na;
-            return b.maxLeverage - a.maxLeverage;
-        });
-
-        const group = document.createElement('div');
-        group.className = 'cat-group';
-
-        const isPT = catKey.startsWith('pt');
-
-        // Group header
-        const maxLev = fmt(emodes[0].maxLeverage, 1);
-        group.innerHTML = `
-            <div class="cat-group-header">
-                <span class="cat-group-icon">${cat.icon}</span>
-                <span class="cat-group-title">${cat.label}</span>
-                <span class="cat-group-meta">${emodes.length} E-modes &middot; up to ${maxLev}x leverage</span>
-            </div>
-        `;
-
-        // Build table
-        const tableWrap = document.createElement('div');
-        tableWrap.className = 'table-section';
-        tableWrap.style.marginBottom = '0';
-
-        const maturityCol = isPT ? '<col style="width:80px;">' : '';
-        const maturityHeader = isPT ? '<th>Maturity</th>' : '';
-
-        tableWrap.innerHTML = `<div class="table-wrap"><table>
-            <colgroup>
-                <col style="width:30%;">
-                <col style="width:${isPT ? '16' : '20'}%;">
-                <col style="width:68px;">
-                <col style="width:52px;">
-                <col style="width:72px;">
-                <col style="width:72px;">
-                <col style="width:80px;">
-                ${maturityCol}
-                <col style="width:36px;">
-            </colgroup>
-            <thead><tr>
-                <th style="text-align:left;">Collateral</th>
-                <th style="text-align:left;">Borrow</th>
-                <th>Leverage</th>
-                <th>LTV</th>
-                <th>Coll Yield</th>
-                <th>Borr Cost</th>
-                <th>Net Yield</th>
-                ${maturityHeader}
-                <th></th>
-            </tr></thead>
-            <tbody></tbody>
-        </table></div>`;
-
-        const tbody = tableWrap.querySelector('tbody');
-
-        emodes.forEach(em => {
-            const tr = document.createElement('tr');
-            tr.style.cursor = 'pointer';
-            tr.onclick = () => selectEmode(em.id);
-            if (_selectedEmode === em.id) tr.style.background = 'var(--purple-dim)';
-
-            const collPills = em.collateralAssets.map(a => {
-                const cls = a.symbol.startsWith('PT-') ? 'asset-pill asset-pill--pt' : 'asset-pill';
-                return `<span class="${cls}">${esc(a.symbol)}</span>`;
-            }).join('');
-
-            const borrPills = em.borrowableAssets.map(a =>
-                `<span class="asset-pill">${esc(a.symbol)}</span>`
-            ).join('');
-
-            const levClass = em.maxLeverage >= 12 ? 'lev-high' : em.maxLeverage >= 8 ? 'lev-mid' : 'lev-low';
-
-            // Compute net loop yield
-            const loopData = computeNetLoopYield(em);
-            const collYieldStr = loopData ? fmt(loopData.collYield, 2) + '%' : '—';
-            let borrCostStr = '—';
-            let borrCostTitle = '';
-            if (loopData) {
-                borrCostStr = fmt(loopData.borrowCost, 2) + '%';
-                if (loopData.borrowNativeYield > 0) {
-                    borrCostTitle = `Aave rate ${fmt(loopData.borrowAaveRate, 2)}% + ${loopData.borrSymbol} yield ${fmt(loopData.borrowNativeYield, 2)}%`;
-                }
-            }
-            let netYieldStr = '—';
-            let netYieldClass = '';
-            if (loopData) {
-                netYieldStr = fmt(loopData.netYield, 1) + '%';
-                netYieldClass = loopData.netYield > 0 ? 'td-teal' : 'td-coral';
-            }
-
-            // Maturity for PT rows
-            let maturityCell = '';
-            if (isPT) {
-                const mat = getEmodeMaturity(em);
-                if (mat) {
-                    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-                    const matStr = `${mat.getDate()} ${months[mat.getMonth()]} ${mat.getFullYear()}`;
-                    const daysLeft = Math.ceil((mat - new Date()) / 86400000);
-                    const daysLabel = daysLeft > 0 ? `${daysLeft}d` : 'expired';
-                    const daysColor = daysLeft > 90 ? 'var(--teal)' : daysLeft > 30 ? 'var(--amber)' : 'var(--coral)';
-                    maturityCell = `<td><span style="font-size:0.68rem;">${matStr}</span><br><span style="font-size:0.6rem; color:${daysColor};">${daysLabel}</span></td>`;
-                } else {
-                    maturityCell = '<td>—</td>';
-                }
-            }
-
-            // Tooltip showing the formula
-            const netTitle = loopData
-                ? `${loopData.collSymbol} ${fmt(loopData.collYield, 2)}% × ${fmt(loopData.lev, 1)} − ${loopData.borrSymbol} ${fmt(loopData.borrowCost, 2)}% × ${fmt(loopData.lev - 1, 1)}` + (loopData.borrowNativeYield > 0 ? `\nBorrow cost = ${fmt(loopData.borrowAaveRate, 2)}% Aave + ${fmt(loopData.borrowNativeYield, 2)}% ${loopData.borrSymbol} yield` : '')
-                : '';
-
-            tr.innerHTML = `
-                <td class="td-wrap" style="text-align:left;"><div class="asset-pills">${collPills}</div></td>
-                <td class="td-wrap" style="text-align:left;"><div class="asset-pills">${borrPills}</div></td>
-                <td><span class="leverage-val ${levClass}">${fmt(em.maxLeverage, 1)}x</span></td>
-                <td>${fmt(em.ltv, 1)}%</td>
-                <td class="td-teal">${collYieldStr}</td>
-                <td class="td-amber" ${borrCostTitle ? `title="${borrCostTitle}"` : ''}>${borrCostStr}</td>
-                <td class="${netYieldClass}" title="${netTitle}" style="font-weight:700;">${netYieldStr}</td>
-                ${maturityCell}
-                <td style="text-align:center;"><span class="emode-id">${em.id}</span></td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-        group.appendChild(tableWrap);
-        container.appendChild(group);
+    // Sort all by net yield (highest first), fall back to leverage
+    filtered.sort((a, b) => {
+        const ya = computeNetLoopYield(a);
+        const yb = computeNetLoopYield(b);
+        const na = ya ? ya.netYield : -999;
+        const nb = yb ? yb.netYield : -999;
+        if (Math.abs(na - nb) > 0.1) return nb - na;
+        return b.maxLeverage - a.maxLeverage;
     });
+
+    // Single flat table
+    const tableWrap = document.createElement('div');
+    tableWrap.className = 'table-section';
+
+    tableWrap.innerHTML = `<div class="table-wrap"><table>
+        <colgroup>
+            <col style="width:72px;">
+            <col style="width:26%;">
+            <col style="width:18%;">
+            <col style="width:64px;">
+            <col style="width:50px;">
+            <col style="width:68px;">
+            <col style="width:68px;">
+            <col style="width:76px;">
+            <col style="width:76px;">
+            <col style="width:36px;">
+        </colgroup>
+        <thead><tr>
+            <th style="text-align:left;">Category</th>
+            <th style="text-align:left;">Collateral</th>
+            <th style="text-align:left;">Borrow</th>
+            <th>Leverage</th>
+            <th>LTV</th>
+            <th>Coll Yield</th>
+            <th>Borr Cost</th>
+            <th>Net Yield</th>
+            <th>Maturity</th>
+            <th></th>
+        </tr></thead>
+        <tbody></tbody>
+    </table></div>`;
+
+    const tbody = tableWrap.querySelector('tbody');
+
+    filtered.forEach(em => {
+        const tr = document.createElement('tr');
+        tr.style.cursor = 'pointer';
+        tr.onclick = (e) => { if (!e.target.closest('.sim-btn')) selectEmode(em.id); };
+        if (_selectedEmode === em.id) tr.style.background = 'var(--purple-dim)';
+
+        const cat = CATEGORIES[em.category];
+        const catBadge = `<span class="${catBadgeClass(em.category)}">${cat ? cat.icon + ' ' + cat.label : em.category}</span>`;
+
+        const collPills = em.collateralAssets.map(a => {
+            const cls = a.symbol.startsWith('PT-') ? 'asset-pill asset-pill--pt' : 'asset-pill';
+            return `<span class="${cls}">${esc(a.symbol)}</span>`;
+        }).join('');
+
+        const borrPills = em.borrowableAssets.map(a =>
+            `<span class="asset-pill">${esc(a.symbol)}</span>`
+        ).join('');
+
+        const levClass = em.maxLeverage >= 12 ? 'lev-high' : em.maxLeverage >= 8 ? 'lev-mid' : 'lev-low';
+
+        // Compute net loop yield
+        const loopData = computeNetLoopYield(em);
+        const collYieldStr = loopData ? fmt(loopData.collYield, 2) + '%' : '—';
+        let borrCostStr = '—';
+        let borrCostTitle = '';
+        if (loopData) {
+            borrCostStr = fmt(loopData.borrowCost, 2) + '%';
+            if (loopData.borrowNativeYield > 0) {
+                borrCostTitle = `Aave rate ${fmt(loopData.borrowAaveRate, 2)}% + ${loopData.borrSymbol} yield ${fmt(loopData.borrowNativeYield, 2)}%`;
+            }
+        }
+        let netYieldStr = '—';
+        let netYieldClass = '';
+        if (loopData) {
+            netYieldStr = fmt(loopData.netYield, 1) + '%';
+            netYieldClass = loopData.netYield > 0 ? 'td-teal' : 'td-coral';
+        }
+
+        // Maturity (for PT rows, show it; for others show —)
+        let maturityCell = '<td>—</td>';
+        const mat = getEmodeMaturity(em);
+        if (mat) {
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const matStr = `${mat.getDate()} ${months[mat.getMonth()]} ${mat.getFullYear()}`;
+            const daysLeft = Math.ceil((mat - new Date()) / 86400000);
+            const daysLabel = daysLeft > 0 ? `${daysLeft}d` : 'expired';
+            const daysColor = daysLeft > 90 ? 'var(--teal)' : daysLeft > 30 ? 'var(--amber)' : 'var(--coral)';
+            maturityCell = `<td><span style="font-size:0.68rem;">${matStr}</span><br><span style="font-size:0.6rem; color:${daysColor};">${daysLabel}</span></td>`;
+        }
+
+        // Tooltip showing the formula
+        const netTitle = loopData
+            ? `${loopData.collSymbol} ${fmt(loopData.collYield, 2)}% × ${fmt(loopData.lev, 1)} − ${loopData.borrSymbol} ${fmt(loopData.borrowCost, 2)}% × ${fmt(loopData.lev - 1, 1)}` + (loopData.borrowNativeYield > 0 ? `\nBorrow cost = ${fmt(loopData.borrowAaveRate, 2)}% Aave + ${fmt(loopData.borrowNativeYield, 2)}% ${loopData.borrSymbol} yield` : '')
+            : '';
+
+        tr.innerHTML = `
+            <td style="text-align:left;">${catBadge}</td>
+            <td class="td-wrap" style="text-align:left;"><div class="asset-pills">${collPills}</div></td>
+            <td class="td-wrap" style="text-align:left;"><div class="asset-pills">${borrPills}</div></td>
+            <td><span class="leverage-val ${levClass}">${fmt(em.maxLeverage, 1)}x</span></td>
+            <td>${fmt(em.ltv, 1)}%</td>
+            <td class="td-teal">${collYieldStr}</td>
+            <td class="td-amber" ${borrCostTitle ? `title="${borrCostTitle}"` : ''}>${borrCostStr}</td>
+            <td class="${netYieldClass}" title="${netTitle}" style="font-weight:700;">${netYieldStr}</td>
+            ${maturityCell}
+            <td style="text-align:center;"><span class="emode-id">${em.id}</span></td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    container.appendChild(tableWrap);
 }
 
 /* --- E-Mode Detail Panel --- */
@@ -2103,6 +2365,9 @@ function selectEmode(id) {
     _selectedEmode = id;
     const em = _parsedEmodes.find(e => e.id === id);
     if (!em) return;
+
+    // Open simulator for this E-mode
+    openSimulatorFromEmode(id);
 
     // Update card highlights
     renderEmodeGrouped();
@@ -2397,6 +2662,153 @@ function showAllRawReserves() {
     renderRawReserves();
 }
 
+/* ═══════ Simulator ═══════ */
+let _simCollSymbol = null;
+let _simBorrSymbol = null;
+let _simMaxLev = 1;
+let _simCollYield = 0;   // % per year
+let _simBorrCost = 0;    // % per year (effective = Aave rate + native yield)
+let _simBorrAaveRate = 0;
+let _simBorrNativeYield = 0;
+let _simLiqLTV = 0;      // E-mode liquidation threshold as fraction (e.g., 0.93)
+
+function openSimFromMatrix(collSym, borrSym, maxLev) {
+    // Find the best E-mode for this pair
+    const visibleEmodes = getVisibleEmodes();
+    let bestEm = null;
+    for (const em of visibleEmodes) {
+        const hasColl = em.collateralAssets.some(a => a.symbol === collSym);
+        const hasBorr = em.borrowableAssets.some(a => a.symbol === borrSym);
+        if (hasColl && hasBorr && (!bestEm || em.ltv > bestEm.ltv)) bestEm = em;
+    }
+    if (!bestEm) return;
+
+    openSimulator(collSym, borrSym, bestEm);
+}
+
+function openSimulatorFromEmode(emodeId) {
+    const em = _parsedEmodes.find(e => e.id === emodeId);
+    if (!em) return;
+    const loopData = computeNetLoopYield(em);
+    if (!loopData) return;
+    openSimulator(loopData.collSymbol, loopData.borrSymbol, em);
+}
+
+function openSimulator(collSym, borrSym, em) {
+    const collReserve = _parsedReserves.find(r => r.symbol === collSym);
+    const borrReserve = _parsedReserves.find(r => r.symbol === borrSym);
+    if (!collReserve || !borrReserve) return;
+
+    _simCollSymbol = collSym;
+    _simBorrSymbol = borrSym;
+    _simMaxLev = em.maxLeverage;
+    _simLiqLTV = em.liqThreshold / 100; // convert from percentage to fraction
+
+    // Compute collateral yield
+    if (collSym.startsWith('PT-')) {
+        _simCollYield = computePTFixedYield(collReserve);
+    } else if (_stakingYields[collSym]) {
+        _simCollYield = _stakingYields[collSym] + collReserve.supplyAPY;
+    } else {
+        _simCollYield = collReserve.supplyAPY;
+    }
+
+    // Compute borrow cost
+    _simBorrNativeYield = _stakingYields[borrSym] || 0;
+    _simBorrAaveRate = borrReserve.borrowAPY;
+    _simBorrCost = _simBorrAaveRate + _simBorrNativeYield;
+
+    // Set up slider
+    const slider = document.getElementById('simSlider');
+    slider.min = 1;
+    slider.max = _simMaxLev;
+    slider.step = 0.1;
+    slider.value = _simMaxLev; // start at max
+    document.getElementById('simMaxLabel').textContent = fmt(_simMaxLev, 1) + 'x';
+    document.getElementById('simStrategy').textContent = `${collSym} / ${borrSym}  (E-Mode ${em.id}: ${em.label})`;
+
+    const panel = document.getElementById('simPanel');
+    panel.classList.add('sim-panel--visible');
+
+    updateSimulator();
+    panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function closeSimulator() {
+    document.getElementById('simPanel').classList.remove('sim-panel--visible');
+    _simCollSymbol = null;
+    _simBorrSymbol = null;
+}
+
+function updateSimulator() {
+    const lev = parseFloat(document.getElementById('simSlider').value);
+    document.getElementById('simLevDisplay').textContent = fmt(lev, 1) + 'x';
+
+    const collReturn = _simCollYield * lev;
+    const borrCostTotal = _simBorrCost * (lev - 1);
+    const netYield = collReturn - borrCostTotal;
+
+    // Operating LTV at this leverage: lambda_t = (L-1)/L
+    const operatingLTV = (lev - 1) / lev;
+    // Health Factor = liqLTV / operatingLTV
+    const hf = operatingLTV > 0 ? _simLiqLTV / operatingLTV : Infinity;
+    // Price drop to liquidation: 1 - 1/HF
+    const priceDrop = hf > 1 ? (1 - 1 / hf) * 100 : 0;
+
+    // Days to liquidation (if yield erodes HF)
+    // HF' = [(1 + r_stake/100) / (1 + r_borrow/100)] * HF per year
+    // We use annualized rates converted to per-year multipliers
+    const rStake = _simCollYield / 100;
+    const rBorrow = _simBorrCost / 100;
+    const rNet = rStake - rBorrow;
+    let daysToLiq = '—';
+    if (rNet < 0 && hf > 1 && isFinite(hf)) {
+        const ratio = (1 + rStake) / (1 + rBorrow);
+        if (ratio > 0 && ratio < 1) {
+            const years = -Math.log(1 / hf) / Math.log(ratio);
+            const days = Math.round(years * 365);
+            if (days > 0 && days < 100000) daysToLiq = days + ' days';
+        }
+    }
+
+    const resultsEl = document.getElementById('simResults');
+    const netColor = netYield > 0 ? 'var(--teal)' : 'var(--coral)';
+    const hfColor = hf >= 2 ? 'var(--teal)' : hf >= 1.2 ? 'var(--amber)' : 'var(--coral)';
+
+    resultsEl.innerHTML = `
+        <div class="sim-card">
+            <div class="sim-card-label">Net Yield</div>
+            <div class="sim-card-value" style="color:${netColor};">${fmt(netYield, 2)}%</div>
+            <div class="sim-card-sub">collYield &times; L &minus; borrCost &times; (L&minus;1)</div>
+        </div>
+        <div class="sim-card">
+            <div class="sim-card-label">Collateral Return</div>
+            <div class="sim-card-value" style="color:var(--teal);">+${fmt(collReturn, 2)}%</div>
+            <div class="sim-card-sub">${fmt(_simCollYield, 2)}% &times; ${fmt(lev, 1)}</div>
+        </div>
+        <div class="sim-card">
+            <div class="sim-card-label">Borrow Cost</div>
+            <div class="sim-card-value" style="color:var(--coral);">-${fmt(borrCostTotal, 2)}%</div>
+            <div class="sim-card-sub">${fmt(_simBorrCost, 2)}% &times; ${fmt(lev - 1, 1)}${_simBorrNativeYield > 0 ? ` (${fmt(_simBorrAaveRate, 2)}% + ${fmt(_simBorrNativeYield, 2)}% native)` : ''}</div>
+        </div>
+        <div class="sim-card">
+            <div class="sim-card-label">Health Factor</div>
+            <div class="sim-card-value" style="color:${hfColor};">${isFinite(hf) ? fmt(hf, 2) : '∞'}</div>
+            <div class="sim-card-sub">liqLTV (${fmt(_simLiqLTV * 100, 1)}%) / opLTV (${fmt(operatingLTV * 100, 1)}%)</div>
+        </div>
+        <div class="sim-card">
+            <div class="sim-card-label">Price Drop to Liquidation</div>
+            <div class="sim-card-value">${priceDrop > 0 ? fmt(priceDrop, 1) + '%' : '—'}</div>
+            <div class="sim-card-sub">${priceDrop > 0 ? 'Collateral must drop this much' : 'At or above liquidation'}</div>
+        </div>
+        <div class="sim-card">
+            <div class="sim-card-label">Days to Liquidation</div>
+            <div class="sim-card-value" style="color:${daysToLiq !== '—' ? 'var(--coral)' : 'var(--teal)'};">${daysToLiq}</div>
+            <div class="sim-card-sub">${daysToLiq === '—' ? 'Yield positive — HF improves over time' : 'If rates stay constant (no price move)'}</div>
+        </div>
+    `;
+}
+
 /* ═══════ Helpers ═══════ */
 function fmt(v, d) { return Number(v).toFixed(d); }
 function fmtNum(v) {
@@ -2426,7 +2838,7 @@ function copyAddr(addr) {
 function toggleDark() {
     document.documentElement.classList.toggle('dark');
     const dk = document.documentElement.classList.contains('dark');
-    localStorage.setItem('aave-explorer-theme', dk ? 'dark' : 'light');
+    localStorage.setItem('aave-looping-sim-theme', dk ? 'dark' : 'light');
     document.getElementById('darkIcon').innerHTML = dk ? '&#9788;' : '&#9790;';
     document.getElementById('darkLabel').textContent = dk ? 'Light' : 'Dark';
 }
@@ -2437,6 +2849,7 @@ function refreshData() {
     _activeCat = 'all';
     _flowSelection = null;
     document.getElementById('emodeDetail').classList.remove('emode-detail--visible');
+    document.getElementById('simPanel').classList.remove('sim-panel--visible');
     document.querySelectorAll('.expand-row').forEach(r => r.remove());
     _showAllRaw = false;
     fetchData();
@@ -2444,7 +2857,7 @@ function refreshData() {
 
 /* ═══════ Init ═══════ */
 (function() {
-    if (localStorage.getItem('aave-explorer-theme') !== 'light') {
+    if (localStorage.getItem('aave-looping-sim-theme') !== 'light') {
         document.documentElement.classList.add('dark');
         document.getElementById('darkIcon').innerHTML = '&#9788;';
         document.getElementById('darkLabel').textContent = 'Light';
