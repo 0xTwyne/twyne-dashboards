@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twyne Stableloop Comparison</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+    <style>
+        :root {
+            --bg-primary: #0f1419;
+            --bg-secondary: #1a1f2e;
+            --bg-card: #232b3b;
+            --text-primary: #e8eaed;
+            --text-secondary: #9aa0a6;
+            --accent-blue: #4a9bb5;
+            --accent-orange: #ef6c00;
+            --accent-green: #4caf50;
+            --accent-purple: #9c7cf4;
+            --accent-amber: #e0a732;
+            --border-color: #3a4556;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            min-height: 100vh;
+            transition: grid-template-columns 0.3s ease;
+        }
+        .container.sidebar-closed {
+            grid-template-columns: 0px 1fr;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            background: var(--bg-secondary);
+            padding: 24px;
+            border-right: 1px solid var(--border-color);
+            overflow-y: auto;
+            overflow-x: hidden;
+            max-height: 100vh;
+            position: sticky;
+            top: 0;
+            transition: padding 0.3s ease, opacity 0.2s ease;
+        }
+        .sidebar-closed .sidebar {
+            padding: 0;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        .sidebar-header span {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .sidebar-toggle {
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sidebar-toggle:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+        .sidebar-open-btn {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: 1px solid rgba(156,124,244,0.35);
+            background: rgba(156,124,244,0.08);
+            color: var(--accent-purple);
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            margin-bottom: 16px;
+            align-self: flex-start;
+        }
+        .sidebar-open-btn:hover {
+            background: rgba(156,124,244,0.15);
+            border-color: rgba(156,124,244,0.5);
+        }
+        .sidebar-closed .sidebar-open-btn {
+            display: flex;
+        }
+
+        .sidebar h1 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+            color: var(--accent-blue);
+        }
+
+        .sidebar .subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .section {
+            margin-bottom: 24px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        details > summary {
+            list-style: none;
+        }
+        details > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details.section summary.section-header {
+            list-style: none;
+            justify-content: space-between;
+            cursor: pointer;
+            user-select: none;
+            margin-bottom: 0;
+            padding: 10px 12px;
+            border-radius: 6px;
+            border-bottom: none;
+            background: rgba(255, 255, 255, 0.03);
+            transition: background 0.15s;
+        }
+        details.section summary.section-header:hover {
+            background: rgba(255, 255, 255, 0.06);
+        }
+        details.section summary.section-header::-webkit-details-marker {
+            display: none;
+        }
+        details.section summary.section-header::after {
+            content: '\25BE';
+            font-size: 1rem;
+            color: var(--text-secondary);
+            transition: transform 0.2s;
+        }
+        details:not([open]).section summary.section-header::after {
+            content: '\25B8';
+        }
+        details[open].section summary.section-header {
+            margin-bottom: 8px;
+            border-bottom: 1px solid var(--border-color);
+            border-radius: 6px 6px 0 0;
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            padding: 8px 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .input-wrapper.has-prefix input {
+            padding-left: 24px;
+        }
+
+        .input-wrapper.has-suffix input {
+            padding-right: 28px;
+        }
+
+        .input-prefix, .input-suffix {
+            position: absolute;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+
+        .input-prefix {
+            left: 10px;
+        }
+
+        .input-suffix {
+            right: 10px;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .stat-display {
+            background: var(--bg-card);
+            padding: 12px;
+            border-radius: 8px;
+            margin-top: 12px;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            padding: 4px 0;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: var(--accent-blue);
+        }
+
+        .stat-value.positive {
+            color: var(--accent-green);
+        }
+
+        .stat-value.warning {
+            color: var(--accent-orange);
+        }
+
+        /* Main Content */
+        .main {
+            padding: 24px 32px;
+            overflow-y: auto;
+        }
+
+        .main h2 {
+            font-size: 1.25rem;
+            margin-bottom: 8px;
+        }
+
+        .main .description {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+
+        /* Position Scenarios */
+        #positionComparison .scenario-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        .scenario-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            table-layout: fixed;
+        }
+        .scenario-table col:nth-child(1) { width: 14%; }
+        .scenario-table col:nth-child(2) { width: 10%; }
+        .scenario-table col:nth-child(3) { width: 22%; }
+        .scenario-table col:nth-child(4) { width: 12%; }
+        .scenario-table col:nth-child(5) { width: 8%; }
+        .scenario-table col:nth-child(6) { width: 8%; }
+        .scenario-table col:nth-child(7) { width: 22%; }
+        .scenario-table th {
+            padding: 10px 14px;
+            font-size: 0.7rem;
+            text-align: left;
+            background: var(--bg-secondary);
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .scenario-table td {
+            padding: 9px 14px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            font-variant-numeric: tabular-nums;
+        }
+
+        tr:hover td {
+            background: rgba(74, 155, 181, 0.1);
+        }
+
+        .scenario-card {
+            border-radius: 12px;
+            padding: 16px;
+        }
+        .scenario-card.aave {
+            background: rgba(239, 108, 0, 0.06);
+            border: 1px solid rgba(239, 108, 0, 0.2);
+        }
+        .scenario-card.aave th {
+            background: rgba(239, 108, 0, 0.1);
+            color: var(--accent-orange);
+        }
+        .scenario-card.twyne {
+            background: rgba(156, 124, 244, 0.06);
+            border: 1px solid rgba(156, 124, 244, 0.2);
+        }
+        .scenario-card.twyne th {
+            background: rgba(156, 124, 244, 0.1);
+            color: var(--accent-purple);
+        }
+        .delta-positive { color: var(--accent-green); font-weight: 600; }
+        .delta-negative { color: var(--accent-orange); font-weight: 600; }
+
+        /* Tooltip */
+        #tip {
+            position: fixed;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 0.75rem;
+            font-weight: 400;
+            line-height: 1.5;
+            max-width: 260px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s;
+            z-index: 9999;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+            .sidebar {
+                position: relative;
+                max-height: none;
+                border-right: none;
+                border-bottom: 1px solid var(--border-color);
+            }
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span>Parameters</span>
+                <button class="sidebar-toggle" id="sidebarToggle" title="Close sidebar">&#x2039;</button>
+            </div>
+            <div class="section">
+                <div class="section-header">Rates</div>
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-left: 3px solid var(--accent-purple); border-radius: 8px; padding: 12px;">
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Supply APY</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="supplyApy" value="5.00" step="0.1" min="0" max="20">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Borrow APY</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="borrowApy" value="3.50" step="0.1" min="0" max="20">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" id="betaSafe" value="100">
+            </div>
+
+            <div class="section">
+                <div class="section-header">Liquidation LTVs</div>
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-left: 3px solid var(--accent-purple); border-radius: 8px; padding: 12px;">
+                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                        <img src="icons/aave_logo_light.png" alt="Aave" style="width: 64px;">
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Liq LTV</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="liqLtvE" value="93" step="1" min="70" max="98">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Borrow LTV</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="borrowLtvE" value="90" step="1" min="60" max="95">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-left: 3px solid var(--accent-purple); border-radius: 8px; padding: 12px; margin-top: 8px;">
+                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                        <img src="icons/twyne_logo_white_full.png" alt="Twyne" style="width: 64px;">
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>Liq LTV</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="liqLtvT" value="98" step="1" min="90" max="99">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>Borrow LTV</label>
+                            <span class="stat-value" id="summaryBorrowLtvTwyne" style="font-size: 14px; line-height: 32px; color: var(--accent-purple);">&mdash;</span>
+                        </div>
+                    </div>
+                    <div class="stat-display" style="margin-top: 8px;">
+                        <div class="stat-row">
+                            <span class="stat-label">Credit Requirements</span>
+                            <span class="stat-value" id="psiValue">3.16%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <details class="section" style="margin-bottom: 0; margin-top: 12px; --detail-accent: var(--accent-purple);">
+                <summary class="section-header" style="border-left: 3px solid var(--accent-purple);">Interest Rate</summary>
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-left: 3px solid var(--accent-purple); border-radius: 8px; padding: 12px; margin-top: 8px;">
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>I_min</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="iMin" value="0" step="0.1" min="0" max="10">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>I_max</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="iMax" value="15" step="1" min="1" max="50">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>I_0 (kink rate)</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="i0" value="0.8" step="0.1" min="0" max="10">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                        <div class="input-group">
+                            <label>u_0 (kink util)</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="u0" value="90" step="1" min="50" max="99">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-row">
+                        <div class="input-group">
+                            <label>gamma</label>
+                            <input type="number" id="gamma" value="32" step="1" min="1" max="100">
+                        </div>
+                        <div class="input-group">
+                            <label>Utilization</label>
+                            <div class="input-wrapper has-suffix">
+                                <input type="number" id="utilization" value="90" step="1" min="80" max="100">
+                                <span class="input-suffix">%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </details>
+        </aside>
+
+        <main class="main">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 20px; margin-bottom: 16px;">
+                <h2 style="margin: 0; color: var(--accent-purple);">Stableloop Comparison</h2>
+                <img src="icons/twyne_logo_white_full.png" alt="Twyne" style="height: 36px;">
+            </div>
+
+            <button class="sidebar-open-btn" id="sidebarOpen" title="Open sidebar">&#x203A; Parameters</button>
+
+            <!-- Net Looping Yield Heatmap (first) -->
+            <section style="margin-bottom: 40px;">
+                <h2 style="margin-bottom: 16px;">Net Looping Yield</h2>
+                <div style="background: rgba(156,124,244,0.06); border: 1px solid rgba(156,124,244,0.15); border-radius: 10px; padding: 14px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                        <div style="font-size: 0.8rem; font-weight: 600; color: var(--accent-purple);">Yield by Liquidation LTV &amp; Health Factor</div>
+                        <div style="display: flex; gap: 10px; align-items: center; font-size: 0.75rem; color: var(--text-secondary);">
+                            <label>HF <input type="number" id="hfMin" value="1.01" step="0.01" min="1.01" max="1.5" style="width: 50px; padding: 2px 4px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 3px; color: var(--text-primary); font-size: 0.7rem; text-align: center;"></label>
+                            <span style="color: var(--text-secondary);">to</span>
+                            <label><input type="number" id="hfMax" value="1.05" step="0.01" min="1.02" max="2.0" style="width: 50px; padding: 2px 4px; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 3px; color: var(--text-primary); font-size: 0.7rem; text-align: center;"></label>
+                        </div>
+                    </div>
+                    <div id="yieldHeatmap"></div>
+                </div>
+            </section>
+
+            <!-- Position Scenarios: Stableloop -->
+            <section id="positionComparison">
+                <div style="display: flex; align-items: center; justify-content: space-between;">
+                    <h2 style="margin-bottom: 4px;">Position Scenarios: Stableloop</h2>
+                    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border-color); border-left: 3px solid var(--accent-amber); border-radius: 8px;">
+                        <label style="font-size: 0.8rem; color: var(--text-secondary); white-space: nowrap;">Borrower Equity</label>
+                        <div class="input-wrapper has-prefix" style="max-width: 160px;">
+                            <span class="input-prefix">$</span>
+                            <input type="text" id="borrowerEquity" value="1,000,000" inputmode="numeric">
+                        </div>
+                    </div>
+                </div>
+                <p class="description">Compare a stablecoin looped position on Aave alone vs with Twyne credit delegation.</p>
+
+                <div class="scenario-grid">
+                    <!-- Scenario A: Aave Only -->
+                    <div class="scenario-card aave">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                            <img src="icons/aave_logo_light.png" alt="Aave" style="width: 56px;">
+                            <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-orange); font-weight: 600;">Scenario A &mdash; Aave Only</span>
+                        </div>
+                        <table class="scenario-table" id="scenarioATable">
+                            <colgroup><col><col><col><col><col><col><col></colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Credit-LP Req.</th>
+                                    <th>Leverage</th>
+                                    <th>Collateral</th>
+                                    <th>Debt</th>
+                                    <th>LTV</th>
+                                    <th>HF</th>
+                                    <th>Net APY</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Scenario B: With Twyne -->
+                    <div class="scenario-card twyne">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                            <img src="icons/twyne_logo_white_full.png" alt="Twyne" style="width: 56px;">
+                            <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--accent-purple); font-weight: 600;">Scenario B &mdash; With Twyne</span>
+                        </div>
+                        <table class="scenario-table" id="scenarioBTable">
+                            <colgroup><col><col><col><col><col><col><col></colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Credit-LP Req.</th>
+                                    <th>Leverage</th>
+                                    <th>Collateral</th>
+                                    <th>Debt</th>
+                                    <th>LTV</th>
+                                    <th>HF</th>
+                                    <th>Net APY</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="creditExamplesBox" style="margin-top: 24px; background: rgba(74, 155, 181, 0.06); border: 1px solid rgba(74, 155, 181, 0.2); border-radius: 10px; padding: 16px 20px; line-height: 1.7; font-size: 0.85rem; color: var(--text-secondary);">
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        // =====================================================================
+        // Economic Formulas
+        // =====================================================================
+
+        function psi(liqLtvT, betaSafe, liqLtvClp, liqLtvC) {
+            return liqLtvT / (betaSafe * liqLtvClp) - liqLtvC / liqLtvClp;
+        }
+
+        function interestRate(u, iMin, i0, u0, iMax, gamma) {
+            const linearSlope = (i0 - iMin) / u0;
+            const nonlinearCoeff = iMax - iMin - linearSlope;
+            return iMin + linearSlope * u + nonlinearCoeff * Math.pow(u, gamma);
+        }
+
+        function ltvFromHf(liqLtvT, hf) {
+            return liqLtvT / hf;
+        }
+
+        function leverageFromLtv(lambdaT) {
+            return 1.0 / (1.0 - lambdaT);
+        }
+
+        function loopedYield(rSupply, rBorrow, lambdaT, irU, psiVal) {
+            const numerator = rSupply - rBorrow * lambdaT - irU * psiVal;
+            const denominator = 1.0 - lambdaT;
+            return numerator / denominator;
+        }
+
+        function aaveNetApy(leverage, rSupply, rBorrow) {
+            return leverage * rSupply - (leverage - 1) * rBorrow;
+        }
+
+        function twyneNetApy(leverage, rSupply, rBorrow, irU, psiVal) {
+            const ltv = 1 - 1 / leverage;
+            return loopedYield(rSupply, rBorrow, ltv, irU, psiVal);
+        }
+
+        function minPsiForLeverage(leverage, borrowLtvE, liqLtvE, betaSafe) {
+            const requiredBorrowLtv = 1 - 1 / leverage;
+            const requiredLiqLtvT = requiredBorrowLtv * liqLtvE / borrowLtvE;
+            if (requiredLiqLtvT <= liqLtvE) return 0;
+            return psi(requiredLiqLtvT, betaSafe, liqLtvE, liqLtvE);
+        }
+
+        function positionDetails(equity, leverage) {
+            const collateral = equity * leverage;
+            const debt = equity * (leverage - 1);
+            const ltv = debt / collateral;
+            return { collateral, debt, ltv };
+        }
+
+        // =====================================================================
+        // Helpers
+        // =====================================================================
+
+        function formatNum(n) {
+            if (n >= 1000000000) return '$' + (n / 1000000000).toFixed(1) + 'B';
+            if (n >= 1000000) return '$' + (n / 1000000).toFixed(1) + 'M';
+            if (n >= 1000) return '$' + (n / 1000).toFixed(0) + 'K';
+            return '$' + n.toFixed(0);
+        }
+
+        function formatWithCommas(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        }
+
+        // =====================================================================
+        // State
+        // =====================================================================
+
+        let _scenarioBeyondLevels = [];
+
+        // =====================================================================
+        // Parameter Reader
+        // =====================================================================
+
+        function getParams() {
+            return {
+                supplyApy: parseFloat(document.getElementById('supplyApy').value) / 100,
+                borrowApy: parseFloat(document.getElementById('borrowApy').value) / 100,
+                liqLtvT: parseFloat(document.getElementById('liqLtvT').value) / 100,
+                liqLtvE: parseFloat(document.getElementById('liqLtvE').value) / 100,
+                borrowLtvE: parseFloat(document.getElementById('borrowLtvE').value) / 100,
+                betaSafe: parseFloat(document.getElementById('betaSafe').value) / 100,
+                iMin: parseFloat(document.getElementById('iMin').value) / 100,
+                iMax: parseFloat(document.getElementById('iMax').value) / 100,
+                i0: parseFloat(document.getElementById('i0').value) / 100,
+                u0: parseFloat(document.getElementById('u0').value) / 100,
+                gamma: parseFloat(document.getElementById('gamma').value),
+                hfMin: parseFloat(document.getElementById('hfMin').value),
+                hfMax: parseFloat(document.getElementById('hfMax').value),
+                utilization: parseFloat(document.getElementById('utilization').value) / 100,
+            };
+        }
+
+        // =====================================================================
+        // Update: Sidebar Stats
+        // =====================================================================
+
+        function updateStats() {
+            const p = getParams();
+            const psiVal = psi(p.liqLtvT, p.betaSafe, p.liqLtvE, p.liqLtvE);
+
+            document.getElementById('psiValue').textContent = (psiVal * 100).toFixed(2) + '%';
+
+            const twyneBorrowLtv = p.borrowLtvE * p.liqLtvT / p.liqLtvE;
+            document.getElementById('summaryBorrowLtvTwyne').textContent = (twyneBorrowLtv * 100).toFixed(1) + '%';
+        }
+
+        // =====================================================================
+        // Update: Net Looping Yield Heatmap
+        // =====================================================================
+
+        function updateHeatmap() {
+            const p = getParams();
+            const rSupply = p.supplyApy;
+            const rBorrow = p.borrowApy;
+            const irU = interestRate(p.utilization, p.iMin, p.i0, p.u0, p.iMax, p.gamma);
+
+            const nHf = 5;
+            const hfValues = [];
+            for (let i = 0; i < nHf; i++) {
+                hfValues.push(p.hfMin + (p.hfMax - p.hfMin) * i / (nHf - 1));
+            }
+
+            const ltvStart = Math.floor(p.liqLtvE * 100);
+            const ltvEnd = Math.floor(p.liqLtvT * 100);
+            const ltvValues = [];
+            for (let ltv = ltvStart; ltv <= ltvEnd; ltv++) {
+                ltvValues.push(ltv / 100);
+            }
+
+            const yLabels = hfValues.map(v => v.toFixed(2));
+            const xLabels = ltvValues.map((v, j) => {
+                const pct = (v * 100).toFixed(0);
+                return j === 0 ? pct + ' (Aave)' : pct;
+            });
+
+            const yieldGrid = [];
+            const textGrid = [];
+            for (let i = 0; i < hfValues.length; i++) {
+                const row = [];
+                const textRow = [];
+                for (let j = 0; j < ltvValues.length; j++) {
+                    const lambdaT = ltvFromHf(ltvValues[j], hfValues[i]);
+                    const psiLtv = psi(ltvValues[j], p.betaSafe, p.liqLtvE, p.liqLtvE);
+                    const yieldVal = loopedYield(rSupply, rBorrow, lambdaT, irU, psiLtv) * 100;
+                    row.push(yieldVal);
+                    textRow.push(yieldVal.toFixed(1) + '%');
+                }
+                yieldGrid.push(row);
+                textGrid.push(textRow);
+            }
+
+            const data = [{
+                z: yieldGrid,
+                x: xLabels,
+                y: yLabels,
+                type: 'heatmap',
+                colorscale: [[0, '#1a1730'], [0.25, '#2d2252'], [0.5, '#4a3a80'], [0.75, '#7a5ec0'], [1, '#9c7cf4']],
+                showscale: true,
+                colorbar: {
+                    title: 'Yield %',
+                    titlefont: { color: '#9aa0a6' },
+                    tickfont: { color: '#9aa0a6' }
+                },
+                text: textGrid,
+                texttemplate: '%{text}',
+                textfont: { size: 11, color: '#c8d6e0' },
+                hovertemplate: 'Liq LTV: %{x}<br>HF: %{y}<br>Yield: %{z:.1f}%<extra></extra>',
+            }];
+
+            // Orange overlay rectangle on the first (Aave) column
+            const nX = xLabels.length;
+            const layout = {
+                xaxis: {
+                    title: 'Boosted Liquidation LTV %',
+                    color: '#9aa0a6',
+                    gridcolor: 'rgba(156,124,244,0.12)',
+                    type: 'category',
+                },
+                yaxis: {
+                    title: 'Health Factor',
+                    color: '#9aa0a6',
+                    gridcolor: 'rgba(156,124,244,0.12)',
+                    type: 'category',
+                },
+                paper_bgcolor: 'transparent',
+                plot_bgcolor: 'transparent',
+                margin: { t: 10, r: 70, b: 44, l: 60 },
+                height: 300,
+                shapes: [{
+                    type: 'rect',
+                    xref: 'x', yref: 'paper',
+                    x0: -0.5, x1: 0.5,
+                    y0: 0, y1: 1,
+                    fillcolor: 'rgba(239, 108, 0, 0.25)',
+                    line: { color: 'rgba(239, 108, 0, 0.6)', width: 1.5 },
+                }],
+            };
+
+            Plotly.newPlot('yieldHeatmap', data, layout, { responsive: true });
+        }
+
+        // =====================================================================
+        // Update: Position Comparison Tables
+        // =====================================================================
+
+        function updatePositionComparison() {
+            const p = getParams();
+            const rSupply = p.supplyApy;
+            const rBorrow = p.borrowApy;
+            const irU = interestRate(p.utilization, p.iMin, p.i0, p.u0, p.iMax, p.gamma);
+            const equity = parseFloat(document.getElementById('borrowerEquity').value.replace(/,/g, '')) || 1000000;
+
+            const targetHF = 1.02;
+            const dash = '<span style="color:var(--text-secondary);">&mdash;</span>';
+
+            // --- Scenario A: Aave Only ---
+            const aaveOperatingLtv = Math.min(p.liqLtvE / targetHF, p.borrowLtvE);
+            const aaveLeverage = leverageFromLtv(aaveOperatingLtv);
+            const aaveHF = p.liqLtvE / aaveOperatingLtv;
+            const posA = positionDetails(equity, aaveLeverage);
+            const netApyA = aaveNetApy(aaveLeverage, rSupply, rBorrow);
+
+            const tbodyA = document.querySelector('#scenarioATable tbody');
+            tbodyA.innerHTML = '';
+
+            // Generate rows from 2x up to max leverage, show only last 3
+            const allAaveLevSteps = [];
+            for (let lev = 2; lev < Math.floor(aaveLeverage); lev++) {
+                allAaveLevSteps.push(lev);
+            }
+            allAaveLevSteps.push(aaveLeverage);
+            const aaveLevSteps = allAaveLevSteps.slice(-3);
+
+            aaveLevSteps.forEach(lev => {
+                const ltv = 1 - 1 / lev;
+                const hf = p.liqLtvE / ltv;
+                const pos = positionDetails(equity, lev);
+                const apy = aaveNetApy(lev, rSupply, rBorrow);
+                const isMax = lev === aaveLeverage;
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${dash}</td>
+                    <td>${lev.toFixed(1)}x${isMax ? ' <span style="font-size:0.7rem;color:var(--accent-orange);">MAX</span>' : ''}</td>
+                    <td>${formatNum(pos.collateral)}</td>
+                    <td>${formatNum(pos.debt)}</td>
+                    <td>${(ltv * 100).toFixed(1)}%</td>
+                    <td>${hf.toFixed(2)}</td>
+                    <td style="font-weight:600;">${(apy * 100).toFixed(2)}%</td>
+                `;
+                tbodyA.appendChild(tr);
+            });
+
+            // --- Scenario B: With Twyne ---
+            const tbodyB = document.querySelector('#scenarioBTable tbody');
+            tbodyB.innerHTML = '';
+            const aaveMaxLev = leverageFromLtv(p.borrowLtvE);
+            _scenarioBeyondLevels = [];
+
+            const liqLtvStartPct = Math.floor(p.liqLtvE * 100) + 1;
+            const liqLtvEndPct = Math.round(p.liqLtvT * 100);
+
+            for (let liqPct = liqLtvStartPct; liqPct <= liqLtvEndPct; liqPct++) {
+                const stepLiqLtv = liqPct / 100;
+                const stepBorrowLtv = p.borrowLtvE * stepLiqLtv / p.liqLtvE;
+                const stepOperatingLtv = Math.min(stepLiqLtv / targetHF, stepBorrowLtv);
+                const stepLev = leverageFromLtv(stepOperatingLtv);
+                const stepHF = stepLiqLtv / stepOperatingLtv;
+                const stepPos = positionDetails(equity, stepLev);
+                const stepPsi = minPsiForLeverage(stepLev, p.borrowLtvE, p.liqLtvE, p.betaSafe);
+                const stepCreditLpReq = stepPos.collateral / aaveMaxLev - equity;
+                const stepApy = twyneNetApy(stepLev, rSupply, rBorrow, irU, stepPsi);
+
+                const stepDelta = stepApy - netApyA;
+                const stepDeltaColor = stepDelta >= 0 ? 'var(--accent-green)' : 'var(--accent-orange)';
+                const stepDeltaStr = (stepDelta >= 0 ? '+' : '') + (stepDelta * 100).toFixed(2) + '%';
+                const stepCollGain = stepPos.collateral - posA.collateral;
+                const stepCollGainStr = stepCollGain > 0 ? '<span style="font-size:0.75rem;color:var(--accent-green);margin-left:4px;">(+' + formatNum(stepCollGain) + ')</span>' : '';
+                const stepDeltaInline = '<span style="font-size:0.75rem;color:' + stepDeltaColor + ';margin-left:4px;">(' + stepDeltaStr + ')</span>';
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${formatNum(stepCreditLpReq)}</td>
+                    <td>${stepLev.toFixed(1)}x</td>
+                    <td>${formatNum(stepPos.collateral)} ${stepCollGainStr}</td>
+                    <td>${formatNum(stepPos.debt)}</td>
+                    <td>${(stepPos.ltv * 100).toFixed(1)}%</td>
+                    <td>${stepHF.toFixed(2)}</td>
+                    <td style="font-weight:600;">${(stepApy * 100).toFixed(2)}% ${stepDeltaInline}</td>
+                `;
+                tbodyB.appendChild(tr);
+                _scenarioBeyondLevels.push(stepLev);
+            }
+
+            // Explanation callout
+            const aaveMaxLevLabel = aaveMaxLev.toFixed(1);
+            const twyneMaxLev = _scenarioBeyondLevels[_scenarioBeyondLevels.length - 1];
+            const twyneMidLev = _scenarioBeyondLevels[Math.floor(_scenarioBeyondLevels.length / 2)];
+            const extraTvl = equity * aaveMaxLev;
+
+            document.getElementById('creditExamplesBox').innerHTML = `
+                <strong style="color: var(--text-primary);">Why this matters for stableloop strategies</strong><br>
+                On Aave, <strong style="color: var(--accent-purple);">every $1 deposited can generate up to ~$${aaveMaxLevLabel} in looped TVL</strong>.
+                <br><br>
+                Most depositors don't max out their leverage, and many simply hold stablecoins looking for yield.
+                In both cases, Aave's utility is not fully utilized. Twyne puts it to work by letting these users earn delegation yield
+                while active loopers access even higher capital efficiency than Aave already provides.
+                <br><br>
+                One large looper can borrow all available credit and reach <strong style="color: var(--accent-purple);">${twyneMaxLev.toFixed(1)}x</strong>,
+                or many smaller loopers can each lever up to <strong style="color: var(--accent-purple);">${twyneMidLev.toFixed(1)}x</strong>.
+                Either way, the creditor's <strong style="color: var(--accent-purple);">${formatNum(equity)}</strong> is amplified into
+                <strong style="color: var(--accent-purple);">${formatNum(extraTvl)}</strong> of new TVL on the same Aave rails.
+            `;
+        }
+
+        // =====================================================================
+        // Master Update
+        // =====================================================================
+
+        function updateAll() {
+            updateStats();
+            updateHeatmap();
+            updatePositionComparison();
+        }
+
+        // =====================================================================
+        // Event Wiring
+        // =====================================================================
+
+        ['borrowerEquity'].forEach(id => {
+            const el = document.getElementById(id);
+            el.addEventListener('focus', function() {
+                this.value = this.value.replace(/,/g, '');
+            });
+            el.addEventListener('blur', function() {
+                const num = parseInt(this.value.replace(/,/g, ''), 10);
+                if (!isNaN(num)) {
+                    this.value = formatWithCommas(num);
+                }
+            });
+        });
+
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', updateAll);
+        });
+
+        const liqLtvTInput = document.getElementById('liqLtvT');
+        const liqLtvEInput = document.getElementById('liqLtvE');
+        function checkLtvValidity() {
+            const tVal = parseFloat(liqLtvTInput.value);
+            const eVal = parseFloat(liqLtvEInput.value);
+            if (!isNaN(tVal) && !isNaN(eVal) && tVal < eVal) {
+                liqLtvTInput.style.borderColor = 'var(--accent-orange)';
+                liqLtvTInput.style.boxShadow = '0 0 0 1px var(--accent-orange)';
+            } else {
+                liqLtvTInput.style.borderColor = '';
+                liqLtvTInput.style.boxShadow = '';
+            }
+        }
+        liqLtvTInput.addEventListener('input', checkLtvValidity);
+        liqLtvEInput.addEventListener('input', checkLtvValidity);
+
+        // Initial render
+        updateAll();
+
+        // Tooltip
+        const tip = document.createElement('div');
+        tip.id = 'tip';
+        document.body.appendChild(tip);
+
+        document.addEventListener('mouseover', e => {
+            const th = e.target.closest('th[data-tip]');
+            if (!th) return;
+            tip.textContent = th.getAttribute('data-tip');
+            tip.style.opacity = '1';
+            const r = th.getBoundingClientRect();
+            tip.style.left = r.left + r.width / 2 - tip.offsetWidth / 2 + 'px';
+            tip.style.top = r.top - tip.offsetHeight - 6 + 'px';
+        });
+
+        document.addEventListener('mouseout', e => {
+            if (e.target.closest('th[data-tip]')) tip.style.opacity = '0';
+        });
+
+        // Sidebar toggle
+        const container = document.querySelector('.container');
+        function resizePlots() {
+            document.querySelectorAll('.js-plotly-plot').forEach(el => Plotly.Plots.resize(el));
+        }
+        container.addEventListener('transitionend', e => {
+            if (e.propertyName === 'grid-template-columns') resizePlots();
+        });
+        document.getElementById('sidebarToggle').addEventListener('click', () => {
+            container.classList.add('sidebar-closed');
+        });
+        document.getElementById('sidebarOpen').addEventListener('click', () => {
+            container.classList.remove('sidebar-closed');
+        });
+    </script>
+</body>
+</html>
