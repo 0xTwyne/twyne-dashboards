@@ -156,6 +156,54 @@
             padding: 8px;
             border-left: 2px solid var(--border-color);
         }
+
+        .section-divider {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 32px 0 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--accent-blue);
+        }
+        .section-divider .sub {
+            font-size: 0.8rem;
+            font-weight: 400;
+            color: var(--text-secondary);
+            margin-left: 8px;
+        }
+        .exec-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .table-scroll { overflow-x: auto; }
+        table.strat-tbl {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+        }
+        table.strat-tbl th {
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            padding: 6px 10px;
+            text-align: right;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+        }
+        table.strat-tbl th:first-child { text-align: left; }
+        table.strat-tbl td {
+            padding: 5px 10px;
+            border-bottom: 1px solid var(--border-color);
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+        table.strat-tbl td:first-child { text-align: left; color: var(--accent-blue); }
+        table.strat-tbl tr:hover td { background: rgba(74,155,181,0.05); }
+        .chart-full { grid-column: 1 / -1; }
     </style>
 </head>
 <body>
@@ -199,6 +247,49 @@
         <h1>PT Leveraged Yield Backtest</h1>
         <p class="subtitle">Historical yield analysis for leveraged PT positions through Twyne</p>
 
+        <!-- ====== EXECUTIVE SUMMARY (aggregates all debt tokens) ====== -->
+        <div class="section-divider">Executive Summary <span class="sub">All PT strategies, best debt per token</span></div>
+
+        <div class="exec-grid">
+            <div class="card chart-full">
+                <div class="card-title">All Strategies Over Time (3x Leverage, Best Debt)</div>
+                <div id="all-strategies-chart"></div>
+            </div>
+        </div>
+
+        <div class="exec-grid">
+            <div class="card">
+                <div class="card-title">Total Returns Ranking (Top 30)</div>
+                <div id="total-returns-chart"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">Average Yield by Token Family</div>
+                <div id="family-bar-chart"></div>
+            </div>
+        </div>
+
+        <div class="exec-grid">
+            <div class="card">
+                <div class="card-title">Twyne Yield Uplift: Base (1.5x) vs Twyne-Enabled</div>
+                <div id="twyne-uplift-chart"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">Yield Landscape: Standard PT vs Twyne-Enabled</div>
+                <div id="twyne-yield-surface"></div>
+            </div>
+        </div>
+
+        <div class="exec-grid">
+            <div class="card chart-full">
+                <div class="card-title">Yield Trend by Maturity Date</div>
+                <div id="trend-yield-chart"></div>
+            </div>
+        </div>
+
+        <!-- ====== DEEP DIVE (reactive to sidebar selectors) ====== -->
+        <div class="section-divider">Deep Dive <span class="sub">Select market, debt, &amp; leverage in sidebar</span></div>
+
+
         <div class="stat-grid" id="stats"></div>
 
         <div class="card chart-full">
@@ -231,6 +322,32 @@
                 <div class="card-title">P&L Evolution</div>
                 <div id="pnl-chart"></div>
             </div>
+
+        <!-- Historical Analysis -->
+        <div class="card chart-full" style="margin-top: 16px;">
+            <div class="card-title">Historical Analysis — <span id="hist-title">Select a market</span></div>
+            <div id="hist-combined-chart" style="height: 680px;"></div>
+        </div>
+
+        <!-- Strategy Ranking Table -->
+        <div class="card" style="margin-top: 16px;">
+            <div class="card-title">Strategy Ranking <span style="font-size:0.75rem; color:var(--text-secondary); font-weight:400; margin-left:8px;">Click header to sort</span></div>
+            <div class="table-scroll" style="max-height: 400px; overflow-y: auto;">
+                <table class="strat-tbl" id="strategy-table">
+                    <thead><tr>
+                        <th onclick="sortTable('symbol')">Token</th>
+                        <th onclick="sortTable('debt_asset')">Debt</th>
+                        <th onclick="sortTable('leverage')">Lev</th>
+                        <th onclick="sortTable('median_yield_pct')">Med Yield</th>
+                        <th onclick="sortTable('p25_yield_pct')">P25</th>
+                        <th onclick="sortTable('p75_yield_pct')">P75</th>
+                        <th onclick="sortTable('liq_rate')">Liq%</th>
+                        <th onclick="sortTable('mean_days_held')">Days</th>
+                    </tr></thead>
+                    <tbody id="strategy-tbody"></tbody>
+                </table>
+            </div>
+        </div>
         </div>
     </div>
 </div>
@@ -288,6 +405,8 @@ function updateDashboard() {
     updateRateChart(sym, debt);
     updateHfChart(sym, debt);
     updatePnlChart(sym, debt);
+    updateHistoricalCharts(sym, debt, levs);
+    drawStrategyTable(debt);
 }
 
 function updateStats(sym, debt, levs) {
@@ -305,7 +424,7 @@ function updateStats(sym, debt, levs) {
 
 function updateTimingChart(sym, debt, levs) {
     const traces = levs.map((lev, i) => {
-        const key = `${sym}|${debt}|${lev}`;
+        const key = `${sym}|${debt}|${lev.toFixed(1)}`;
         const d = DATA.timing[key];
         if (!d) return null;
         return {
@@ -433,6 +552,429 @@ function updatePnlChart(sym, debt) {
     }, { responsive: true });
 }
 
+
+// =====================================================================
+// HELPER: classify symbol into family
+// =====================================================================
+const FAMILY_COLORS = { USDe: '#4a9bb5', eUSDe: '#ef6c00', sUSDe: '#4caf50', srUSDe: '#9c7cf4' };
+function getFamily(sym) {
+    if (sym.includes('srUSDe')) return 'srUSDe';
+    if (sym.includes('sUSD')) return 'sUSDe';
+    if (sym.includes('eUSD')) return 'eUSDe';
+    return 'USDe';
+}
+function shortSym(s) { return s.replace('PT-', ''); }
+function parseMaturity(sym) {
+    const m = sym.match(/(\d{1,2})([A-Z]{3})(\d{4})$/);
+    if (!m) return null;
+    const months = {JAN:0,FEB:1,MAR:2,APR:3,MAY:4,JUN:5,JUL:6,AUG:7,SEP:8,OCT:9,NOV:10,DEC:11};
+    return new Date(parseInt(m[3]), months[m[2]], parseInt(m[1]));
+}
+function bestDebtForSymbol(sym, lev) {
+    const debts = DATA.debtMap[sym] || [];
+    let best = debts[0], bestY = -Infinity;
+    debts.forEach(d => {
+        const row = DATA.summary.find(r => r.symbol === sym && r.debt_asset === d && r.leverage === lev);
+        if (row && row.median_yield_pct > bestY) { bestY = row.median_yield_pct; best = d; }
+    });
+    return { debt: best, yield: bestY };
+}
+const hexToRgba = (hex, a) => {
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return `rgba(${r},${g},${b},${a})`;
+};
+
+// =====================================================================
+// EXEC SUMMARY: All Strategies Over Time
+// =====================================================================
+function drawAllStrategiesChart() {
+    const lev = 3.0;
+    const traces = [];
+    const legendShown = {};
+    DATA.heatmap.symbols.forEach(sym => {
+        const bd = bestDebtForSymbol(sym, lev);
+        const key = `${sym}|${bd.debt}|${lev.toFixed(1)}`;
+        const t = DATA.timing[key];
+        if (!t) return;
+        const fam = getFamily(sym);
+        traces.push({
+            x: t.dates, y: t.yields,
+            name: fam,
+            legendgroup: fam,
+            showlegend: !legendShown[fam],
+            text: t.dates.map(() => shortSym(sym)),
+            hovertemplate: '%{text}<br>%{x}<br>Yield: %{y:.1f}%<extra></extra>',
+            type: 'scatter', mode: 'lines',
+            line: { color: FAMILY_COLORS[fam], width: 2 },
+        });
+        legendShown[fam] = true;
+    });
+    Plotly.react('all-strategies-chart', traces, {
+        ...LAYOUT_BASE,
+        height: 320,
+        xaxis: { ...LAYOUT_BASE.xaxis, title: 'Date', type: 'date' },
+        yaxis: { ...LAYOUT_BASE.yaxis, title: 'Annualized Yield (%)' },
+        hovermode: 'closest',
+    }, { responsive: true });
+}
+
+// =====================================================================
+// EXEC SUMMARY: Total Returns Ranking
+// =====================================================================
+function drawTotalReturnsChart() {
+    const entries = DATA.summary
+        .filter(r => r.median_yield_pct != null && r.mean_days_held != null)
+        .map(r => ({
+            label: shortSym(r.symbol) + ' / ' + r.debt_asset + ' / ' + r.leverage + 'x',
+            totalReturn: r.median_yield_pct * r.mean_days_held / 365,
+            family: getFamily(r.symbol),
+            yield: r.median_yield_pct,
+        }))
+        .sort((a, b) => b.totalReturn - a.totalReturn)
+        .slice(0, 30);
+
+    Plotly.react('total-returns-chart', [{
+        y: entries.map(e => e.label),
+        x: entries.map(e => +e.totalReturn.toFixed(2)),
+        type: 'bar',
+        orientation: 'h',
+        marker: { color: entries.map(e => FAMILY_COLORS[e.family]) },
+        hovertemplate: '%{y}<br>Total Return: %{x:.1f}%<br><extra></extra>',
+    }], {
+        ...LAYOUT_BASE,
+        height: Math.max(300, entries.length * 22 + 60),
+        margin: { t: 10, r: 20, b: 40, l: 200 },
+        xaxis: { ...LAYOUT_BASE.xaxis, title: 'Total Period Return (%)' },
+        yaxis: { ...LAYOUT_BASE.yaxis, autorange: 'reversed' },
+    }, { responsive: true });
+}
+
+// =====================================================================
+// EXEC SUMMARY: Family Bar Chart
+// =====================================================================
+function drawFamilyBarChart() {
+    const leverages = DATA.heatmap.leverages;
+    const familyData = {};
+    Object.keys(FAMILY_COLORS).forEach(f => { familyData[f] = {}; leverages.forEach(l => { familyData[f][l] = []; }); });
+
+    DATA.summary.forEach(r => {
+        if (r.median_yield_pct == null) return;
+        const fam = getFamily(r.symbol);
+        if (familyData[fam] && familyData[fam][r.leverage]) {
+            familyData[fam][r.leverage].push(r.median_yield_pct);
+        }
+    });
+
+    const traces = Object.entries(FAMILY_COLORS).map(([fam, color]) => ({
+        x: leverages.map(l => l + 'x'),
+        y: leverages.map(l => {
+            const vals = familyData[fam][l];
+            return vals.length > 0 ? +(vals.reduce((s, v) => s + v, 0) / vals.length).toFixed(1) : null;
+        }),
+        name: fam,
+        type: 'bar',
+        marker: { color },
+    }));
+
+    Plotly.react('family-bar-chart', traces, {
+        ...LAYOUT_BASE,
+        barmode: 'group',
+        height: 300,
+        xaxis: { ...LAYOUT_BASE.xaxis, title: 'Leverage' },
+        yaxis: { ...LAYOUT_BASE.yaxis, title: 'Avg Median Yield (%)' },
+    }, { responsive: true });
+}
+
+// =====================================================================
+// EXEC SUMMARY: Twyne Uplift Chart
+// =====================================================================
+function drawTwyneUpliftChart() {
+    const syms = DATA.heatmap.symbols;
+    const labels = syms.map(shortSym);
+
+    function bestYieldAtLev(sym, lev) {
+        const debts = DATA.debtMap[sym] || [];
+        let best = 0;
+        debts.forEach(d => {
+            const row = DATA.summary.find(r => r.symbol === sym && r.debt_asset === d && r.leverage === lev);
+            if (row && row.median_yield_pct > best) best = row.median_yield_pct;
+        });
+        return best;
+    }
+
+    const base = syms.map(s => bestYieldAtLev(s, 1.5));
+    const mid = syms.map(s => bestYieldAtLev(s, 5.0));
+    const max = syms.map(s => bestYieldAtLev(s, 10.0));
+
+    Plotly.react('twyne-uplift-chart', [
+        { y: labels, x: base, name: '1.5x (Standard)', type: 'bar', orientation: 'h',
+          marker: { color: 'rgba(154,160,166,0.6)' } },
+        { y: labels, x: mid.map((v, i) => v - base[i]), name: '+5x (Twyne)', type: 'bar', orientation: 'h',
+          marker: { color: 'rgba(76,175,80,0.7)' }, base: base },
+        { y: labels, x: max.map((v, i) => v - mid[i]), name: '+10x (Twyne)', type: 'bar', orientation: 'h',
+          marker: { color: 'rgba(156,124,244,0.7)' }, base: mid },
+    ], {
+        ...LAYOUT_BASE,
+        barmode: 'stack',
+        height: Math.max(300, syms.length * 28 + 60),
+        margin: { t: 10, r: 20, b: 40, l: 160 },
+        xaxis: { ...LAYOUT_BASE.xaxis, title: 'Median Yield (%)' },
+        yaxis: { ...LAYOUT_BASE.yaxis, autorange: 'reversed' },
+        legend: { ...LAYOUT_BASE.legend, orientation: 'h', y: 1.05 },
+    }, { responsive: true });
+}
+
+// =====================================================================
+// EXEC SUMMARY: Twyne Yield Surface (enhanced heatmap with boundary)
+// =====================================================================
+function drawTwyneYieldSurface() {
+    const h = DATA.heatmap;
+    const labels = h.symbols.map(shortSym);
+
+    // Use best yield across all debt tokens per cell
+    const bestYields = h.symbols.map((sym, si) =>
+        h.leverages.map((lev, li) => {
+            const bd = bestDebtForSymbol(sym, lev);
+            return bd.yield > -Infinity ? bd.yield : h.yields[si][li];
+        })
+    );
+
+    const trace = {
+        z: bestYields,
+        x: h.leverages.map(l => l + 'x'),
+        y: labels,
+        type: 'heatmap',
+        colorscale: [[0,'#1a1f2e'],[0.2,'#1a4a5e'],[0.4,'#2a7a6e'],[0.6,'#4caf50'],[0.8,'#e0a732'],[1,'#ef6c00']],
+        hovertemplate: '%{y}<br>%{x}<br>Yield: %{z:.1f}%<extra></extra>',
+        colorbar: { title: 'Yield %', titleside: 'right', ticksuffix: '%' },
+    };
+
+    const annotations = [];
+    bestYields.forEach((row, i) => {
+        row.forEach((val, j) => {
+            if (val != null) annotations.push({
+                x: h.leverages[j] + 'x', y: labels[i],
+                text: val.toFixed(0) + '%', showarrow: false,
+                font: { color: val > 30 ? '#000' : '#fff', size: 10 },
+            });
+        });
+    });
+
+    // Add boundary line annotation between 2x and 3x
+    const avgBase = bestYields.reduce((s, r) => s + (r[0] + r[1]) / 2, 0) / bestYields.length;
+    const avgTwyne = bestYields.reduce((s, r) => s + (r[3] + r[4]) / 2, 0) / bestYields.length;
+    annotations.push({
+        x: '2.0x', y: labels[0], yref: 'paper', yanchor: 'bottom',
+        text: '← Standard PT | Twyne-Enabled →',
+        showarrow: false, font: { color: '#e8eaed', size: 11 },
+        xshift: 40, y: 1.02,
+    });
+
+    Plotly.react('twyne-yield-surface', [trace], {
+        ...LAYOUT_BASE,
+        height: Math.max(300, h.symbols.length * 28 + 80),
+        margin: { t: 30, r: 80, b: 40, l: 160 },
+        annotations,
+        xaxis: { ...LAYOUT_BASE.xaxis, title: 'Leverage', side: 'bottom' },
+        yaxis: { ...LAYOUT_BASE.yaxis, autorange: 'reversed' },
+        shapes: [{
+            type: 'line', x0: 1.5, x1: 1.5, y0: -0.5, y1: h.symbols.length - 0.5,
+            xref: 'paper', yref: 'y',
+            line: { color: '#e8eaed', width: 2, dash: 'dash' },
+        }],
+    }, { responsive: true });
+}
+
+// =====================================================================
+// EXEC SUMMARY: Trend by Maturity
+// =====================================================================
+function drawTrendYieldChart() {
+    const syms = DATA.heatmap.symbols
+        .map(s => ({ sym: s, date: parseMaturity(s) }))
+        .filter(x => x.date)
+        .sort((a, b) => a.date - b.date);
+
+    const leverages = [1.5, 3.0, 5.0, 10.0];
+    const traces = leverages.map((lev, i) => {
+        const xDates = [], yVals = [], texts = [];
+        syms.forEach(({ sym, date }) => {
+            const bd = bestDebtForSymbol(sym, lev);
+            if (bd.yield > -Infinity) {
+                xDates.push(date.toISOString().slice(0, 10));
+                yVals.push(bd.yield);
+                texts.push(shortSym(sym));
+            }
+        });
+        return {
+            x: xDates, y: yVals, text: texts,
+            name: lev + 'x', type: 'scatter', mode: 'lines+markers',
+            line: { color: COLORS[i % COLORS.length], width: 2 },
+            marker: { size: 6 },
+            hovertemplate: '%{text}<br>Maturity: %{x}<br>Yield: %{y:.1f}%<extra></extra>',
+        };
+    });
+
+    Plotly.react('trend-yield-chart', traces, {
+        ...LAYOUT_BASE,
+        height: 300,
+        xaxis: { ...LAYOUT_BASE.xaxis, title: 'Maturity Date', type: 'date' },
+        yaxis: { ...LAYOUT_BASE.yaxis, title: 'Best Median Yield (%)' },
+    }, { responsive: true });
+}
+
+// =====================================================================
+// DEEP DIVE: Historical Analysis (3-row subplot)
+// =====================================================================
+function updateHistoricalCharts(sym, debt, levs) {
+    const d = DATA.prices[sym];
+    if (!d) { Plotly.react('hist-combined-chart', [], LAYOUT_BASE, { responsive: true }); return; }
+
+    const dates = d.dates;
+    const ptPrices = d.pt_price_usd;
+    const borrowRates = d['borrow_rate_' + debt];
+    const daysToMat = d.time_to_maturity_days;
+
+    if (!borrowRates) { Plotly.react('hist-combined-chart', [], LAYOUT_BASE, { responsive: true }); return; }
+
+    // Row 1: PT Implied Yield Spread
+    const impliedYield = ptPrices.map((p, i) =>
+        daysToMat[i] > 3 ? ((1/p - 1) * (365 / daysToMat[i]) * 100) : null
+    );
+    const borrowPct = borrowRates.map(r => r * 100);
+    const spread = impliedYield.map((y, i) => y != null ? +(y - borrowPct[i]).toFixed(3) : null);
+
+    const allTraces = [];
+    const gridColor = 'rgba(138,155,181,0.1)';
+
+    // Spread trace (subplot 1)
+    allTraces.push({
+        x: dates, y: spread, type: 'scatter', mode: 'lines',
+        name: 'Yield Spread', line: { color: '#9aa0a6', width: 1.2 },
+        xaxis: 'x', yaxis: 'y', showlegend: false,
+    });
+
+    // ROI + Drawdown per leverage (subplots 2 & 3)
+    levs.forEach((lev, ci) => {
+        const key = sym + '|' + debt + '|' + lev.toFixed(1);
+        const t = DATA.timing[key];
+        if (!t) return;
+
+        // Forward-fill timing yields onto prices.dates
+        const yieldMap = {};
+        t.dates.forEach((date, i) => { yieldMap[date] = t.yields[i]; });
+        let lastY = t.yields[0] || 0;
+        const dailyYields = dates.map(date => {
+            if (yieldMap[date] != null) lastY = yieldMap[date];
+            return lastY;
+        });
+
+        // Cumulative ROI
+        const capital = [1.0];
+        for (let i = 1; i < dates.length; i++) {
+            capital.push(capital[i-1] * (1 + dailyYields[i] / 100 / 365));
+        }
+
+        // Drawdown
+        let peak = -Infinity;
+        const dd = capital.map(c => {
+            if (c > peak) peak = c;
+            return -((peak - c) / peak * 100);
+        });
+
+        const color = COLORS[ci % COLORS.length];
+
+        allTraces.push({
+            x: dates, y: capital, name: lev + 'x', type: 'scatter', mode: 'lines',
+            line: { color, width: 1.5 }, xaxis: 'x2', yaxis: 'y2', legendgroup: 'l' + lev,
+        });
+        allTraces.push({
+            x: dates, y: dd, name: lev + 'x', type: 'scatter', mode: 'lines',
+            line: { color, width: 1.2 }, fill: 'tozeroy', fillcolor: hexToRgba(color, 0.08),
+            xaxis: 'x3', yaxis: 'y3', showlegend: false, legendgroup: 'l' + lev,
+        });
+    });
+
+    Plotly.react('hist-combined-chart', allTraces, {
+        paper_bgcolor: '#232b3b', plot_bgcolor: '#232b3b',
+        font: { color: '#e8eaed', size: 11 },
+        margin: { t: 30, r: 20, b: 40, l: 60 },
+        hovermode: 'x unified', height: 680,
+        grid: { rows: 3, columns: 1, subplots: [['xy'], ['x2y2'], ['x3y3']], roworder: 'top to bottom' },
+        xaxis:  { color: '#9aa0a6', gridcolor: gridColor, matches: 'x3', showticklabels: false },
+        xaxis2: { color: '#9aa0a6', gridcolor: gridColor, matches: 'x3', showticklabels: false },
+        xaxis3: { color: '#9aa0a6', gridcolor: gridColor },
+        yaxis:  { color: '#9aa0a6', gridcolor: gridColor, ticksuffix: '%', zeroline: true,
+                  zerolinecolor: 'rgba(255,255,255,0.3)', zerolinewidth: 1.5,
+                  title: { text: 'Yield Spread', font: { size: 11, color: '#9aa0a6' } } },
+        yaxis2: { color: '#9aa0a6', gridcolor: gridColor, tickprefix: '$',
+                  title: { text: 'Cumulative ROI', font: { size: 11, color: '#9aa0a6' } } },
+        yaxis3: { color: '#9aa0a6', gridcolor: gridColor, ticksuffix: '%', zeroline: true,
+                  zerolinecolor: 'rgba(255,255,255,0.25)', zerolinewidth: 1,
+                  title: { text: 'Drawdown', font: { size: 11, color: '#9aa0a6' } } },
+        showlegend: true,
+        legend: { bgcolor: 'rgba(0,0,0,0)', font: { size: 10 } },
+        annotations: [
+            { text: 'PT Implied Yield \u2212 ' + debt + ' Borrow Rate', xref: 'paper', yref: 'y domain',
+              x: 0, y: 1, xanchor: 'left', yanchor: 'bottom', showarrow: false, font: { size: 11, color: '#e8eaed' } },
+            { text: 'Cumulative ROI ($1 Invested)', xref: 'paper', yref: 'y2 domain',
+              x: 0, y: 1, xanchor: 'left', yanchor: 'bottom', showarrow: false, font: { size: 11, color: '#e8eaed' } },
+            { text: 'Drawdown from Peak', xref: 'paper', yref: 'y3 domain',
+              x: 0, y: 1, xanchor: 'left', yanchor: 'bottom', showarrow: false, font: { size: 11, color: '#e8eaed' } },
+        ],
+        shapes: [{ type: 'line', xref: 'x2', yref: 'y2',
+            x0: dates[0], x1: dates[dates.length - 1], y0: 1, y1: 1,
+            line: { color: 'rgba(255,255,255,0.3)', width: 1.5, dash: 'dash' } }],
+    }, { responsive: true });
+
+    document.getElementById('hist-title').textContent = shortSym(sym) + ' / ' + debt;
+}
+
+// =====================================================================
+// DEEP DIVE: Strategy Ranking Table
+// =====================================================================
+let _tblSortCol = 'median_yield_pct';
+let _tblSortAsc = false;
+
+function drawStrategyTable(debt) {
+    const rows = DATA.summary
+        .filter(r => r.debt_asset === debt)
+        .sort((a, b) => {
+            const va = a[_tblSortCol], vb = b[_tblSortCol];
+            if (va == null) return 1; if (vb == null) return -1;
+            return _tblSortAsc ? (va > vb ? 1 : -1) : (va < vb ? 1 : -1);
+        });
+
+    const fp = v => v != null ? v.toFixed(1) + '%' : '\u2014';
+    const fd = v => v != null ? v.toFixed(0) + 'd' : '\u2014';
+    const fl = v => v != null ? (v * 100).toFixed(1) + '%' : '\u2014';
+
+    document.getElementById('strategy-tbody').innerHTML = rows.map(r =>
+        '<tr><td>' + shortSym(r.symbol) + '</td><td>' + r.debt_asset + '</td><td>' +
+        r.leverage + 'x</td><td>' + fp(r.median_yield_pct) + '</td><td>' + fp(r.p25_yield_pct) +
+        '</td><td>' + fp(r.p75_yield_pct) + '</td><td>' + fl(r.liq_rate) + '</td><td>' +
+        fd(r.mean_days_held) + '</td></tr>'
+    ).join('');
+}
+
+function sortTable(col) {
+    if (_tblSortCol === col) _tblSortAsc = !_tblSortAsc;
+    else { _tblSortCol = col; _tblSortAsc = false; }
+    const debt = document.getElementById('sel-debt').value;
+    drawStrategyTable(debt);
+}
+
+// =====================================================================
+// EXEC SUMMARY: Draw all (called once at init)
+// =====================================================================
+function drawExecSummary() {
+    drawAllStrategiesChart();
+    drawTotalReturnsChart();
+    drawFamilyBarChart();
+    drawTwyneUpliftChart();
+    drawTwyneYieldSurface();
+    drawTrendYieldChart();
+}
+
 // --- Heatmap (static, drawn once) ---
 function drawHeatmap() {
     const h = DATA.heatmap;
@@ -499,6 +1041,7 @@ function drawHeatmap() {
 
 // Init
 drawHeatmap();
+drawExecSummary();
 updateDashboard();
 </script>
 </body>
