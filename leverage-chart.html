@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Twyne — 50x Leverage Chart</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'IBM Plex Mono', monospace;
+    margin: 0; padding: 0;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh;
+    background: #bbb;
+  }
+  .banner {
+    position: relative;
+    width: 1584px;
+    height: 396px;
+    overflow: hidden;
+  }
+</style>
+</head>
+<body>
+  <div class="banner" id="banner">
+    <canvas id="ucLeverageChart" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
+  </div>
+
+  <script>
+  (function() {
+    const twyneLogo = new Image();
+    twyneLogo.src = 'icons/twyne_symbol.png';
+    const aaveLogo = new Image();
+    aaveLogo.src = 'icons/aave-aave-logo.png';
+    const twyneWordmark = new Image();
+    twyneWordmark.src = 'twyne_logo_black.png';
+
+    const purple = '#7B2CBF';
+    const purpleLight = 'rgba(123, 44, 191, 0.55)';
+    const grey = 'rgba(70, 70, 90, 0.7)';
+    const greyFaint = 'rgba(70, 70, 90, 0.15)';
+    const greyGuide = 'rgba(70, 70, 90, 0.10)';
+    const purpleGuide = 'rgba(123, 44, 191, 0.10)';
+    const F = "'IBM Plex Mono', monospace";
+
+    function initLeverageChart() {
+      const canvas = document.getElementById('ucLeverageChart');
+      if (!canvas) return;
+
+      // Force exact pixel size for LinkedIn banner
+      canvas.width = 1584 * 2;
+      canvas.height = 396 * 2;
+      canvas.style.width = '1584px';
+      canvas.style.height = '396px';
+
+      const ltvStart = 80;
+      const ltvEnd = 98;
+      const step = 0.1;
+      const aaveStdLTV = 85;
+      const aaveEModeLTV = 95;
+      const twyneLTV = 98;
+
+      const labels = [];
+      const curveData = [];
+      let aaveStdIdx = 0, aaveSplitIdx = 0, twyneIdx = 0, idx = 0;
+
+      for (let ltv = ltvStart; ltv <= ltvEnd + step * 0.01; ltv += step) {
+        const ltvRound = Math.round(ltv * 10) / 10;
+        labels.push(ltvRound);
+        curveData.push(1 / (1 - ltvRound / 100));
+        if (Math.abs(ltvRound - aaveStdLTV) < 0.01) aaveStdIdx = idx;
+        if (Math.abs(ltvRound - aaveEModeLTV) < 0.01) aaveSplitIdx = idx;
+        if (Math.abs(ltvRound - twyneLTV) < 0.01) twyneIdx = idx;
+        idx++;
+      }
+
+      const aaveData = curveData.map((v, i) => i <= aaveSplitIdx ? v : null);
+      const twyneData = curveData.map((v, i) => i >= aaveSplitIdx ? v : null);
+
+      const chart = new Chart(canvas, {
+        type: 'line',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Twyne',
+              data: twyneData,
+              borderColor: purple,
+              backgroundColor: function(context) {
+                const ch = context.chart;
+                const {ctx: gc, chartArea} = ch;
+                if (!chartArea) return 'transparent';
+                const grad = gc.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
+                grad.addColorStop(0, 'rgba(123, 44, 191, 0.02)');
+                grad.addColorStop(0.4, 'rgba(123, 44, 191, 0.12)');
+                grad.addColorStop(0.7, 'rgba(123, 44, 191, 0.20)');
+                grad.addColorStop(1, 'rgba(123, 44, 191, 0.30)');
+                return grad;
+              },
+              borderWidth: 4,
+              fill: true,
+              pointRadius: 0,
+              tension: 0.4,
+              spanGaps: false,
+            },
+            {
+              label: 'Aave',
+              data: aaveData,
+              borderColor: 'rgba(120, 120, 140, 0.30)',
+              backgroundColor: 'rgba(120, 120, 140, 0.03)',
+              borderWidth: 3,
+              fill: true,
+              pointRadius: 0,
+              tension: 0.4,
+              spanGaps: false,
+            }
+          ]
+        },
+        options: {
+          responsive: false,
+          maintainAspectRatio: false,
+          layout: { padding: { top: 24, right: 80, bottom: 80, left: 66 } },
+          events: [],
+          plugins: { legend: { display: false }, tooltip: { enabled: false } },
+          scales: {
+            x: { display: false },
+            y: { display: false, suggestedMax: 62, min: 0 }
+          }
+        },
+        plugins: [
+        {
+          id: 'bg',
+          beforeDraw(chart) {
+            const g = chart.ctx;
+            const grad = g.createLinearGradient(0, 0, chart.width, chart.height);
+            grad.addColorStop(0, '#eaeaee');
+            grad.addColorStop(0.4, '#e2e2e8');
+            grad.addColorStop(1, '#dcd8e4');
+            g.save();
+            g.fillStyle = grad;
+            g.fillRect(0, 0, chart.width, chart.height);
+            g.restore();
+          }
+        },
+        {
+          id: 'annotations',
+          afterDraw(chart) {
+            const xs = chart.scales.x;
+            const ys = chart.scales.y;
+            const g = chart.ctx;
+
+            const lS = 52; // aave logo size
+            const tLS = 58; // twyne logo size
+            const dr = 9; // dot radius
+
+            function px(dataIdx) { return xs.getPixelForValue(dataIdx); }
+            function py(val) { return ys.getPixelForValue(val); }
+
+            // Coordinates
+            const asx = px(aaveStdIdx), asy = py(curveData[aaveStdIdx]);
+            const ax = px(aaveSplitIdx), ay = py(curveData[aaveSplitIdx]);
+            const tx = px(twyneIdx), ty = py(curveData[twyneIdx]);
+
+            // -- Vertical guides --
+            g.save();
+            g.setLineDash([5, 5]);
+            g.lineWidth = 1.5;
+            [[asx, asy, greyGuide], [ax, ay, greyGuide], [tx, ty, purpleGuide]].forEach(([x, y, c]) => {
+              g.beginPath(); g.strokeStyle = c;
+              g.moveTo(x, y + dr + 4); g.lineTo(x, ys.bottom);
+              g.stroke();
+            });
+            g.setLineDash([]);
+            g.restore();
+
+            // -- Horizontal guides to y-axis --
+            g.save();
+            g.setLineDash([5, 5]);
+            g.lineWidth = 1.5;
+            [[ax, ay, greyGuide], [tx, ty, purpleGuide]].forEach(([x, y, c]) => {
+              g.beginPath(); g.strokeStyle = c;
+              g.moveTo(xs.left, y); g.lineTo(x - dr - 4, y);
+              g.stroke();
+            });
+            g.setLineDash([]);
+            g.restore();
+
+            // -- Dashed connectors between dots --
+            g.save();
+            g.setLineDash([4, 6]); g.lineWidth = 1.5;
+            g.beginPath(); g.strokeStyle = greyFaint;
+            g.moveTo(asx + dr + 3, asy); g.lineTo(ax - dr - 3, ay); g.stroke();
+            g.beginPath(); g.strokeStyle = 'rgba(123, 44, 191, 0.08)';
+            g.moveTo(ax + dr + 3, ay); g.lineTo(tx - dr - 6, ty); g.stroke();
+            g.setLineDash([]);
+            g.restore();
+
+            // -- Aave (85%) --
+            g.save();
+            g.beginPath(); g.arc(asx, asy, dr, 0, Math.PI * 2);
+            g.fillStyle = grey; g.fill();
+            if (aaveLogo.complete && aaveLogo.naturalWidth > 0) {
+              g.drawImage(aaveLogo, asx - lS / 2, asy - lS - 20, lS, lS);
+            }
+            g.font = "600 28px " + F; g.fillStyle = grey;
+            g.textAlign = 'center'; g.fillText('Aave', asx, asy - lS - 28);
+            g.restore();
+
+            // -- Aave E-Mode (95%) --
+            g.save();
+            g.beginPath(); g.arc(ax, ay, dr, 0, Math.PI * 2);
+            g.fillStyle = grey; g.fill();
+            if (aaveLogo.complete && aaveLogo.naturalWidth > 0) {
+              g.drawImage(aaveLogo, ax - lS / 2, ay - lS - 20, lS, lS);
+            }
+            g.font = "600 24px " + F; g.fillStyle = grey;
+            g.textAlign = 'center'; g.fillText('Aave E-Mode', ax, ay - lS - 28);
+            g.restore();
+
+            // -- Twyne (98%) --
+            g.save();
+            // Glow
+            g.beginPath(); g.arc(tx, ty, 28, 0, Math.PI * 2);
+            const glow = g.createRadialGradient(tx, ty, 6, tx, ty, 28);
+            glow.addColorStop(0, 'rgba(123, 44, 191, 0.25)');
+            glow.addColorStop(1, 'rgba(123, 44, 191, 0)');
+            g.fillStyle = glow; g.fill();
+            // Ring
+            g.beginPath(); g.arc(tx, ty, dr + 5, 0, Math.PI * 2);
+            g.strokeStyle = 'rgba(123, 44, 191, 0.28)'; g.lineWidth = 2.5; g.stroke();
+            // Dot
+            g.beginPath(); g.arc(tx, ty, dr + 1, 0, Math.PI * 2);
+            g.fillStyle = purple; g.fill();
+            // Logo above
+            if (twyneLogo.complete && twyneLogo.naturalWidth > 0) {
+              g.drawImage(twyneLogo, tx - tLS / 2, ty - tLS - 22, tLS, tLS);
+            }
+            g.font = "700 30px " + F; g.fillStyle = purple;
+            g.textAlign = 'center'; g.fillText('Twyne', tx, ty - tLS - 30);
+            g.restore();
+
+            // -- X-axis tick labels --
+            const axC = 'rgba(60, 60, 85, 0.7)';
+            const xLY = ys.bottom + 14;
+            g.save();
+            g.font = "600 22px " + F;
+            g.textAlign = 'center'; g.textBaseline = 'top';
+            [85, 90, 95, 98].forEach(ltv => {
+              const ti = Math.round((ltv - ltvStart) / step);
+              if (ti >= 0 && ti < labels.length) {
+                g.fillStyle = (ltv === 98) ? purpleLight : axC;
+                g.fillText(ltv + '%', px(ti), xLY);
+              }
+            });
+            // X-axis title
+            g.font = "600 18px " + F;
+            g.fillStyle = 'rgba(60, 60, 85, 0.55)';
+            g.fillText('Liquidation LTV', (xs.left + xs.right) / 2, xLY + 28);
+            g.restore();
+
+            // -- Y-axis labels --
+            const yLX = xs.left - 14;
+            g.save();
+            g.font = "600 22px " + F;
+            g.textAlign = 'right'; g.textBaseline = 'middle';
+            g.fillStyle = axC; g.fillText('20x', yLX, py(20));
+            g.fillStyle = purpleLight; g.fillText('50x', yLX, py(50));
+            g.restore();
+
+            // -- Twyne wordmark logo top-left --
+            if (twyneWordmark.complete && twyneWordmark.naturalWidth > 0) {
+              g.save();
+              const wmH = 140;
+              const wmW = wmH * (twyneWordmark.naturalWidth / twyneWordmark.naturalHeight);
+              g.globalAlpha = 1.0;
+              g.drawImage(twyneWordmark, 16, 10, wmW, wmH);
+              g.restore();
+            }
+          }
+        }]
+      });
+
+      return chart;
+    }
+
+    let ready = 0;
+    const allImgs = [twyneLogo, aaveLogo, twyneWordmark];
+    function onReady() { if (++ready >= allImgs.length) initLeverageChart(); }
+    allImgs.forEach(img => {
+      img.onload = onReady; img.onerror = onReady;
+      if (img.complete) ready++;
+    });
+    if (ready >= allImgs.length) initLeverageChart();
+  })();
+  </script>
+</body>
+</html>
