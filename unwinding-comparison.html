@@ -1101,17 +1101,28 @@
     <div class="param-card">
         <div class="param-label">Aave Borrow LTV</div>
         <div class="input-suffix-wrap">
-            <input type="number" id="aaveLTV" value="93" min="50" max="99" step="0.5" oninput="update()">
+            <input type="number" id="aaveLTV" value="92" min="50" max="99" step="0.5" oninput="update()">
             <span class="input-suffix">%</span>
         </div>
     </div>
     <div class="param-card">
-        <div class="param-label">Twyne Borrow LTV</div>
-        <input type="hidden" id="twyneLTV" value="97">
-        <div class="ltv-toggle">
-            <button class="ltv-btn ltv-btn--active" id="btnOvercol" onclick="setTwyneLTV(97)">Overcollateralized <span class="ltv-btn-val">97%</span><span class="ltv-badge ltv-badge--live">live</span></button>
-            <button class="ltv-btn" id="btnUndercol" onclick="setTwyneLTV(200)">Undercollateralized <span class="ltv-btn-val">200%</span><span class="ltv-badge ltv-badge--soon">soon</span></button>
+        <div class="param-label">Aave Liq LTV</div>
+        <div class="input-suffix-wrap">
+            <input type="number" id="aaveLiqLTV" value="94" min="50" max="99" step="0.5" oninput="update()">
+            <span class="input-suffix">%</span>
         </div>
+    </div>
+    <div class="param-card">
+        <div class="param-label">Twyne Liq LTV</div>
+        <div class="input-suffix-wrap">
+            <input type="number" id="twyneLiqLTV" value="98" min="50" max="99.5" step="0.5" oninput="update()">
+            <span class="input-suffix">%</span>
+        </div>
+    </div>
+    <div class="param-card">
+        <div class="param-label">Twyne Borrow LTV <span style="font-size:0.55rem; color:var(--text-muted); font-weight:400;">(derived)</span></div>
+        <input type="hidden" id="twyneLTV" value="97">
+        <div class="param-value"><span id="twyneLTVDisplay">95.91</span>%</div>
     </div>
 </div>
 <div class="chart-pair" style="align-items: stretch;">
@@ -1262,24 +1273,28 @@ function toggleXAxis() {
     update();
 }
 
+const BETA_SAFE = 1.0;
+
+function deriveTwyneBorrowLTV(aBorrow, aLiq, tLiq) {
+    if (aLiq <= 0) return 0;
+    return aBorrow * tLiq / (BETA_SAFE * aLiq);
+}
+
 function params() {
+    const aLTV    = parseFloat(document.getElementById('aaveLTV').value) / 100;
+    const aLiqLTV = parseFloat(document.getElementById('aaveLiqLTV').value) / 100;
+    const tLiqLTV = parseFloat(document.getElementById('twyneLiqLTV').value) / 100;
+    const tLTV    = deriveTwyneBorrowLTV(aLTV, aLiqLTV, tLiqLTV);
+    document.getElementById('twyneLTV').value = (tLTV * 100).toFixed(2);
     return {
         L:    parseFloat(document.getElementById('leverageSlider').value),
         dep:  10,
-        aLTV: parseFloat(document.getElementById('aaveLTV').value) / 100,
-        tLTV: parseFloat(document.getElementById('twyneLTV').value) / 100,
+        aLTV, aLiqLTV, tLiqLTV, tLTV,
         unstakeDays: parseInt(document.getElementById('unstakeDaysSlider').value),
     };
 }
 
 function f(v, d) { return v.toFixed(d === undefined ? 2 : d); }
-
-function setTwyneLTV(val) {
-    document.getElementById('twyneLTV').value = val;
-    document.getElementById('btnOvercol').classList.toggle('ltv-btn--active', val === 97);
-    document.getElementById('btnUndercol').classList.toggle('ltv-btn--active', val === 200);
-    update();
-}
 
 /*
  * Simulate full unloop: returns array of { C, B, W } per step.
@@ -1304,9 +1319,14 @@ function simUnloop(L, deposit, ltv) {
 
 /* ─── Main Update ─── */
 function update() {
-    /* dynamic leverage range based on Aave LTV */
+    /* derive tLTV and show, then clamp leverage slider to Aave's cap */
     const aLTVRaw = parseFloat(document.getElementById('aaveLTV').value) / 100;
-    const maxLev = Math.floor((1 / (1 - aLTVRaw)) * 10) / 10;  // round down to 0.1
+    const aLiqRaw = parseFloat(document.getElementById('aaveLiqLTV').value) / 100;
+    const tLiqRaw = parseFloat(document.getElementById('twyneLiqLTV').value) / 100;
+    const tLTVRaw = deriveTwyneBorrowLTV(aLTVRaw, aLiqRaw, tLiqRaw);
+    document.getElementById('twyneLTVDisplay').textContent = f(tLTVRaw * 100, 2);
+
+    const maxLev = Math.floor((1 / (1 - aLTVRaw)) * 10) / 10;
     const slider = document.getElementById('leverageSlider');
     slider.max = maxLev;
     if (parseFloat(slider.value) > maxLev) slider.value = maxLev;

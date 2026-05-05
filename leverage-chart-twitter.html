@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Twyne — Leverage Twitter Banner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    min-height: 100vh;
+    background: #1a1a1a;
+    color: #F7F5F0;
+    font-family: 'JetBrains Mono', monospace;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    padding: 40px 20px;
+    gap: 24px;
+  }
+  .banner {
+    position: relative;
+    width: 1500px;
+    height: 500px;
+    overflow: hidden;
+    background: #F7F5F0;
+    border-radius: 8px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+  .banner canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+  /* HTML axis labels — guaranteed visible in any viewer */
+  .axis-label {
+    position: absolute;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 30px;
+    color: #1A1A1A;
+    letter-spacing: 0.12em;
+    pointer-events: none;
+    user-select: none;
+  }
+  .axis-label.leverage {
+    left: 38px;
+    top: 50%;
+    transform: translateY(-50%) rotate(-90deg);
+    transform-origin: center center;
+    white-space: nowrap;
+  }
+  .axis-label.borrow {
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  .meta {
+    color: #8A8A8A;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .actions {
+    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+  }
+  button.dl {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    padding: 14px 22px;
+    color: #F7F5F0;
+    background: #7B6FC0;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+  }
+  button.dl:hover { background: #8f84cf; transform: translateY(-1px); box-shadow: 0 8px 20px rgba(123,111,192,0.35); }
+  button.dl.secondary { background: #2a2a2a; border-color: rgba(255,255,255,0.12); }
+  button.dl.secondary:hover { background: #333; }
+
+  /* Responsive preview scaling */
+  @media (max-width: 1600px) {
+    .banner { transform: scale(calc((100vw - 80px) / 1500)); transform-origin: top center; }
+    body { padding-top: 40px; gap: 0; }
+    .post-banner-spacer { height: calc(((100vw - 80px) / 1500) * 500 - 500px + 40px); }
+  }
+</style>
+</head>
+<body>
+
+  <div class="meta">Twitter / X header · 1500 × 500</div>
+
+  <div class="banner" id="banner">
+    <canvas id="leverageChart"></canvas>
+    <div class="axis-label leverage">LEVERAGE</div>
+    <div class="axis-label borrow">BORROW&nbsp;&nbsp;LTV&nbsp;&nbsp;%</div>
+  </div>
+
+  <div class="post-banner-spacer"></div>
+
+  <div class="actions">
+    <button class="dl" id="downloadBtn">Download PNG · 3000 × 1000 (2×)</button>
+    <button class="dl secondary" id="downloadBtn4x">Download PNG · 6000 × 2000 (4×)</button>
+  </div>
+
+  <div class="meta">Right-click → Save image also works</div>
+
+  <script>
+  const twyneLogo = new Image(); twyneLogo.src = 'icons/twyne_symbol.png';
+  const aaveLogo = new Image(); aaveLogo.src = 'icons/aave-aave-logo.png';
+
+  // ── Design palette (stable-summit) ──
+  const INK = '#1A1A1A';
+  const INK_SOFT = '#4A4A4A';
+  const INK_MUTED = '#8A8A8A';
+  const PURPLE = '#7B6FC0';
+  const BG = '#F7F5F0';
+  const F_SYNE = "'Syne', sans-serif";
+  const F_MONO = "'JetBrains Mono', monospace";
+
+  // ── Layout constants ──
+  // Banner 1500×500. Slight outer buffer so content breathes.
+  const BUFFER = 56;
+  // Y-axis title gets a small reserved strip on the left.
+  const Y_TITLE_STRIP = 40;
+  // X-axis title gets a strip at the bottom.
+  const X_TITLE_STRIP = 48;
+  // Range chosen so callouts visually center in the banner.
+  const LTV_START = 90, LTV_END = 97, LTV_STEP = 0.25;
+  const AAVE_LTV = 92;   // Aave borrow LTV reference
+  const TWYNE_LTV = 96;  // Twyne borrow LTV when liqLTV ~98%
+
+  let chartInstance = null;
+
+  function buildChart(canvas, dpr) {
+    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+    canvas.style.width = '1500px';
+    canvas.style.height = '500px';
+
+    const labels = [], curveData = [];
+    let aaveIdx = 0, twyneIdx = 0, idx = 0;
+    for (let ltv = LTV_START; ltv <= LTV_END + 0.01; ltv += LTV_STEP) {
+      const r = Math.round(ltv * 100) / 100;
+      labels.push(r);
+      curveData.push(1 / (1 - r / 100));
+      if (Math.abs(r - AAVE_LTV) < 0.01) aaveIdx = idx;
+      if (Math.abs(r - TWYNE_LTV) < 0.01) twyneIdx = idx;
+      idx++;
+    }
+
+    const greyData = curveData.slice();
+    const purpleData = curveData.map((v, i) => (i >= aaveIdx && i <= twyneIdx) ? v : null);
+
+    // Symmetric plot padding → plot area is visually centered in the banner.
+    // Axis titles are separately anchored to the IMAGE center (see axisTitles plugin).
+    const PAD_LEFT = 180;
+    const PAD_RIGHT = 180;
+    const PAD_TOP = 60;
+    const PAD_BOTTOM = 96;
+
+    chartInstance = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Curve',
+            data: greyData,
+            borderColor: 'rgba(140,140,160,0.5)',
+            backgroundColor: 'rgba(140,140,160,0.035)',
+            borderWidth: 2.5,
+            fill: true,
+            pointRadius: 0,
+            tension: 0.4,
+          },
+          {
+            label: 'Twyne uplift',
+            data: purpleData,
+            borderColor: PURPLE,
+            backgroundColor: (ctx) => {
+              const { ctx: c, chartArea } = ctx.chart;
+              if (!chartArea) return 'transparent';
+              const grad = c.createLinearGradient(0, chartArea.top, 0, chartArea.bottom);
+              grad.addColorStop(0, 'rgba(123,111,192,0.26)');
+              grad.addColorStop(1, 'rgba(123,111,192,0)');
+              return grad;
+            },
+            borderWidth: 3.5,
+            fill: true,
+            pointRadius: 0,
+            tension: 0.4,
+            spanGaps: false,
+          }
+        ]
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        devicePixelRatio: dpr,
+        layout: {
+          padding: { top: PAD_TOP, right: PAD_RIGHT, bottom: PAD_BOTTOM, left: PAD_LEFT }
+        },
+        events: [],
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          x: {
+            ticks: { display: false },
+            grid: { display: false },
+            border: { color: 'rgba(0,0,0,0.12)', width: 1 }
+          },
+          y: {
+            ticks: { display: false },
+            grid: { display: false },
+            border: { display: false },
+            max: 35, min: 0
+          }
+        }
+      },
+      plugins: [
+        {
+          id: 'bg',
+          beforeDraw(chart) {
+            const g = chart.ctx;
+            g.save();
+            g.fillStyle = BG;
+            g.fillRect(0, 0, chart.width, chart.height);
+            g.restore();
+          }
+        },
+        // Axis titles rendered as HTML overlays (see .axis-label in CSS) for guaranteed visibility.
+        {
+          id: 'annotations',
+          afterDraw(chart) {
+            const xs = chart.scales.x, ys = chart.scales.y, g = chart.ctx;
+            g.save();
+
+            function roundRect(x, y, w, h, r) {
+              g.beginPath();
+              g.moveTo(x + r, y);
+              g.lineTo(x + w - r, y); g.quadraticCurveTo(x + w, y, x + w, y + r);
+              g.lineTo(x + w, y + h - r); g.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+              g.lineTo(x + r, y + h); g.quadraticCurveTo(x, y + h, x, y + h - r);
+              g.lineTo(x, y + r); g.quadraticCurveTo(x, y, x + r, y);
+              g.closePath();
+            }
+
+            const ax = xs.getPixelForValue(aaveIdx),  ay = ys.getPixelForValue(curveData[aaveIdx]);
+            const tx = xs.getPixelForValue(twyneIdx), ty = ys.getPixelForValue(curveData[twyneIdx]);
+
+            // Dashed vertical guides — very subtle
+            g.setLineDash([4, 5]); g.lineWidth = 1;
+            g.strokeStyle = 'rgba(140,140,160,0.22)';
+            g.beginPath(); g.moveTo(ax, ay + 12); g.lineTo(ax, ys.bottom); g.stroke();
+            g.strokeStyle = 'rgba(123,111,192,0.24)';
+            g.beginPath(); g.moveTo(tx, ty + 14); g.lineTo(tx, ys.bottom); g.stroke();
+            g.setLineDash([]);
+
+            // Aave dot
+            g.beginPath(); g.arc(ax, ay, 8, 0, Math.PI*2);
+            g.fillStyle = 'rgba(140,140,160,0.8)'; g.fill();
+            g.strokeStyle = 'rgba(255,255,255,0.95)'; g.lineWidth = 2.5;
+            g.beginPath(); g.arc(ax, ay, 8, 0, Math.PI*2); g.stroke();
+
+            // Twyne dot with glow
+            const gl = g.createRadialGradient(tx, ty, 6, tx, ty, 30);
+            gl.addColorStop(0, 'rgba(123,111,192,0.38)');
+            gl.addColorStop(1, 'rgba(123,111,192,0)');
+            g.fillStyle = gl;
+            g.beginPath(); g.arc(tx, ty, 30, 0, Math.PI*2); g.fill();
+            g.beginPath(); g.arc(tx, ty, 10, 0, Math.PI*2);
+            g.fillStyle = PURPLE; g.fill();
+            g.strokeStyle = 'rgba(255,255,255,0.95)'; g.lineWidth = 2.5;
+            g.beginPath(); g.arc(tx, ty, 10, 0, Math.PI*2); g.stroke();
+
+            // ===== Callout (Aave) — above-left, stable-summit style =====
+            function drawCallout(opts) {
+              const { x, y, w, h, r, bgFill, borderStroke,
+                      logo, logoClip, nameText, nameColor,
+                      bigText, bigColor, bigLabel,
+                      big2Text, big2Color, big2Label } = opts;
+              // shadow
+              g.save();
+              g.shadowColor = 'rgba(0,0,0,0.08)';
+              g.shadowBlur = 8;
+              g.shadowOffsetY = 2;
+              roundRect(x, y, w, h, r);
+              g.fillStyle = bgFill; g.fill();
+              g.restore();
+
+              roundRect(x, y, w, h, r);
+              g.strokeStyle = borderStroke; g.lineWidth = 1.4; g.stroke();
+
+              const pad = x + 14;
+              // Row 1: logo + name
+              if (logo && logo.complete && logo.naturalWidth > 0) {
+                const s = 20;
+                if (logoClip) {
+                  g.save();
+                  g.beginPath(); g.arc(pad + s/2, y + 18, s/2, 0, Math.PI*2); g.clip();
+                  g.drawImage(logo, pad, y + 8, s, s);
+                  g.restore();
+                } else {
+                  g.drawImage(logo, pad, y + 8, s, s);
+                }
+              }
+              g.textAlign = 'left'; g.textBaseline = 'middle';
+              g.font = "600 14px " + F_SYNE;
+              g.fillStyle = nameColor;
+              g.fillText(nameText, pad + 28, y + 18);
+
+              // Row 2: big number + sub label
+              g.font = "700 24px " + F_SYNE;
+              g.fillStyle = bigColor;
+              g.fillText(bigText, pad, y + 46);
+              g.font = "500 11.5px " + F_MONO;
+              g.fillStyle = nameColor;
+              g.fillText(bigLabel, pad + 62, y + 46);
+
+              // Row 3: big number + sub label
+              g.font = "700 24px " + F_SYNE;
+              g.fillStyle = big2Color;
+              g.fillText(big2Text, pad, y + 72);
+              g.font = "500 11.5px " + F_MONO;
+              g.fillStyle = nameColor;
+              g.fillText(big2Label, pad + 62, y + 72);
+            }
+
+            const BOX_W = 172, BOX_H = 88, BOX_R = 12;
+
+            // Aave callout — above-left
+            const aBoxX = ax - BOX_W - 28;
+            const aBoxY = ay - BOX_H - 16;
+            // Tether line
+            g.beginPath();
+            g.moveTo(aBoxX + BOX_W, aBoxY + BOX_H);
+            g.lineTo(ax - 9, ay - 3);
+            g.strokeStyle = 'rgba(140,140,160,0.38)'; g.lineWidth = 1.5; g.stroke();
+            drawCallout({
+              x: aBoxX, y: aBoxY, w: BOX_W, h: BOX_H, r: BOX_R,
+              bgFill: 'rgba(247,245,240,0.98)',
+              borderStroke: 'rgba(140,140,160,0.38)',
+              logo: aaveLogo, logoClip: true,
+              nameText: 'Aave', nameColor: 'rgba(100,100,120,0.85)',
+              bigText: '92%', bigColor: INK, bigLabel: 'borrow LTV',
+              big2Text: '12x', big2Color: INK, big2Label: 'leverage',
+            });
+
+            // Twyne callout — above-left
+            const tBoxX = tx - BOX_W - 28;
+            const tBoxY = ty - BOX_H - 18;
+            g.beginPath();
+            g.moveTo(tBoxX + BOX_W, tBoxY + BOX_H);
+            g.lineTo(tx - 10, ty - 3);
+            g.strokeStyle = 'rgba(123,111,192,0.45)'; g.lineWidth = 1.5; g.stroke();
+            drawCallout({
+              x: tBoxX, y: tBoxY, w: BOX_W, h: BOX_H, r: BOX_R,
+              bgFill: 'rgba(244,241,252,0.98)',
+              borderStroke: 'rgba(123,111,192,0.5)',
+              logo: twyneLogo, logoClip: false,
+              nameText: 'Twyne', nameColor: 'rgba(123,111,192,0.85)',
+              bigText: '96%', bigColor: PURPLE, bigLabel: 'borrow LTV',
+              big2Text: '25x', big2Color: PURPLE, big2Label: 'leverage',
+            });
+
+            // ===== L-shape connector from Aave dot to Twyne dot =====
+            const cornerX = ax;
+            const cornerY = ty;
+            g.beginPath();
+            g.moveTo(ax, ay - 8);
+            g.lineTo(cornerX, cornerY + 14);
+            g.quadraticCurveTo(cornerX, cornerY, cornerX + 14, cornerY);
+            g.lineTo(tx - 10, ty);
+            g.strokeStyle = 'rgba(123,111,192,0.55)';
+            g.lineWidth = 2.25; g.stroke();
+
+            const hs = 10;
+            g.beginPath();
+            g.moveTo(tx - 10, ty);
+            g.lineTo(tx - 10 - hs, ty - hs * 0.55);
+            g.moveTo(tx - 10, ty);
+            g.lineTo(tx - 10 - hs, ty + hs * 0.55);
+            g.strokeStyle = 'rgba(123,111,192,0.65)';
+            g.lineWidth = 2.25; g.stroke();
+
+            g.restore();
+          }
+        }
+      ]
+    });
+  }
+
+  function init(dpr) {
+    const canvas = document.getElementById('leverageChart');
+    if (!canvas) return;
+    buildChart(canvas, dpr);
+  }
+
+  // ── Asset loading ──
+  let ready = 0;
+  const allImgs = [twyneLogo, aaveLogo];
+  function onReady() { if (++ready >= allImgs.length) init(2); }
+  allImgs.forEach(img => {
+    img.onload = onReady; img.onerror = onReady;
+    if (img.complete) ready++;
+  });
+  if (ready >= allImgs.length) init(2);
+
+  // ── Download handlers (html2canvas captures HTML labels + chart canvas together) ──
+  async function downloadAt(scale, filename) {
+    // Re-render chart at matching DPR so the captured canvas is sharp
+    init(scale);
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    const banner = document.getElementById('banner');
+    const exported = await html2canvas(banner, {
+      scale,
+      backgroundColor: '#F7F5F0',
+      useCORS: true,
+      allowTaint: true,
+    });
+    exported.toBlob((blob) => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+      if (scale !== 2) init(2);
+    }, 'image/png');
+  }
+
+  document.getElementById('downloadBtn').addEventListener('click', () => {
+    downloadAt(2, 'twyne-leverage-banner_3000x1000.png');
+  });
+  document.getElementById('downloadBtn4x').addEventListener('click', () => {
+    downloadAt(4, 'twyne-leverage-banner_6000x2000.png');
+  });
+  </script>
+</body>
+</html>
