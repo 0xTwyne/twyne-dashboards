@@ -3,64 +3,83 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Twyne — One Pager</title>
+<title>Twyne · The credit delegation layer</title>
+<meta name="description" content="Twyne reserves other depositors’ unused borrowing power beneath your position, so you can set your liquidation line past the protocol’s. Noncustodial, live on Aave and Euler.">
+<meta property="og:title" content="Twyne · The credit delegation layer">
+<meta property="og:description" content="Twyne reserves other depositors’ unused borrowing power beneath your position, so you can set your liquidation line past the protocol’s.">
+<meta name="theme-color" content="#ecebe9">
+<link rel="icon" type="image/png" href="icons/twyne_symbol.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300..700&family=Geist+Mono:wght@400..700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+  /* Twyne design system tokens (twyne-frontend packages/twyne-materials/static/css/colors.css).
+     Legacy names (--purple, --blue, --coral) are kept so inline styles retokenize in place:
+     --purple / --blue = Twyne + borrower accent (periwinkle), --teal = creditor, --coral = liquidation. */
   :root {
-    --bg: #e5e5e5;
-    --bg-card: #e5e5e5;
-    --bg-elevated: #f5f5f5;
-    --text: #000000;
-    --text-secondary: #060610;
-    --text-muted: #0e0e1c;
-    --purple: #7B2CBF;
-    --purple-dim: rgba(123, 44, 191, 0.08);
-    --purple-border: rgba(123, 44, 191, 0.25);
-    --blue: #3b82f6;
-    --blue-dim: rgba(59, 130, 246, 0.1);
-    --blue-border: rgba(59, 130, 246, 0.3);
-    --teal: #0fa67f;
-    --teal-dim: rgba(15, 166, 127, 0.1);
-    --teal-border: rgba(15, 166, 127, 0.3);
-    --coral: #c75050;
-    --coral-dim: rgba(199, 80, 80, 0.1);
-    --coral-border: rgba(199, 80, 80, 0.3);
-    --border: rgba(0, 0, 0, 0.12);
-    --border-strong: rgba(0, 0, 0, 0.18);
-    --radius: 6px;
-    --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-    --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.12);
+    --font-sans: 'Geist', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+    --bg: #ecebe9;
+    --surface: #f7f7f5;
+    --bg-card: #f7f7f5;
+    --bg-elevated: #ffffff;
+    --text: #111111;
+    --text-secondary: #3f3f3f;
+    --text-muted: #6b6a68;
+    --purple: #4a51e0;
+    --purple-fill: #5b63ff;
+    --purple-dim: rgba(91, 99, 255, 0.08);
+    --purple-dim-strong: rgba(91, 99, 255, 0.15);
+    --purple-border: rgba(91, 99, 255, 0.30);
+    --lavender: #cac7ff;
+    --blue: #5b63ff;
+    --blue-dim: rgba(91, 99, 255, 0.08);
+    --blue-border: rgba(91, 99, 255, 0.30);
+    --teal: #2a7268;
+    --teal-dim: rgba(42, 114, 104, 0.08);
+    --teal-border: rgba(42, 114, 104, 0.30);
+    --coral: #cd2c4d;
+    --coral-dim: rgba(205, 44, 77, 0.08);
+    --coral-border: rgba(205, 44, 77, 0.30);
+    --border: #dddcd9;
+    --border-strong: #c9c8c5;
+    --radius: 8px;
+    --radius-lg: 14px;
+    --shadow: none;
+    --shadow-hover: none;
+    --header-bg: rgba(236, 235, 233, 0.82);
   }
 
   /* Dark mode */
   html.dark {
-    --bg: #1a1a2e;
-    --bg-card: #1a1a2e;
-    --bg-elevated: #2a2a4a;
-    --text: #ffffff;
-    --text-secondary: #f4f4ff;
-    --text-muted: #e2e2f8;
-    --purple: #a970e0;
-    --purple-dim: rgba(169, 112, 224, 0.12);
-    --purple-border: rgba(169, 112, 224, 0.35);
-    --blue: #60a5fa;
-    --blue-dim: rgba(96, 165, 250, 0.15);
-    --blue-border: rgba(96, 165, 250, 0.4);
-    --teal: #2fd4aa;
-    --teal-dim: rgba(47, 212, 170, 0.12);
-    --teal-border: rgba(47, 212, 170, 0.35);
-    --coral: #e07070;
-    --coral-dim: rgba(224, 112, 112, 0.12);
-    --coral-border: rgba(224, 112, 112, 0.35);
-    --border: rgba(255, 255, 255, 0.14);
-    --border-strong: rgba(255, 255, 255, 0.22);
-    --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    --shadow-hover: 0 4px 16px rgba(0, 0, 0, 0.4);
+    --bg: #111111;
+    --surface: #181818;
+    --bg-card: #181818;
+    --bg-elevated: #222222;
+    --text: #f5f5f3;
+    --text-secondary: #d8d7d5;
+    --text-muted: #939393;
+    --purple: #9ca0ff;
+    --purple-fill: #7b82ff;
+    --purple-dim: rgba(156, 160, 255, 0.10);
+    --purple-dim-strong: rgba(156, 160, 255, 0.18);
+    --purple-border: rgba(156, 160, 255, 0.35);
+    --blue: #9ca0ff;
+    --blue-dim: rgba(156, 160, 255, 0.10);
+    --blue-border: rgba(156, 160, 255, 0.35);
+    --teal: #7fb3ac;
+    --teal-dim: rgba(127, 179, 172, 0.10);
+    --teal-border: rgba(127, 179, 172, 0.32);
+    --coral: #e5677f;
+    --coral-dim: rgba(229, 103, 127, 0.10);
+    --coral-border: rgba(229, 103, 127, 0.32);
+    --border: #2b2b2b;
+    --border-strong: #3f3f3f;
+    --header-bg: rgba(17, 17, 17, 0.82);
   }
 
   html.dark .header-logo {
@@ -80,7 +99,7 @@
     border-radius: 20px;
     padding: 6px 12px;
     cursor: pointer;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 11px;
     color: var(--text-muted);
     transition: all 0.2s ease;
@@ -105,7 +124,7 @@
   html {
     background: var(--bg);
     color: var(--text);
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 15px;
     line-height: 1.65;
     font-weight: 400;
@@ -140,7 +159,7 @@
   }
 
   .header-label {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 11px;
     font-weight: 500;
     letter-spacing: 0.08em;
@@ -155,7 +174,7 @@
   }
 
   .section-title {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.1em;
@@ -238,7 +257,7 @@
   }
 
   .why-heading h2 {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 22px;
     font-weight: 600;
     color: var(--text);
@@ -259,7 +278,7 @@
   }
 
   .why-col-label {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 9px;
     font-weight: 600;
     text-transform: uppercase;
@@ -284,7 +303,7 @@
   }
 
   .why-pill h3 {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 12px;
     font-weight: 600;
     color: var(--text);
@@ -303,7 +322,7 @@
     border-radius: 50%;
     background: var(--purple);
     color: #ffffff;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 10px;
     font-weight: 600;
     display: flex;
@@ -371,7 +390,7 @@
   }
 
   .why-persona-label {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.02em;
@@ -393,7 +412,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 12px;
     font-weight: 500;
     letter-spacing: 0.03em;
@@ -419,7 +438,7 @@
   }
 
   .why-benefits-col h4 {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 10.5px;
     font-weight: 600;
     text-transform: uppercase;
@@ -494,7 +513,7 @@
   .user-card--clp::before { background: var(--teal); }
 
   .user-card-title {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 14px;
     font-weight: 600;
     margin-bottom: 8px;
@@ -588,7 +607,7 @@
   .data-table {
     width: 100%;
     border-collapse: collapse;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 13px;
     font-variant-numeric: tabular-nums;
   }
@@ -658,7 +677,7 @@
     font-size: 11.5px;
     color: var(--text-muted);
     margin-top: 12px;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-weight: 400;
     line-height: 1.5;
   }
@@ -683,7 +702,7 @@
   .stat-box::before { display: none; }
 
   .stat-value {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 28px;
     font-weight: 600;
     line-height: 1;
@@ -695,7 +714,7 @@
   .stat-box--purple .stat-value { color: var(--purple); }
 
   .stat-label {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 12px;
     font-weight: 500;
     color: var(--text);
@@ -720,7 +739,7 @@
   }
 
   .tvl-callout-flow {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 22px;
     font-weight: 600;
     color: var(--text);
@@ -755,7 +774,7 @@
   .compare-table {
     width: 100%;
     border-collapse: collapse;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 13px;
     font-variant-numeric: tabular-nums;
     margin-top: 20px;
@@ -837,7 +856,7 @@
   }
 
   .sec-marker {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 11px;
     font-weight: 600;
     color: var(--text);
@@ -847,7 +866,7 @@
   }
 
   .sec-desc {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 12px;
     color: var(--text-muted);
     line-height: 1.6;
@@ -880,7 +899,7 @@
   }
 
   .risk-link-label {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 12px;
     font-weight: 500;
     color: var(--text);
@@ -888,7 +907,7 @@
   }
 
   .risk-link a {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 12.5px;
     color: var(--purple);
     text-decoration: none;
@@ -903,7 +922,7 @@
   /* ── Backed by ── */
 
   .backers {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 13.5px;
     font-weight: 400;
     color: var(--text);
@@ -927,7 +946,7 @@
   }
 
   .footer-left, .footer-right {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 11px;
     color: var(--text-muted);
     letter-spacing: 0.04em;
@@ -967,7 +986,7 @@
   }
 
   .expandable-title {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 12px;
     font-weight: 500;
     color: var(--text-muted);
@@ -992,7 +1011,7 @@
   }
   .tbd-sticker {
     display: inline-block;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 9px;
     font-weight: 700;
     letter-spacing: 0.5px;
@@ -1046,7 +1065,7 @@
 
   /* Simulator tabs */
   .sim-tab {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 11px;
     font-weight: 500;
     padding: 6px 12px;
@@ -1076,7 +1095,7 @@
   .yield-table {
     width: 100%;
     border-collapse: collapse;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 13px;
   }
   .yield-table th, .yield-table td {
@@ -1205,7 +1224,7 @@
   }
 
   .yield-input-group label {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 10.5px;
     font-weight: 500;
     letter-spacing: 0.04em;
@@ -1228,7 +1247,7 @@
   }
 
   .yield-input-group input {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 14px;
     font-weight: 500;
     color: var(--text);
@@ -1247,7 +1266,7 @@
   }
 
   .input-unit {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 12px;
     color: var(--text-muted);
     margin-left: 2px;
@@ -1280,7 +1299,7 @@
   }
 
   .backtest-subplot-title {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 10px;
     font-weight: 500;
     color: var(--text-muted);
@@ -1343,21 +1362,21 @@
     width: 18px;
     height: 18px;
     border-radius: 50%;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 10px;
     font-weight: 700;
     flex-shrink: 0;
   }
 
   .uc-title {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 12px;
     font-weight: 700;
     color: var(--text);
   }
 
   .uc-desc {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 10px;
     color: var(--text-muted);
     line-height: 1.4;
@@ -1420,7 +1439,7 @@
   }
 
   .uc-group-label {
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-sans);
     font-size: 10px;
     font-weight: 600;
     letter-spacing: 1.5px;
@@ -1709,6 +1728,240 @@
     }
   }
 
+  /* ══════════════════════════════════════════════
+     Brand layer — overrides the legacy rules above.
+     ══════════════════════════════════════════════ */
+
+  html {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.6;
+    font-feature-settings: 'ss01', 'cv11';
+    text-rendering: optimizeLegibility;
+  }
+  html, body { transition: background-color 0.2s ease, color 0.2s ease; }
+  ::selection { background: var(--lavender); color: #111111; }
+
+  body {
+    max-width: 960px;
+    zoom: 1;
+    padding: 0 32px 64px;
+  }
+
+  a { color: inherit; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+  a:hover { color: var(--purple) !important; }
+  :focus-visible { outline: 2px solid var(--purple-fill); outline-offset: 2px; border-radius: 4px; }
+
+  /* Header */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    margin: 0 -32px;
+    padding: 18px 32px;
+    background: var(--header-bg);
+    backdrop-filter: saturate(1.4) blur(12px);
+    -webkit-backdrop-filter: saturate(1.4) blur(12px);
+    border-bottom: 1px solid transparent;
+  }
+  .header-logo { height: 36px; opacity: 1; }
+  .header-right { gap: 8px; }
+  .header-link {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+    padding: 6px 12px;
+    border-radius: 999px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+  .header-link:hover { background: var(--purple-dim); }
+  .dark-toggle {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 999px;
+    background: transparent;
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+  }
+  .dark-toggle:hover { background: var(--purple-dim); color: var(--text); }
+  .dark-toggle svg { width: 16px; height: 16px; }
+  .dark-toggle .icon-sun { display: none; }
+  html.dark .dark-toggle .icon-sun { display: block; }
+  html.dark .dark-toggle .icon-moon { display: none; }
+
+  /* Hero */
+  .hero { padding: 28px 0 48px; }
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+  }
+  .hero-eyebrow::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--lavender);
+    box-shadow: 0 0 0 3px var(--purple-dim);
+  }
+  .hero h1 {
+    font-size: clamp(40px, 6.4vw, 64px);
+    line-height: 1.02;
+    font-weight: 600;
+    letter-spacing: -0.035em;
+    color: var(--text);
+    max-width: 14ch;
+    text-wrap: balance;
+  }
+  .hero-lede {
+    margin-top: 24px;
+    max-width: 60ch;
+    font-size: 19px;
+    line-height: 1.55;
+    color: var(--text-secondary);
+    text-wrap: pretty;
+  }
+
+  /* Section heads */
+  .section { margin-bottom: 0; padding: 56px 0 8px; }
+  .section-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 24px; }
+  .section-index {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--purple);
+    font-variant-numeric: tabular-nums;
+  }
+  .section-title {
+    font-size: 28px;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    line-height: 1.2;
+    text-transform: none;
+    color: var(--text);
+    margin: 0 !important;
+  }
+  .section-title::after { display: none; }
+  .section > p, .section-body { max-width: 68ch; }
+
+  /* Cards */
+  .why-solution-card, .uc-row {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    border-color: var(--border);
+  }
+  .uc-row { margin-top: 16px; }
+  .why-solution-card > div:first-child { color: var(--text-muted) !important; }
+
+  .hero-stat {
+    font-size: 56px;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .hero-stat-label {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-top: 10px;
+  }
+  .uc-desc, .uc-row .uc-desc { font-size: 15px; color: var(--text-secondary); max-width: 40ch; }
+
+  /* Disclosure rows */
+  .expandable-header { padding: 14px 0; }
+  .expandable-title { font-size: 14px; font-weight: 600; color: var(--text-secondary); }
+  .expandable-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 1px solid var(--border-strong);
+    font-size: 10px;
+  }
+  .expandable.open .expandable-toggle { border-color: var(--purple-border); background: var(--purple-dim); }
+  .expandable.open .expandable-content { max-height: 4000px; }
+
+  /* Tables + inputs */
+  .yield-table { font-family: var(--font-sans); font-variant-numeric: tabular-nums; font-size: 14px; }
+  .yield-table thead .col-row th, .yield-table tbody th { font-size: 14px; }
+  .yield-table thead .col-row th { border-bottom-width: 1px; }
+  .yield-table thead .axis-label, .yield-table tbody th { border-right-width: 1px; }
+  .yield-table tbody td { font-weight: 600; }
+  input[type="number"] {
+    font-family: var(--font-mono);
+    font-size: 13px !important;
+    padding: 5px 8px !important;
+    border-radius: 6px !important;
+    border-color: var(--border-strong) !important;
+    background: var(--bg-elevated) !important;
+    color: var(--text) !important;
+    width: 70px !important;
+  }
+  input[type="number"]:focus { outline: none; border-color: var(--purple-fill) !important; box-shadow: 0 0 0 3px var(--purple-dim); }
+
+  .chart-container { background: transparent; border: none; padding: 0; }
+
+  /* Lists of names */
+  .backers {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+  .backers .sep { display: none; }
+  .backers > span:not(.sep), .backers > a {
+    padding: 6px 14px;
+    border: 1px solid var(--border-strong);
+    border-radius: 999px;
+    background: var(--surface);
+    text-decoration: none !important;
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 72px;
+    padding: 28px 0 0;
+    border-top: 1px solid var(--border-strong);
+  }
+  .footer-left { display: inline-flex; align-items: center; gap: 12px; font-size: 13px; letter-spacing: 0; }
+  .footer-right { display: inline-flex; gap: 20px; font-size: 13px; letter-spacing: 0; }
+  .footer a { border-bottom: none !important; }
+  .footer-mark { width: 20px; height: 20px; }
+  html.dark .footer-mark { filter: invert(1); }
+
+  @media (max-width: 680px) {
+    body { padding: 0 16px 48px !important; }
+    .header { margin: 0 -16px; padding: 14px 16px; }
+    .header-link { display: none; }
+    .hero { padding: 16px 0 28px; }
+    .header-logo { height: 30px; }
+    .hero-lede { font-size: 17px; }
+    .section { padding-top: 40px; }
+    .section-title { font-size: 23px !important; }
+    .hero-stat { font-size: 44px !important; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition: none !important; animation: none !important; }
+  }
+
 </style>
 </head>
 <body>
@@ -1717,21 +1970,26 @@
   <header class="header">
     <img src="icons/twyne_logo_white_full.png" alt="Twyne" class="header-logo">
     <div class="header-right">
-      <button class="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode">
-        <span class="dark-toggle-icon">◐</span>
+      <a class="header-link" href="https://twyne.gitbook.io/twyne/" target="_blank" rel="noopener">Docs</a>
+      <a class="header-link" href="https://github.com/0xTwyne/papers/blob/main/Twyne_V1_Whitepaper.pdf" target="_blank" rel="noopener">Whitepaper</a>
+      <button class="dark-toggle" onclick="toggleDarkMode()" title="Toggle dark mode" aria-label="Switch to dark mode">
+        <svg class="icon-moon" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M13.5 9.6A5.5 5.5 0 0 1 6.4 2.5a5.5 5.5 0 1 0 7.1 7.1Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        <svg class="icon-sun" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="3" stroke="currentColor" stroke-width="1.4"/><path d="M8 1.5v1.5M8 13v1.5M1.5 8H3M13 8h1.5M3.4 3.4l1 1M11.6 11.6l1 1M3.4 12.6l1-1M11.6 4.4l1-1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
       </button>
     </div>
   </header>
 
   <!-- Overview -->
-  <section class="section" style="padding-top: 16px;">
-    <h2 class="section-title" style="margin-bottom: 14px;">Overview</h2>
-    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0 0 16px;">
-      Liquidity is expensive to source &mdash; meanwhile $30B in borrowing power sits idle on Aave. Twyne turns that idle capacity into a marketplace, connecting lenders who don&rsquo;t use it with borrowers who need it.
-    </p>
+  <section class="hero">
+    <div class="hero-eyebrow">Twyne explainer</div>
+    <h1>The credit delegation layer</h1>
+    <p class="hero-lede">Liquidity is expensive to source &mdash; meanwhile $30B in borrowing power sits idle on Aave. Twyne turns that idle capacity into a marketplace, connecting lenders who don&rsquo;t use it with borrowers who need it.</p>
+  </section>
+
+  <section class="section" style="padding-top: 0;">
     <div>
       <div class="why-solution-card">
-        <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px;">Credit Delegation</div>
+        <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 14px;">Credit Delegation</div>
         <div class="why-flow">
           <div class="why-persona">
             <div class="why-persona-icon why-persona-icon--teal">
@@ -1773,15 +2031,15 @@
             </div>
             <div class="expandable-content">
               <div class="expandable-inner" style="padding: 0;">
-                <div class="mob-card-inner" style="padding: 16px 24px 0; font-size: 12px; color: var(--text-muted); line-height: 1.6;">Most Aave depositors never borrow &mdash; $12B sits at 0% LTV. Meanwhile, borrowers who need higher leverage are capped by the protocol's LTV ceiling, and many assets never get listed on Aave at all due to its governance process.</div>
+                <div class="mob-card-inner" style="padding: 16px 24px 0; font-size: 15px; color: var(--text-secondary); line-height: 1.6;">Most Aave depositors never borrow &mdash; $12B sits at 0% LTV. Meanwhile, borrowers who need higher leverage are capped by the protocol's LTV ceiling, and many assets never get listed on Aave at all due to its governance process.</div>
                 <div class="mob-ltv-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0; align-items: center;">
                   <div style="position: relative; height: 240px; padding: 16px 12px 12px 12px;">
                     <canvas id="ltvDistChart"></canvas>
                   </div>
                   <div class="mob-delegate-box" style="display: flex; flex-direction: column; justify-content: center; padding: 16px 24px; border-left: 1px solid var(--border);">
-                    <div style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;"><span style="color: var(--text);">V1.0</span> Delegate within Aave <span style="font-size: 9px; font-weight: 600; color: var(--teal); background: var(--teal-dim); border: 1px solid var(--teal-border); border-radius: 10px; padding: 1px 8px; text-transform: uppercase; letter-spacing: 0.3px;">Live</span></div>
-                    <div style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 12px;"><span style="color: var(--text);">V1.1</span> Delegate outside of Aave</div>
-                    <div style="font-size: 12px; color: var(--text-muted); line-height: 1.8;">
+                    <div style="font-size: 12px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 4px;"><span style="color: var(--text);">V1.0</span> Delegate within Aave <span style="font-size: 10px; font-weight: 600; color: var(--teal); background: var(--teal-dim); border: 1px solid var(--teal-border); border-radius: 10px; padding: 1px 8px; text-transform: uppercase; letter-spacing: 0.3px;">Live</span></div>
+                    <div style="font-size: 12px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.3px; margin-bottom: 12px;"><span style="color: var(--text);">V1.1</span> Delegate outside of Aave</div>
+                    <div style="font-size: 15px; color: var(--text-muted); line-height: 1.8;">
                       &bull; Earn Vaults<br>
                       &bull; Agentic DeFi<br>
                       &bull; Redemption Markets<br>
@@ -1798,12 +2056,12 @@
   </section>
   <!-- Use Cases -->
   <section class="section">
-    <h2 class="section-title">Borrower Use Cases</h2>
+    <div class="section-head"><span class="section-index">01</span><h2 class="section-title">Borrower Use Cases</h2></div>
 
     <!-- Use Case 2: Boost Leverage -->
     <div class="uc-row">
       <div class="uc-text">
-        <div class="hero-stat" style="color: var(--text-muted); text-decoration: underline;">50&times;</div>
+        <div class="hero-stat" style="">50&times;</div>
         <div class="hero-stat-label">leverage</div>
         <p class="uc-desc" style="margin-top: 8px;">A few extra points of liquidation LTV unlock drastically more leverage.</p>
       </div>
@@ -1824,23 +2082,23 @@
           <div class="expandable-content">
             <div class="expandable-inner" style="padding: 0;">
           <!-- Yield Table -->
-          <div class="mob-card-inner" style="padding: 20px 24px; background: var(--bg-card); border-bottom: 1px solid var(--border);">
-            <div style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px;">Each cell shows <strong style="color: var(--text);">net looping APY</strong> at different leverage levels. Aave caps out at 95% Liq LTV. Twyne pushes up to 99%.</div>
+          <div class="mob-card-inner" style="padding: 20px 24px; background: var(--bg-card);">
+            <div style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px;">Each cell shows <strong style="color: var(--text);">net looping APY</strong> at different leverage levels. Aave caps out at 95% Liq LTV. Twyne pushes up to 99%.</div>
             <!-- Rate inputs -->
-            <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; font-size: 11px; color: var(--text-muted); margin-bottom: 20px;">
+            <div style="display: flex; gap: 16px; align-items: center; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); margin-bottom: 20px;">
               <label style="display: flex; align-items: center; gap: 6px;">
                 Staking Yield
-                <input type="number" id="inputStakeRate" value="3.00" step="0.05" min="0" max="20" style="width: 62px; padding: 3px 6px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-elevated); color: var(--text-primary); font-size: 11px; text-align: right;">
+                <input type="number" id="inputStakeRate" value="3.00" step="0.05" min="0" max="20" style="width: 62px; padding: 3px 6px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-elevated); color: var(--text); font-size: 12px; text-align: right;">
                 <span style="color: var(--text-muted);">%</span>
               </label>
               <label style="display: flex; align-items: center; gap: 6px;">
                 Borrow Cost
-                <input type="number" id="inputBorrowRate" value="2.00" step="0.05" min="0" max="20" style="width: 62px; padding: 3px 6px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-elevated); color: var(--text-primary); font-size: 11px; text-align: right;">
+                <input type="number" id="inputBorrowRate" value="2.00" step="0.05" min="0" max="20" style="width: 62px; padding: 3px 6px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-elevated); color: var(--text); font-size: 12px; text-align: right;">
                 <span style="color: var(--text-muted);">%</span>
               </label>
               <label style="display: flex; align-items: center; gap: 6px;">
                 Creditor Yield
-                <input type="number" id="inputClpYield" value="1.31" step="0.05" min="0" max="20" style="width: 62px; padding: 3px 6px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-elevated); color: var(--text-primary); font-size: 11px; text-align: right;">
+                <input type="number" id="inputClpYield" value="1.31" step="0.05" min="0" max="20" style="width: 62px; padding: 3px 6px; border: 1px solid var(--border-strong); border-radius: 4px; background: var(--bg-elevated); color: var(--text); font-size: 12px; text-align: right;">
                 <span style="color: var(--text-muted);">%</span>
               </label>
             </div>
@@ -1856,7 +2114,7 @@
     <!-- Use Case 3: Liquidation Protection -->
     <div class="uc-row">
       <div class="uc-text">
-        <div class="hero-stat" style="color: var(--text-muted); text-decoration: underline;">94%</div>
+        <div class="hero-stat" style="">94%</div>
         <div class="hero-stat-label">of liquidations saved</div>
         <p class="uc-desc" style="margin-top: 8px;">Protect against liquidations by increasing borrowing capacity. Same collateral, higher resilience.</p>
       </div>
@@ -1878,20 +2136,20 @@
             <div class="expandable-inner" style="padding: 0;">
           <!-- Explainer + stats -->
           <div class="mob-card-inner" style="padding: 20px 24px; background: var(--bg-card); border-bottom: 1px solid var(--border);">
-            <div style="font-size: 12px; line-height: 1.6; color: var(--text-muted); margin-bottom: 16px;">
+            <div style="font-size: 15px; line-height: 1.6; color: var(--text-secondary); margin-bottom: 16px;">
               We took positions that were liquidated in WETH-USDC markets on Aave and simulated what happens with Twyne's higher buffer. Each line starts from that position's own liquidation day &mdash; day 0 is when Aave would have liquidated, and the chart shows how it would have played out over the next 30 days.
             </div>
             <div style="margin-bottom: 16px;">
-              <a href="https://x.com/twynexyz/status/1942950529304310186" target="_blank" style="font-size: 11px; color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">Full analysis &rarr;</a>
+              <a href="https://x.com/twynexyz/status/1942950529304310186" target="_blank" style="font-size: 12px; color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">Full analysis &rarr;</a>
             </div>
             <div class="mob-stats-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
               <div>
                 <div style="font-size: 24px; font-weight: 600; color: var(--blue);">94%</div>
-                <div style="font-size: 12px; color: var(--text-muted);">Would have survived</div>
+                <div style="font-size: 15px; color: var(--text-muted);">Would have survived</div>
               </div>
               <div>
                 <div style="font-size: 24px; font-weight: 600; color: var(--coral);">6%</div>
-                <div style="font-size: 12px; color: var(--text-muted);">Still liquidated</div>
+                <div style="font-size: 15px; color: var(--text-muted);">Still liquidated</div>
               </div>
             </div>
           </div>
@@ -1914,37 +2172,37 @@
 
   <!-- How It Works -->
   <section class="section">
-    <h2 class="section-title">How It Works</h2>
+    <div class="section-head"><span class="section-index">02</span><h2 class="section-title">How It Works</h2></div>
 
     <!-- One Position, Two LTVs -->
-    <div style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+    <div style="border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); overflow: hidden;">
         <div class="mob-card-inner" style="padding: 20px 24px 24px;">
           <div style="margin-bottom: 10px;">
-            <span style="font-size: 12px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">One Position, Two LTVs</span>
+            <span style="font-size: 15px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">One Position, Two LTVs</span>
           </div>
-          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0 0 20px;">Under the hood, Twyne is just bookkeeping &mdash; one position on Aave, two views of who owns what.</p>
+          <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin: 0 0 20px;">Under the hood, Twyne is just bookkeeping &mdash; one position on Aave, two views of who owns what.</p>
           <div class="mob-dual-ltv" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
 
             <!-- What Aave sees -->
             <div>
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
                 <img src="icons/aave-aave-logo.png" alt="Aave" style="width: 26px; height: 26px; border-radius: 50%;">
-                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted);">Aave sees</div>
-                <div style="font-size: 22px; font-weight: 700; color: var(--teal); line-height: 1; margin-left: 4px;">71<span style="font-size: 14px; opacity: 0.65;">%</span> <span style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted);">LTV</span></div>
+                <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted);">Aave sees</div>
+                <div style="font-size: 22px; font-weight: 700; color: var(--teal); line-height: 1; margin-left: 4px;">71<span style="font-size: 14px; opacity: 0.65;">%</span> <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted);">LTV</span></div>
               </div>
               <div style="display: flex; gap: 3px; margin-bottom: 4px;">
-                <div style="width: 54%; height: 24px; position: relative; border-radius: 3px; overflow: hidden; border: 1px solid rgba(220, 80, 150, 0.35);">
-                  <div style="position: absolute; inset: 0; background: #dc5096; opacity: 0.15;"></div>
-                  <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 6px; font-size: 9px; font-weight: 600; color: #dc5096; letter-spacing: 0.2px;">Borrower Collateral</div>
+                <div style="width: 54%; height: 24px; position: relative; border-radius: 3px; overflow: hidden; border: 1px solid var(--purple-border);">
+                  <div style="position: absolute; inset: 0; background: var(--purple); opacity: 0.15;"></div>
+                  <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 6px; font-size: 10px; font-weight: 600; color: var(--purple); letter-spacing: 0.2px;">Borrower Collateral</div>
                 </div>
                 <div style="width: 16%; height: 24px; position: relative; border-radius: 3px; overflow: hidden; border: 1px solid var(--teal-border);">
                   <div style="position: absolute; inset: 0; background: var(--teal); opacity: 0.12;"></div>
-                  <div style="position: relative; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; color: var(--teal); letter-spacing: 0.2px;">Credit</div>
+                  <div style="position: relative; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: var(--teal); letter-spacing: 0.2px;">Credit</div>
                 </div>
               </div>
               <div style="position: relative; width: 50%; height: 18px; border-radius: 3px; overflow: hidden; border: 1px solid var(--border-strong);">
                 <div style="position: absolute; inset: 0; background: var(--text-muted); opacity: 0.15;"></div>
-                <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 6px; font-size: 9px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.2px;">Debt</div>
+                <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 6px; font-size: 10px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.2px;">Debt</div>
               </div>
             </div>
 
@@ -1952,27 +2210,27 @@
             <div>
               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
                 <img src="icons/twyne_symbol.png" alt="Twyne" class="dual-ltv-twyne-logo" style="width: 26px; height: 26px;">
-                <div style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted);">Twyne sees</div>
-                <div style="font-size: 22px; font-weight: 700; color: var(--purple); line-height: 1; margin-left: 4px;">92<span style="font-size: 14px; opacity: 0.65;">%</span> <span style="font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted);">LTV</span></div>
+                <div style="font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted);">Twyne sees</div>
+                <div style="font-size: 22px; font-weight: 700; color: var(--purple); line-height: 1; margin-left: 4px;">92<span style="font-size: 14px; opacity: 0.65;">%</span> <span style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.3px; color: var(--text-muted);">LTV</span></div>
               </div>
               <div style="display: flex; gap: 3px; margin-bottom: 4px;">
-                <div style="width: 54%; height: 24px; position: relative; border-radius: 3px; overflow: hidden; border: 1px solid rgba(220, 80, 150, 0.35);">
-                  <div style="position: absolute; inset: 0; background: #dc5096; opacity: 0.15;"></div>
-                  <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 6px; font-size: 9px; font-weight: 600; color: #dc5096; letter-spacing: 0.2px;">Borrower Collateral</div>
+                <div style="width: 54%; height: 24px; position: relative; border-radius: 3px; overflow: hidden; border: 1px solid var(--purple-border);">
+                  <div style="position: absolute; inset: 0; background: var(--purple); opacity: 0.15;"></div>
+                  <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 6px; font-size: 10px; font-weight: 600; color: var(--purple); letter-spacing: 0.2px;">Borrower Collateral</div>
                 </div>
               </div>
               <div style="position: relative; width: 50%; height: 18px; border-radius: 3px; overflow: hidden; border: 1px solid var(--border-strong);">
                 <div style="position: absolute; inset: 0; background: var(--text-muted); opacity: 0.15;"></div>
-                <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 6px; font-size: 9px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.2px;">Debt</div>
+                <div style="position: relative; height: 100%; display: flex; align-items: center; padding-left: 6px; font-size: 10px; font-weight: 500; color: var(--text-muted); letter-spacing: 0.2px;">Debt</div>
               </div>
             </div>
 
           </div>
           <div class="mob-dual-captions" style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; padding: 20px 0 0;">
-            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Aave sees healthy composite position.</p>
-            <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Twyne tracks the borrower's real LTV separately.</p>
+            <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin: 0;">Aave sees healthy composite position.</p>
+            <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin: 0;">Twyne tracks the borrower's real LTV separately.</p>
           </div>
-          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 16px 0 0 0;">Overcollateralized from both perspectives. Users don't have to think about it &mdash; invariants enforce it automatically. Liquidators clean up positions if health worsens.</p>
+          <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin: 16px 0 0 0;">Overcollateralized from both perspectives. Users don't have to think about it &mdash; invariants enforce it automatically. Liquidators clean up positions if health worsens.</p>
         </div>
 
         <!-- The Token Flow -->
@@ -1983,7 +2241,7 @@
                 <span>The Token Flow</span>
                 <span class="expandable-toggle">&#x25BE;</span>
               </div>
-              <button id="replay-diagram-btn" style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border: 1px solid var(--purple-border); border-radius: 14px; background: rgba(123, 44, 191, 0.08); color: var(--purple); font-size: 10px; font-weight: 600; cursor: pointer; transition: opacity 0.2s, background 0.2s;" onmouseenter="this.style.background='rgba(123, 44, 191, 0.15)'" onmouseleave="this.style.background='rgba(123, 44, 191, 0.08)'" onclick="event.stopPropagation()">
+              <button id="replay-diagram-btn" style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border: 1px solid var(--purple-border); border-radius: 14px; background: var(--purple-dim); color: var(--purple); font-size: 11px; font-weight: 600; cursor: pointer; transition: opacity 0.2s, background 0.2s;" onmouseenter="this.style.background='var(--purple-dim-strong)'" onmouseleave="this.style.background='var(--purple-dim)'" onclick="event.stopPropagation()">
                 <svg width="8" height="10" viewBox="0 0 8 10" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L7 5L1 9V1Z" fill="currentColor"/></svg>
                 Play
               </button>
@@ -1993,12 +2251,12 @@
                 <!-- Creditor / Borrower explanation -->
                 <div class="mob-token-flow" style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; padding: 16px 0 24px;">
                   <div>
-                    <h4 style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Creditor</h4>
-                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Deposits collateral into a lending market but doesn't borrow against it. Stakes it in Twyne to make the unused borrowing power available.</p>
+                    <h4 style="font-size: 12px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Creditor</h4>
+                    <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin: 0;">Deposits collateral into a lending market but doesn't borrow against it. Stakes it in Twyne to make the unused borrowing power available.</p>
                   </div>
                   <div>
-                    <h4 style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Borrower</h4>
-                    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0;">Pulls the Creditor's borrowing power into their vault, combining it with their own collateral to take on more debt.</p>
+                    <h4 style="font-size: 12px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px;">Borrower</h4>
+                    <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin: 0;">Pulls the Creditor's borrowing power into their vault, combining it with their own collateral to take on more debt.</p>
                   </div>
                 </div>
                 <!-- Animated diagram -->
@@ -2018,67 +2276,67 @@
 
   <!-- Capital Efficiency -->
   <section class="section">
-    <h2 class="section-title">Capital Efficiency</h2>
+    <div class="section-head"><span class="section-index">03</span><h2 class="section-title">Capital Efficiency</h2></div>
 
-    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
+    <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">
       A standalone 99% liquidation threshold market would be costly to bootstrap. Twyne builds on top of the underlying market&rsquo;s liquidity &mdash; it only needs to supply the incremental credit required to bridge the gap to the target LT.
     </p>
-    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
+    <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">
       Take stETH: Aave already provides ~95% LT. Twyne only needs to bridge the last ~4% &mdash; just 4 cents per dollar of borrower collateral. That's a 25x capital multiplier. All borrowable liquidity from the underlying market comes for free. This recomposes underlying protocol infrastructure into a new primitive &mdash; bootstrapping risk-segmented markets at a fraction of the cost.
     </p>
 
     <!-- $1M supply → $25M borrower -->
-    <div class="mob-card-inner" style="border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; margin-bottom: 24px;">
+    <div class="mob-card-inner" style="border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); padding: 20px 24px; margin-bottom: 24px;">
       <div class="mob-hero-row" style="display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px;">
         <span style="font-size: 28px; font-weight: 700; color: var(--teal);">$1M</span>
-        <span style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Creditor capital enables</span>
+        <span style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Creditor capital enables</span>
         <span style="font-size: 20px; color: var(--text-muted); margin: 0 4px;">&rarr;</span>
         <span style="font-size: 28px; font-weight: 700; color: var(--purple);">$25M</span>
-        <span style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Borrower positions at</span>
+        <span style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Borrower positions at</span>
         <span style="font-size: 28px; font-weight: 700; color: var(--purple);">99%</span>
-        <span style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Liquidation Threshold</span>
+        <span style="font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.3px;">Liquidation Threshold</span>
       </div>
     </div>
 
     <!-- Cost / Yield intro -->
-    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px;">
+    <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">
       This capital efficiency is also reflected in the interest rate mechanics. Borrowing stays cheap while Creditors earn multiplied yield.
     </p>
 
     <!-- Cost / Yield table -->
-    <div class="mob-table-wrap" style="border: 1px solid var(--border); border-radius: 8px; overflow: hidden; margin-bottom: 24px;">
+    <div class="mob-table-wrap" style="border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); overflow: hidden; margin-bottom: 24px;">
       <!-- Header -->
       <div style="display: grid; grid-template-columns: 1.2fr 0.6fr 1fr 1fr 0.8fr; gap: 0; padding: 10px 20px; border-bottom: 1px solid var(--border);">
-        <div style="font-size: 10px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;"></div>
-        <div style="font-size: 10px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">Multiplier</div>
-        <div style="font-size: 10px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">Creditor Yield</div>
-        <div style="font-size: 10px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">Borrower Cost</div>
-        <div style="font-size: 10px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">LiqLTV Boost</div>
+        <div style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;"></div>
+        <div style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">Multiplier</div>
+        <div style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">Creditor Yield</div>
+        <div style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">Borrower Cost</div>
+        <div style="font-size: 11px; font-weight: 600; color: var(--text); text-transform: uppercase; letter-spacing: 0.5px;">LiqLTV Boost</div>
       </div>
       <!-- LRT row -->
       <div style="display: grid; grid-template-columns: 1.2fr 0.6fr 1fr 1fr 0.8fr; gap: 0; padding: 14px 20px; align-items: center; border-bottom: 1px solid var(--border);">
         <div>
-          <div style="font-size: 12px; font-weight: 600; color: var(--text);">LRT Carry Trades</div>
-          <div style="font-size: 10px; color: var(--text-muted);">eETH/WETH &middot; e-mode</div>
+          <div style="font-size: 15px; font-weight: 600; color: var(--text);">LRT Carry Trades</div>
+          <div style="font-size: 11px; color: var(--text-muted);">eETH/WETH &middot; e-mode</div>
         </div>
         <div style="font-size: 18px; font-weight: 700; color: var(--text);">25x</div>
-        <div style="font-size: 18px; font-weight: 700; color: var(--teal);">~1.2%<span style="font-size: 10px; font-weight: 500; color: var(--text-muted);"> /yr</span></div>
-        <div style="font-size: 18px; font-weight: 700; color: var(--purple);">~0.05%<span style="font-size: 10px; font-weight: 500; color: var(--text-muted);"> /yr</span></div>
+        <div style="font-size: 18px; font-weight: 700; color: var(--teal);">~1.2%<span style="font-size: 11px; font-weight: 500; color: var(--text-muted);"> /yr</span></div>
+        <div style="font-size: 18px; font-weight: 700; color: var(--purple);">~0.05%<span style="font-size: 11px; font-weight: 500; color: var(--text-muted);"> /yr</span></div>
         <div style="font-size: 14px; font-weight: 600; color: var(--text);">95% &rarr; 99%</div>
       </div>
       <!-- Volatile row -->
       <div style="display: grid; grid-template-columns: 1.2fr 0.6fr 1fr 1fr 0.8fr; gap: 0; padding: 14px 20px; align-items: center;">
         <div>
-          <div style="font-size: 12px; font-weight: 600; color: var(--text);">Volatile Pairs</div>
-          <div style="font-size: 10px; color: var(--text-muted);">ETH/USDC, WBTC/USDC</div>
+          <div style="font-size: 15px; font-weight: 600; color: var(--text);">Volatile Pairs</div>
+          <div style="font-size: 11px; color: var(--text-muted);">ETH/USDC, WBTC/USDC</div>
         </div>
         <div style="font-size: 18px; font-weight: 700; color: var(--text);">8.5&times;</div>
-        <div style="font-size: 18px; font-weight: 700; color: var(--teal);">~7.7%<span style="font-size: 10px; font-weight: 500; color: var(--text-muted);"> /yr</span></div>
-        <div style="font-size: 18px; font-weight: 700; color: var(--purple);">~1%<span style="font-size: 10px; font-weight: 500; color: var(--text-muted);"> /yr</span></div>
+        <div style="font-size: 18px; font-weight: 700; color: var(--teal);">~7.7%<span style="font-size: 11px; font-weight: 500; color: var(--text-muted);"> /yr</span></div>
+        <div style="font-size: 18px; font-weight: 700; color: var(--purple);">~1%<span style="font-size: 11px; font-weight: 500; color: var(--text-muted);"> /yr</span></div>
         <div style="font-size: 14px; font-weight: 600; color: var(--text);">85% &rarr; 95%</div>
       </div>
     </div>
-    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 0 0 24px;">
+    <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin: 0 0 24px;">
       For context, external liquidation penalties run 5&ndash;10%. At the ~1% annual siphoning rate, one day of Twyne costs ~0.003% &mdash; roughly 1,800x cheaper than a 5% liquidation penalty. Unlike a penalty, it's paid gradually with no forced selling.
     </p>
 
@@ -2086,21 +2344,21 @@
 
   <!-- Risk & Security -->
   <section class="section">
-    <h2 class="section-title">Risk &amp; Security</h2>
+    <div class="section-head"><span class="section-index">04</span><h2 class="section-title">Risk &amp; Security</h2></div>
 
-    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
+    <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">
       Two layers of liquidation: an internal mechanism that causes zero creditor losses, and an external fallback that is safe in most cases but carries tail risk.
     </p>
-    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 12px;">
+    <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px;">
       We stress-tested the worst case &mdash; assuming no internal liquidations fire and every position falls back to external liquidation. Annualized creditor loss: ~0.16% at 94% max LT. Creditors are compensated for this risk through the delegation fee. Importantly, this was volatile pairs only &mdash; correlated pairs with hardcoded oracles carry a fundamentally different risk profile.
     </p>
-    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 16px;">
+    <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">
       Built on top of battle-tested Euler's EVC/EVK infrastructure ($10M+ security spend).
-      Audited by <a href="https://yaudit.dev" target="_blank" style="color: var(--text-muted); text-decoration: underline;">yAudit</a> &amp; <a href="https://seceureka.com" target="_blank" style="color: var(--text-muted); text-decoration: underline;">SecEureka</a>.
-      Fuzzed by <a href="https://enigmadark.com" target="_blank" style="color: var(--text-muted); text-decoration: underline;">Enigma Dark</a>.
-      $50k bug bounty via <a href="https://immunefi.com/bug-bounty/twyne/information/" target="_blank" style="color: var(--text-muted); text-decoration: underline;">Immunefi</a>.
+      Audited by <a href="https://yaudit.dev" target="_blank" style="">yAudit</a> &amp; <a href="https://seceureka.com" target="_blank" style="">SecEureka</a>.
+      Fuzzed by <a href="https://enigmadark.com" target="_blank" style="">Enigma Dark</a>.
+      $50k bug bounty via <a href="https://immunefi.com/bug-bounty/twyne/information/" target="_blank" style="">Immunefi</a>.
     </p>
-    <div class="mob-links-row" style="display: flex; gap: 24px; font-size: 11px;">
+    <div class="mob-links-row" style="display: flex; gap: 24px; font-size: 12px;">
       <a href="https://twyne.gitbook.io/twyne/" target="_blank" style="color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">Documentation</a>
       <a href="https://twyne.gitbook.io/twyne/resources/security" target="_blank" style="color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">Audit Reports</a>
       <a href="https://github.com/0xTwyne/papers/blob/main/Twyne_V1_Whitepaper.pdf" target="_blank" style="color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">Whitepaper</a>
@@ -2110,55 +2368,66 @@
 
   <!-- What's Next -->
   <section class="section">
-    <h2 class="section-title">What's Next</h2>
-    <p style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 10px;">
+    <div class="section-head"><span class="section-index">05</span><h2 class="section-title">What's Next</h2></div>
+    <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 10px;">
       In TradFi, clearinghouses like DTCC function as netting layers for money and credit. DeFi followed the same arc: AMM aggregators evolved from simple pool routing into layers like CoWSwap, where orderflow is matched before touching liquidity.
     </p>
-    <p style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-bottom: 20px;">
+    <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px;">
       Twyne becomes the single entry point for lending &mdash; user flows are netted, risks are segmented and turned into opportunities. In the short term, we're working on:
     </p>
     <div style="padding-left: 16px; border-left: 2px solid var(--border-strong);">
       <div style="margin-bottom: 14px;">
-        <span style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 600; color: var(--text);">Extend Credit Lines</span>
-        <p style="font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--text-muted); line-height: 1.6; margin: 4px 0 0;">Credit delegation routes borrowing power on Aave to any asset. Yield-bearing stablecoins can permissionlessly onboard to Aave. On top of that, and more uniquely, it unlocks time-delayed operations: Redemption Markets, RWA settlement, cross-lending market netting.</p>
+        <span style="font-size: 15px; font-weight: 600; color: var(--text);">Extend Credit Lines</span>
+        <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin: 4px 0 0;">Credit delegation routes borrowing power on Aave to any asset. Yield-bearing stablecoins can permissionlessly onboard to Aave. On top of that, and more uniquely, it unlocks time-delayed operations: Redemption Markets, RWA settlement, cross-lending market netting.</p>
       </div>
     </div>
   </section>
 
   <!-- Team -->
   <section class="section">
-    <h2 class="section-title">The Team</h2>
+    <div class="section-head"><span class="section-index">06</span><h2 class="section-title">The Team</h2></div>
 
     <!-- Background & research -->
-    <p style="font-size: 12px; color: var(--text-muted); line-height: 1.6; margin-top: 20px;">
+    <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.6; margin-top: 20px;">
       The team is well-positioned to build a risk layer on top of existing lending markets. Before Twyne, they ran 0xsidequest — a white-glove risk advisory (think Chaos Labs / Gauntlet) — modeling risks in DeFi lending, CDP stablecoins, and DEX liquidity. Published research includes
-      <a href="https://arxiv.org/abs/2212.07306" target="_blank" style="color: var(--text-muted); text-decoration: underline;">Toxic Liquidation Spirals</a>,
-      <a href="https://arxiv.org/abs/2211.08870" target="_blank" style="color: var(--text-muted); text-decoration: underline;">Multi-asset DeFi Lending Models</a>, and
-      <a href="https://mirror.xyz/0x69063cA6E3530a255317e0Bd7aeDb4BF35fb74B1/VQ6bMTeSbbFb9eXMqFzCkN5WW_Ed7h-qUce74TGbwCo" target="_blank" style="color: var(--text-muted); text-decoration: underline;">RAI Fork Parameters</a>.
+      <a href="https://arxiv.org/abs/2212.07306" target="_blank" style="">Toxic Liquidation Spirals</a>,
+      <a href="https://arxiv.org/abs/2211.08870" target="_blank" style="">Multi-asset DeFi Lending Models</a>, and
+      <a href="https://mirror.xyz/0x69063cA6E3530a255317e0Bd7aeDb4BF35fb74B1/VQ6bMTeSbbFb9eXMqFzCkN5WW_Ed7h-qUce74TGbwCo" target="_blank" style="">RAI Fork Parameters</a>.
     </p>
 
     <div style="margin-top: 28px;">
-      <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Previously At</div>
+      <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Previously At</div>
       <div class="backers">
-        Spearbit<span class="sep">&middot;</span>Ethereum Foundation<span class="sep">&middot;</span>Gnosis<span class="sep">&middot;</span>Polygon<span class="sep">&middot;</span>Giza<span class="sep">&middot;</span>Liquity<span class="sep">&middot;</span>New York University<span class="sep">&middot;</span>University of Oxford
+        <span>Spearbit</span><span>Ethereum Foundation</span><span>Gnosis</span><span>Polygon</span><span>Giza</span><span>Liquity</span><span>New York University</span><span>University of Oxford</span>
       </div>
     </div>
   </section>
 
   <!-- Backed By -->
   <section class="section">
-    <h2 class="section-title">Backed By</h2>
+    <div class="section-head"><span class="section-index">07</span><h2 class="section-title">Backed By</h2></div>
     <div class="backers">
-      Cyber Fund<span class="sep">&middot;</span>Ethereal Ventures<span class="sep">&middot;</span>Euler Finance<span class="sep">&middot;</span>Daedalus<span class="sep">&middot;</span><a href="https://x.com/twynexyz/status/1937912570557366614/photo/1" target="_blank" style="color: inherit; text-decoration: underline;">Angel Investors</a>
+      <span>Cyber Fund</span><span>Ethereal Ventures</span><span>Euler Finance</span><span>Daedalus</span><a href="https://x.com/twynexyz/status/1937912570557366614/photo/1" target="_blank">Angel Investors</a>
     </div>
   </section>
 
   <!-- Footer -->
   <footer class="footer">
-    <span class="footer-left"><a href="https://twyne.xyz" target="_blank" style="color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">twyne.xyz</a></span>
-    <span class="footer-right"><a href="https://x.com/twynexyz" target="_blank" style="color: var(--text-muted); text-decoration: none; border-bottom: 1px solid var(--border);">@twynexyz</a></span>
+    <span class="footer-left"><img src="icons/twyne_symbol.png" alt="" class="footer-mark"> Twyne</span>
+    <span class="footer-right">
+      <a href="https://twyne.xyz" target="_blank" rel="noopener" style="color: var(--text-muted); text-decoration: none;">twyne.xyz</a>
+      <a href="https://twyne.gitbook.io/twyne/" target="_blank" rel="noopener" style="color: var(--text-muted); text-decoration: none;">Docs</a>
+      <a href="https://x.com/twynexyz" target="_blank" rel="noopener" style="color: var(--text-muted); text-decoration: none;">@twynexyz</a>
+    </span>
   </footer>
 
+<script>
+  Chart.defaults.font.family = "'Geist Mono', ui-monospace, monospace";
+  Chart.defaults.color = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#6b6a68';
+  if (document.fonts && document.fonts.ready) {
+    document.fonts.ready.then(() => Object.values(Chart.instances).forEach(ch => ch.update('none')));
+  }
+</script>
 <script>
 (function() {
   // Constants
@@ -2322,7 +2591,7 @@
       // Thead: label row + LTV values row
       html += '<thead>';
       html += '<tr class="proto-row">';
-      html += '<th style="border-bottom: none; border-right: 3px solid var(--border-strong);"></th>';
+      html += '<th style="border-bottom: none; border-right: 1px solid var(--border-strong);"></th>';
       html += '<th style="border-bottom: none; font-size: 9px; color: var(--text-muted); letter-spacing: 0.3px; padding-bottom: 0;"><span style="font-weight: 700; font-size: 10px; color: var(--text-primary); letter-spacing: 0;">Aave</span> Liq LTV</th>';
       html += '<th class="proto-twyne col-sep" colspan="' + (ltvValues.length - 1) + '" style="border-bottom: none; font-size: 9px; letter-spacing: 0.3px; padding-bottom: 0;"><span style="font-weight: 700; font-size: 10px; letter-spacing: 0;">Twyne</span> Liq LTV</th>';
       html += '</tr>';
@@ -2343,9 +2612,11 @@
           const leverage = (1 / (1 - (ltv / 100) / hf)).toFixed(1);
           const t = Math.max(0, Math.min(1, (yieldVal - minY) / (maxY - minY)));
           // Purple text: interpolate from muted to vivid
-          const r = Math.round(160 - t * 80);
-          const g = Math.round(140 - t * 100);
-          const b = Math.round(200 - t * 20);
+          const dk = document.documentElement.classList.contains('dark');
+          const lo = dk ? [130, 130, 138] : [140, 139, 150], hi = dk ? [176, 179, 255] : [74, 81, 224];
+          const r = Math.round(lo[0] + t * (hi[0] - lo[0]));
+          const g = Math.round(lo[1] + t * (hi[1] - lo[1]));
+          const b = Math.round(lo[2] + t * (hi[2] - lo[2]));
           const cls = i === 1 ? ' class="col-sep"' : '';
           html += '<td' + cls + ' style="color: rgb(' + r + ',' + g + ',' + b + ')"';
           html += ' title="HF ' + hf.toFixed(2) + ' | LLTV ' + ltv + '% | ' + leverage + 'x leverage\nYield: ' + yieldVal.toFixed(2) + '%">';
@@ -2365,6 +2636,7 @@
 
     function renderApySpreadChart(baseStake, clpYield) {
       const canvas = document.getElementById('apySpreadChart');
+      if (!canvas) return;
       if (apySpreadChartInstance) {
         apySpreadChartInstance.destroy();
         apySpreadChartInstance = null;
@@ -2377,8 +2649,8 @@
           datasets: [
             { label: 'Aave 14x', data: spreadSteps.map(s => calcAaveYield(14, baseStake, baseStake - s/100) * 100), borderColor: '#e07050', fill: false, borderWidth: 2.5, pointRadius: 0, tension: 0.3 },
             { label: 'Twyne 16.6x', data: spreadSteps.map(s => calcTwyneYield(16.6, baseStake, baseStake - s/100, clpYield, 0.9) * 100), borderColor: '#5c3d7a', fill: false, borderWidth: 2, pointRadius: 0, tension: 0.3 },
-            { label: 'Twyne 19.8x', data: spreadSteps.map(s => calcTwyneYield(19.8, baseStake, baseStake - s/100, clpYield, 0.9) * 100), borderColor: '#7B2CBF', fill: false, borderWidth: 2, pointRadius: 0, tension: 0.3 },
-            { label: 'Twyne 24.6x', data: spreadSteps.map(s => calcTwyneYield(24.6, baseStake, baseStake - s/100, clpYield, 0.9) * 100), borderColor: '#a970e0', fill: false, borderWidth: 2, pointRadius: 0, tension: 0.3 }
+            { label: 'Twyne 19.8x', data: spreadSteps.map(s => calcTwyneYield(19.8, baseStake, baseStake - s/100, clpYield, 0.9) * 100), borderColor: '#5b63ff', fill: false, borderWidth: 2, pointRadius: 0, tension: 0.3 },
+            { label: 'Twyne 24.6x', data: spreadSteps.map(s => calcTwyneYield(24.6, baseStake, baseStake - s/100, clpYield, 0.9) * 100), borderColor: '#9ca0ff', fill: false, borderWidth: 2, pointRadius: 0, tension: 0.3 }
           ]
         },
         options: {
@@ -2386,14 +2658,14 @@
           maintainAspectRatio: false,
           layout: { padding: { bottom: 0 } },
           plugins: {
-            legend: { display: true, position: 'top', align: 'end', labels: { usePointStyle: true, pointStyle: 'line', font: { family: 'IBM Plex Mono', size: 9 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim(), padding: 12, boxWidth: 18, boxHeight: 0 } },
+            legend: { display: true, position: 'top', align: 'end', labels: { usePointStyle: true, pointStyle: 'line', font: { family: 'Geist Mono', size: 9 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim(), padding: 12, boxWidth: 18, boxHeight: 0 } },
             tooltip: {
               enabled: true,
               mode: 'index',
               intersect: false,
-              backgroundColor: 'rgba(30, 30, 50, 0.95)',
-              titleFont: { family: 'IBM Plex Mono', size: 11 },
-              bodyFont: { family: 'IBM Plex Mono', size: 10 },
+              backgroundColor: 'rgba(17, 17, 17, 0.94)',
+              titleFont: { family: 'Geist Mono', size: 11 },
+              bodyFont: { family: 'Geist Mono', size: 10 },
               padding: 10,
               usePointStyle: true,
               callbacks: {
@@ -2403,8 +2675,8 @@
             }
           },
           scales: {
-            x: { title: { display: true, text: 'Rate Spread (%)', font: { family: 'IBM Plex Mono', size: 9 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() }, grid: { display: false }, ticks: { font: { family: 'IBM Plex Mono', size: 9 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim(), maxRotation: 0, autoSkip: false, callback: function(val, idx) { var s = spreadSteps[idx]; return s !== undefined && s % 1 === 0 ? s + '%' : ''; } }, border: { display: false } },
-            y: { title: { display: true, text: 'Net APY (%)', font: { family: 'IBM Plex Mono', size: 10 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() }, grid: { color: 'rgba(128,128,128,0.06)', drawBorder: false }, ticks: { font: { family: 'IBM Plex Mono', size: 9 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim(), maxTicksLimit: 5, stepSize: 50 }, border: { display: false }, afterFit: (axis) => { axis.width = 60; } }
+            x: { title: { display: true, text: 'Rate Spread (%)', font: { family: 'Geist Mono', size: 9 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() }, grid: { display: false }, ticks: { font: { family: 'Geist Mono', size: 9 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim(), maxRotation: 0, autoSkip: false, callback: function(val, idx) { var s = spreadSteps[idx]; return s !== undefined && s % 1 === 0 ? s + '%' : ''; } }, border: { display: false } },
+            y: { title: { display: true, text: 'Net APY (%)', font: { family: 'Geist Mono', size: 10 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() }, grid: { color: 'rgba(128,128,128,0.06)', drawBorder: false }, ticks: { font: { family: 'Geist Mono', size: 9 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim(), maxTicksLimit: 5, stepSize: 50 }, border: { display: false }, afterFit: (axis) => { axis.width = 60; } }
           },
           interaction: { mode: 'index', intersect: false }
         },
@@ -2433,7 +2705,7 @@
             const yAxis = chart.scales.y;
             const x = xAxis.getPixelForValue(currentChosenSpreadIdx);
             if (x < xAxis.left || x > xAxis.right) return;
-            const tealColor = getComputedStyle(document.documentElement).getPropertyValue('--teal').trim() || '#2a9d8f';
+            const tealColor = getComputedStyle(document.documentElement).getPropertyValue('--teal').trim() || '#2a7268';
             ctx.save();
             ctx.beginPath();
             ctx.setLineDash([6, 4]);
@@ -2446,7 +2718,7 @@
             const spreadVal = spreadSteps[Math.round(currentChosenSpreadIdx)];
             if (spreadVal !== undefined) {
               ctx.fillStyle = tealColor;
-              ctx.font = '500 11px "IBM Plex Mono"';
+              ctx.font = '500 11px "Geist Mono"';
               ctx.textAlign = 'center';
               ctx.fillText(spreadVal.toFixed(1) + '%', x, yAxis.top - 6);
             }
@@ -2479,6 +2751,7 @@
     // Spread histogram (static - doesn't depend on rate inputs)
     const EETH_SPREAD = [1,-0.42,0.5,-0.23,0.68,0.11,0.49,0.16,-0.01,0.47,-0.75,1.1,-0.13,0.42,0.53,-0.17,-0.32,0.16,0.61,0.03,0.59,-0.66,-0.51,-0.36,-0.23,-0.22,-0.02,0.02,0.96,-4.66,-1.92,-0.05,-0.37,0.05,0.39,0.09,0.15,1.37,-0.23,-0.1,0.77,-0.34,0.17,0.18,0.18,1.62,0.36,0.32,0,-1.36,2.61,1.24,-0.47,-0.17,-0.34,0.79,-0.62,1.07,-0.58,0.04,-0.09,0.5,0.65,0.82,1.53,2.22,0.36,2.22,1.66,0.85,1.09,0.23,0.37,0.41,0.36,0.05,0.17,0.18,-0.76,0.87,-2.43,0.41,0.34,0.1,0.25,-0.05,0.19,0.07,0.04,0.15,0.38,0.07,0.48,0.2,0.16,0.04,0.28,0.09,0.3,0.16,0.17,0.22,0.4,0.66,-0.25,-0.79,0.37,0.61,0.69,0.42,0.89,0.46,0.3,0.18,-0.34,0.74,-0.37,0.26,-2.44,0.09,0.33,0.15,-0.29,0.32,0.43,-1.07,-1.86,1.09,0.22,-1.88,2.07,-1.15,1.49,0.16,0.24,0.19,-0.17,0.26,-0.19,0,0.42,0.06,0.16,0.02,-0.13,-0.02,0,0.19,-1.93,2.23,0.33,-0.48,0.17,0.37,0.53,0.41,0.36,0.41,0.18,0.4,0.66,1.22,0.8,0.53,0.43,-1.78,2.17,1.04,0.55,0.62,0.88,1.43,0.83,1.11,0.78,0.94,0.75,0.41,0.48,0.07,0.82,1.12,1.53,1.17,2.16,1.59,1.84,2.14,1.73,1.46,0.36,1.39,0.22,1.6,1.51,1.64,1.47,0.41,1.75,0.09,-3.84,1.09,1.26,1.18,0.98,1.2,1.08,0.99,1.29,1.33,1.3,1.37,1.24,1.32,1.28,1.29,1.48,1.41,1.12,1.33,0.56,1.44,1.6,1.3,-1.43,4.19,-0.14,2.55,1.15,2,-1.74,-1.56,0.82,1.37,0.79,0.8,0.78,1.26,1.44,1.13,1.31,0.71,0.12,3.35,2.83,1.47,0.04,1.24,0.77,0.86,0.77,0.71,0.82,1.06,1.04,0.91,0.92,0.31,1.18,1.01,1.25,0.85,1.56,0.22,1.33,1.26,1.69,1.24,1.77,0.99,0.13,1.37,2.28,0.47,0.39,1.49,0.98,0.29,1.81,0.22,3.01,0.75,0.76,0.81,-2.79,0.67,0.87,0.24,1.27,0.57,0.04,0.79,0.52,0.5,-0.9,1.96,0.89,0.81,0.04,0.76,1.1,0.45,1.15,1.24,1,-0.18,3.73,0.66,1.95,1.84,1.15,0.84,1.15,0.08,1.04,0.68,1.51,-1.59,3.21,1.02,0.82,1.18,1.41,0.27,1.35,1.48,1.17,0.08,1.25,1.26,1.24,0.41,0.78,1.03,0.05,0.81,-0.54,1.2,1.3,0.29,0.59,0.92,0.57,1.12,0.87,0.92,0.66,0.2,0.5,0.84,1.39,1.13,0.57,1.37,0.64,0.16,1.07,1.31,0.63,1.09,0.68,0.04,0.89,0.83,0.88,-0.04,0.94,0.99,-2.05,3,0.83,1.02,0.22,1.45,0.36,0.07,0.76,1.16,0.06,0.83,0.69,0.82,0.14,1.29,0.92,0.91,0.47,0.61,-0.63,0.29,0.4,0.45,0.69,-1.44,1.38,0.09,0.31,-0.5,0.24,0.37,0.45,0.27,-0.29,-0.09,-2.26,-3.96,0.29,-3.38,-3.99,0.76,-3.18,-0.98,-1.5,0.46,-0.49,0.26,0.79,-0.71,0.72,0.32,-1.06,0.48,0.42,-1.12,0.34,-0.73,0.25,0.35,-0.66,1.15,0.34,0.45,0.63,0.74,0,0.68,0.89,0.48,0.47,-0.23,-1.86,0.59,0.58,0.71,1.08,-0.52,0.66,0.6,0.51,-0.42,0.99,0.49,0.76,-0.38,0.63,0.49,0.55,0.68,-0.16,0.52,0.49,0.65,0.65,1.06,-0.31,0.81,0.68,0.69,1.14,-0.09,1.04,1.11,0.99,0.95,0.21,0.96,0.98,0.98,1.06,1.16,0.26,1.49,0.19,0.97,0.93,1.01,1.03,1.2,-0.16,1.28,0.83,0.94,1.21,0.79,2.09,0.84,0.9,0.94,0.06,0.81,0.79,0.62,0.67,0.87,-0.15,0.59,0.62,0.62,0.86,-0.32,0.63,0.74,0.62,0.71,-0.19,0.54,0.73,0.78,1,0.87,-0.27,0.71,0.61,0.75,1.17,-0.09,1.05,1.31,1.4,1.25,0.27,1.32,1.01,1.36,-1.78,1.11,-0.41,0.73,0.3,1.39,1.4,1.42,1.42,0.4,1.37,1.29,1.32,0.99,1.4,0.31,1.15,1.19,1.59,0.06,0.82,0.97,0.92,0.93,0.24,1,0.88,-0.45,1.87,0.79,0.75,0.73,0.6,0.61,0.79,0.78,0.2,0.84,0.91,0.86,0.57,0.94,0.84,0.88,0.16,0.84,0.92,-0.73,2.29,1.05,-0.23,0.65,0.46,0.74,0.68,-0.32,1.49,0.99,0.45,1.37,1.13,0.02,1,0.9,0.81,0.65,0.93,0.93,-0.09,0.79,0.8,0.84,1.36,0.28,0.72,0.67];
 
+    if (!document.getElementById('spreadHistChart')) return;
     const histBins = {};
     spreadSteps.forEach(s => histBins[s.toFixed(1)] = 0);
     EETH_SPREAD.forEach(s => {
@@ -2493,7 +2766,7 @@
       histBins[closest.toFixed(1)]++;
     });
     const histValues = spreadSteps.map(s => histBins[s.toFixed(1)]);
-    const histColors = spreadSteps.map(s => s >= 0 ? 'rgba(123, 44, 191, 0.45)' : 'rgba(200, 100, 100, 0.4)');
+    const histColors = spreadSteps.map(s => s >= 0 ? 'rgba(91, 99, 255, 0.45)' : 'rgba(200, 100, 100, 0.4)');
 
     spreadHistChartInstance = new Chart(document.getElementById('spreadHistChart'), {
       type: 'bar',
@@ -2509,9 +2782,9 @@
           legend: { display: false },
           tooltip: {
             enabled: true,
-            backgroundColor: 'rgba(30, 30, 50, 0.95)',
-            titleFont: { family: 'IBM Plex Mono', size: 11 },
-            bodyFont: { family: 'IBM Plex Mono', size: 10 },
+            backgroundColor: 'rgba(17, 17, 17, 0.94)',
+            titleFont: { family: 'Geist Mono', size: 11 },
+            bodyFont: { family: 'Geist Mono', size: 10 },
             padding: 10,
             callbacks: {
               title: (items) => 'Spread: ' + spreadSteps[items[0].dataIndex].toFixed(1) + '%',
@@ -2520,8 +2793,8 @@
           }
         },
         scales: {
-          x: { title: { display: true, text: 'Rate Spread (%)', font: { family: 'IBM Plex Mono', size: 9 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() }, grid: { display: false }, ticks: { font: { family: 'IBM Plex Mono', size: 9 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim(), maxRotation: 0, autoSkip: false, callback: function(val, idx) { var s = spreadSteps[idx]; return s !== undefined && s % 1 === 0 ? s + '%' : ''; } }, border: { display: false } },
-          y: { title: { display: true, text: 'Days', font: { family: 'IBM Plex Mono', size: 9 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() }, grid: { color: 'rgba(128,128,128,0.06)', drawBorder: false }, ticks: { font: { family: 'IBM Plex Mono', size: 8 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim(), maxTicksLimit: 3 }, border: { display: false }, afterFit: (axis) => { axis.width = 60; } }
+          x: { title: { display: true, text: 'Rate Spread (%)', font: { family: 'Geist Mono', size: 9 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() }, grid: { display: false }, ticks: { font: { family: 'Geist Mono', size: 9 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim(), maxRotation: 0, autoSkip: false, callback: function(val, idx) { var s = spreadSteps[idx]; return s !== undefined && s % 1 === 0 ? s + '%' : ''; } }, border: { display: false } },
+          y: { title: { display: true, text: 'Days', font: { family: 'Geist Mono', size: 9 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() }, grid: { color: 'rgba(128,128,128,0.06)', drawBorder: false }, ticks: { font: { family: 'Geist Mono', size: 8 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim(), maxTicksLimit: 3 }, border: { display: false }, afterFit: (axis) => { axis.width = 60; } }
         }
       },
       plugins: [{
@@ -2549,7 +2822,7 @@
           const yAxis = chart.scales.y;
           const x = xAxis.getPixelForValue(currentChosenSpreadIdx);
           if (x < xAxis.left || x > xAxis.right) return;
-          const purpleColor = getComputedStyle(document.documentElement).getPropertyValue('--purple').trim() || '#7B2CBF';
+          const purpleColor = getComputedStyle(document.documentElement).getPropertyValue('--purple').trim() || '#5b63ff';
           ctx.save();
           ctx.beginPath();
           ctx.setLineDash([6, 4]);
@@ -2571,7 +2844,7 @@
     const ctx = document.getElementById('hfChart').getContext('2d');
 
     const datasets = HF_DATA.trajectories.map((traj) => {
-      const color = traj.liq ? 'rgba(199, 80, 80, 0.4)' : 'rgba(59, 130, 246, 0.25)';
+      const color = traj.liq ? 'rgba(205, 44, 77, 0.4)' : 'rgba(91, 99, 255, 0.22)';
       return {
         data: traj.steps.map((step, i) => ({ x: step, y: traj.hf[i] })),
         borderColor: color,
@@ -2594,7 +2867,7 @@
       datasets.push({
         data: liqPoints,
         type: 'scatter',
-        backgroundColor: 'rgba(199, 80, 80, 1)',
+        backgroundColor: 'rgba(205, 44, 77, 1)',
         pointRadius: 5,
       });
     }
@@ -2620,16 +2893,16 @@
             type: 'linear',
             min: 0,
             max: 720,
-            title: { display: true, text: 'Days post-liquidation', font: { family: 'IBM Plex Mono', size: 11 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() },
+            title: { display: true, text: 'Days post-liquidation', font: { family: 'Geist Mono', size: 11 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() },
             grid: { color: document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' },
-            ticks: { font: { family: 'IBM Plex Mono', size: 10 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim(), stepSize: 120, callback: (val) => Math.round(val / 24) + 'd' }
+            ticks: { font: { family: 'Geist Mono', size: 10 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim(), stepSize: 120, callback: (val) => Math.round(val / 24) + 'd' }
           },
           y: {
             min: 0.75,
             max: 1.5,
-            title: { display: true, text: 'Health Factor', font: { family: 'IBM Plex Mono', size: 11 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() },
+            title: { display: true, text: 'Health Factor', font: { family: 'Geist Mono', size: 11 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim() },
             grid: { color: document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)' },
-            ticks: { font: { family: 'IBM Plex Mono', size: 10 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim(), stepSize: 0.1 }
+            ticks: { font: { family: 'Geist Mono', size: 10 }, color: getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim(), stepSize: 0.1 }
           }
         }
       },
@@ -2644,7 +2917,7 @@
           ctx.beginPath();
           ctx.moveTo(xAxis.left, y);
           ctx.lineTo(xAxis.right, y);
-          ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#1a1a2e';
+          ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#111111';
           ctx.lineWidth = 1.5;
           ctx.setLineDash([6, 4]);
           ctx.stroke();
@@ -2685,8 +2958,8 @@
     }
 
     function updateToggleIcon(isDark) {
-      const icon = document.querySelector('.dark-toggle-icon');
-      if (icon) icon.textContent = isDark ? '◑' : '◐';
+      const btn = document.querySelector('.dark-toggle');
+      if (btn) btn.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
     }
 
     function updateDiagramTheme(isDark) {
@@ -2746,9 +3019,9 @@
       function getColors() {
         const style = getComputedStyle(document.documentElement);
         return {
-          teal: style.getPropertyValue('--teal').trim() || '#0fa67f',
-          coral: style.getPropertyValue('--coral').trim() || '#c75050',
-          purple: style.getPropertyValue('--purple').trim() || '#7B2CBF',
+          teal: style.getPropertyValue('--teal').trim() || '#2a7268',
+          coral: style.getPropertyValue('--coral').trim() || '#cd2c4d',
+          purple: style.getPropertyValue('--purple').trim() || '#5b63ff',
           textSecondary: style.getPropertyValue('--text-secondary').trim() || '#555566',
           textMuted: style.getPropertyValue('--text-muted').trim() || '#888899'
         };
@@ -2765,9 +3038,9 @@
 
       function getBarColors(centers) {
         const isDark = document.documentElement.classList.contains('dark');
-        const green = isDark ? '#4a7a54' : '#a3d9b1';
-        const orange = isDark ? '#7a6a3a' : '#e0c88a';
-        const red = isDark ? '#7a4a47' : '#d9a5a0';
+        const green = isDark ? '#4d7f78' : '#8fc3bb';
+        const orange = isDark ? '#3a3a3e' : '#d3d2cf';
+        const red = isDark ? '#6d70d9' : '#9ea2ff';
         return centers.map(ltv => {
           if (ltv <= 0.5) {
             return lerpColor(green, orange, ltv / 0.5);
@@ -2803,9 +3076,9 @@
                 title: (items) => 'LTV: ' + items[0].label,
                 label: (item) => '$' + item.raw.toFixed(2) + 'B supply'
               },
-              titleFont: { family: 'IBM Plex Mono', size: 11 },
-              bodyFont: { family: 'IBM Plex Mono', size: 11 },
-              backgroundColor: 'rgba(30, 30, 50, 0.95)',
+              titleFont: { family: 'Geist Mono', size: 11 },
+              bodyFont: { family: 'Geist Mono', size: 11 },
+              backgroundColor: 'rgba(17, 17, 17, 0.94)',
               borderColor: colors.purple,
               borderWidth: 1
             }
@@ -2815,13 +3088,13 @@
               title: {
                 display: true,
                 text: 'Loan-to-Value (LTV)',
-                font: { family: 'IBM Plex Mono', size: 11 },
+                font: { family: 'Geist Mono', size: 11 },
                 color: colors.textSecondary,
                 padding: { top: 12 }
               },
               grid: { display: false },
               ticks: {
-                font: { family: 'IBM Plex Mono', size: 9 },
+                font: { family: 'Geist Mono', size: 9 },
                 color: colors.textMuted,
                 maxRotation: 0,
                 padding: 6,
@@ -2837,14 +3110,14 @@
               title: {
                 display: true,
                 text: 'Total Supply ($B)',
-                font: { family: 'IBM Plex Mono', size: 11 },
+                font: { family: 'Geist Mono', size: 11 },
                 color: colors.textSecondary
               },
               grid: {
                 color: document.documentElement.classList.contains('dark') ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)'
               },
               ticks: {
-                font: { family: 'IBM Plex Mono', size: 10 },
+                font: { family: 'Geist Mono', size: 10 },
                 color: colors.textMuted,
                 callback: (val) => '$' + val + 'B'
               },
@@ -2868,20 +3141,20 @@
             var gap = 6;
 
             // --- Left pill: "← Creditor" ---
-            ctx.font = '600 9px IBM Plex Mono';
+            ctx.font = '600 9px Geist Mono';
             var labelL = '\u2190  Creditor';
             var twL = ctx.measureText(labelL).width;
             var pxL = twL + 18;
             var pillXL = xMid - gap - pxL;
 
-            ctx.fillStyle = isDark ? 'rgba(138, 173, 114, 0.06)' : 'rgba(138, 173, 114, 0.12)';
-            ctx.strokeStyle = isDark ? 'rgba(138, 173, 114, 0.18)' : 'rgba(138, 173, 114, 0.35)';
+            ctx.fillStyle = isDark ? 'rgba(127, 179, 172, 0.08)' : 'rgba(42, 114, 104, 0.10)';
+            ctx.strokeStyle = isDark ? 'rgba(127, 179, 172, 0.25)' : 'rgba(42, 114, 104, 0.35)';
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.roundRect(pillXL, pillY, pxL, pillH, 10);
             ctx.fill();
             ctx.stroke();
-            ctx.fillStyle = isDark ? 'rgba(138, 173, 114, 0.5)' : 'rgba(90, 130, 65, 0.9)';
+            ctx.fillStyle = isDark ? 'rgba(127, 179, 172, 0.85)' : 'rgba(42, 114, 104, 0.95)';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(labelL, pillXL + pxL / 2, pillY + pillH / 2);
@@ -2892,14 +3165,14 @@
             var pxR = twR + 18;
             var pillXR = xMid + gap;
 
-            ctx.fillStyle = isDark ? 'rgba(199, 80, 80, 0.06)' : 'rgba(199, 80, 80, 0.1)';
-            ctx.strokeStyle = isDark ? 'rgba(199, 80, 80, 0.18)' : 'rgba(199, 80, 80, 0.35)';
+            ctx.fillStyle = isDark ? 'rgba(156, 160, 255, 0.10)' : 'rgba(91, 99, 255, 0.10)';
+            ctx.strokeStyle = isDark ? 'rgba(156, 160, 255, 0.30)' : 'rgba(91, 99, 255, 0.35)';
             ctx.lineWidth = 1;
             ctx.beginPath();
             ctx.roundRect(pillXR, pillY, pxR, pillH, 10);
             ctx.fill();
             ctx.stroke();
-            ctx.fillStyle = isDark ? 'rgba(199, 80, 80, 0.5)' : 'rgba(170, 55, 55, 0.9)';
+            ctx.fillStyle = isDark ? 'rgba(156, 160, 255, 0.95)' : 'rgba(74, 81, 224, 0.95)';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(labelR, pillXR + pxR / 2, pillY + pillH / 2);
@@ -2947,22 +3220,22 @@
     function getColors() {
       const isDark = document.documentElement.classList.contains('dark');
       return {
-        purple: isDark ? '#a970e0' : '#7B2CBF',
-        purpleBg: isDark ? 'rgba(169, 112, 224, 0.12)' : 'rgba(123, 44, 191, 0.10)',
-        purpleBgFaint: isDark ? 'rgba(169, 112, 224, 0.04)' : 'rgba(123, 44, 191, 0.03)',
-        blue: isDark ? '#60a5fa' : '#3b82f6',
-        coral: isDark ? '#e07070' : '#c75050',
-        coralBg: isDark ? 'rgba(224, 112, 112, 0.08)' : 'rgba(199, 80, 80, 0.06)',
+        purple: isDark ? '#9ca0ff' : '#5b63ff',
+        purpleBg: isDark ? 'rgba(156, 160, 255, 0.12)' : 'rgba(91, 99, 255, 0.10)',
+        purpleBgFaint: isDark ? 'rgba(156, 160, 255, 0.04)' : 'rgba(91, 99, 255, 0.03)',
+        blue: isDark ? '#9ca0ff' : '#5b63ff',
+        coral: isDark ? '#e5677f' : '#cd2c4d',
+        coralBg: isDark ? 'rgba(229, 103, 127, 0.08)' : 'rgba(205, 44, 77, 0.06)',
         muted: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)',
         mutedBg: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)',
         grid: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
-        text: isDark ? '#e0dfe6' : '#1a1a2e',
+        text: isDark ? '#f5f5f3' : '#111111',
         textMuted: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)',
       };
     }
 
     const chartDefaults = {
-      font: { family: "'IBM Plex Mono', monospace", size: 10 },
+      font: { family: "'Geist Mono', monospace", size: 10 },
     };
 
     // ---- Chart 1: Stack Yield (stacked area) ----
@@ -3054,7 +3327,7 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: 'rgba(30,30,50,0.92)',
+              backgroundColor: 'rgba(17, 17, 17, 0.94)',
               titleFont: { family: chartDefaults.font.family, size: 11 },
               bodyFont: { family: chartDefaults.font.family, size: 11 },
               padding: 10,
@@ -3109,7 +3382,7 @@
             ctx2.stroke();
             ctx2.setLineDash([]);
             ctx2.fillStyle = c.textMuted;
-            ctx2.font = "9px 'IBM Plex Mono', monospace";
+            ctx2.font = "9px 'Geist Mono', monospace";
             ctx2.textAlign = 'center';
             ctx2.fillText('Aave max', x, yScale.top - 4);
             ctx2.restore();
@@ -3171,9 +3444,9 @@
                 const {ctx: gc, chartArea} = chart;
                 if (!chartArea) return 'transparent';
                 const grad = gc.createLinearGradient(0, chartArea.bottom, 0, chartArea.top);
-                grad.addColorStop(0, isDark ? 'rgba(169, 112, 224, 0.02)' : 'rgba(123, 44, 191, 0.01)');
-                grad.addColorStop(0.5, isDark ? 'rgba(169, 112, 224, 0.08)' : 'rgba(123, 44, 191, 0.06)');
-                grad.addColorStop(1, isDark ? 'rgba(169, 112, 224, 0.20)' : 'rgba(123, 44, 191, 0.15)');
+                grad.addColorStop(0, isDark ? 'rgba(156, 160, 255, 0.02)' : 'rgba(91, 99, 255, 0.01)');
+                grad.addColorStop(0.5, isDark ? 'rgba(156, 160, 255, 0.08)' : 'rgba(91, 99, 255, 0.06)');
+                grad.addColorStop(1, isDark ? 'rgba(156, 160, 255, 0.20)' : 'rgba(91, 99, 255, 0.15)');
                 return grad;
               },
               borderWidth: 2.5,
@@ -3203,7 +3476,7 @@
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: 'rgba(30,30,50,0.92)',
+              backgroundColor: 'rgba(17, 17, 17, 0.94)',
               titleFont: { family: chartDefaults.font.family, size: 11 },
               bodyFont: { family: chartDefaults.font.family, size: 11 },
               padding: 10,
@@ -3253,11 +3526,11 @@
             // Label badge
             const aLabel = '14x';
             const aSub = 'Aave';
-            g.font = isMobileChart ? "700 11px 'IBM Plex Mono', monospace" : "700 13px 'IBM Plex Mono', monospace";
+            g.font = isMobileChart ? "700 11px 'Geist Mono', monospace" : "700 13px 'Geist Mono', monospace";
             g.fillStyle = isDark ? 'rgba(160, 160, 184, 0.7)' : 'rgba(90, 90, 110, 0.7)';
             g.textAlign = 'center';
             g.fillText(aLabel, ax, ay - 20);
-            g.font = "500 8px 'IBM Plex Mono', monospace";
+            g.font = "500 8px 'Geist Mono', monospace";
             g.fillStyle = isDark ? 'rgba(160, 160, 184, 0.45)' : 'rgba(90, 90, 110, 0.45)';
             g.fillText(aSub, ax, ay - 9);
             g.restore();
@@ -3271,7 +3544,7 @@
             // Subtle dashed vertical guide
             g.beginPath();
             g.setLineDash([3, 4]);
-            g.strokeStyle = isDark ? 'rgba(169, 112, 224, 0.18)' : 'rgba(123, 44, 191, 0.12)';
+            g.strokeStyle = isDark ? 'rgba(156, 160, 255, 0.18)' : 'rgba(91, 99, 255, 0.12)';
             g.lineWidth = 1;
             g.moveTo(tx, ty + 8);
             g.lineTo(tx, yScale.bottom);
@@ -3281,8 +3554,8 @@
             g.beginPath();
             g.arc(tx, ty, 12, 0, Math.PI * 2);
             const glowGrad = g.createRadialGradient(tx, ty, 3, tx, ty, 12);
-            glowGrad.addColorStop(0, isDark ? 'rgba(169, 112, 224, 0.25)' : 'rgba(123, 44, 191, 0.18)');
-            glowGrad.addColorStop(1, 'rgba(169, 112, 224, 0)');
+            glowGrad.addColorStop(0, isDark ? 'rgba(156, 160, 255, 0.25)' : 'rgba(91, 99, 255, 0.18)');
+            glowGrad.addColorStop(1, 'rgba(156, 160, 255, 0)');
             g.fillStyle = glowGrad;
             g.fill();
             // Dot with subtle ring
@@ -3292,16 +3565,16 @@
             g.fill();
             g.beginPath();
             g.arc(tx, ty, 7, 0, Math.PI * 2);
-            g.strokeStyle = isDark ? 'rgba(169, 112, 224, 0.3)' : 'rgba(123, 44, 191, 0.2)';
+            g.strokeStyle = isDark ? 'rgba(156, 160, 255, 0.3)' : 'rgba(91, 99, 255, 0.2)';
             g.lineWidth = 1;
             g.stroke();
             // Label
-            g.font = isMobileChart ? "700 12px 'IBM Plex Mono', monospace" : "700 15px 'IBM Plex Mono', monospace";
+            g.font = isMobileChart ? "700 12px 'Geist Mono', monospace" : "700 15px 'Geist Mono', monospace";
             g.fillStyle = c.purple;
             g.textAlign = 'right';
             g.fillText('50x', tx - 14, ty - 4);
-            g.font = "500 8px 'IBM Plex Mono', monospace";
-            g.fillStyle = isDark ? 'rgba(169, 112, 224, 0.6)' : 'rgba(123, 44, 191, 0.5)';
+            g.font = "500 8px 'Geist Mono', monospace";
+            g.fillStyle = isDark ? 'rgba(156, 160, 255, 0.6)' : 'rgba(91, 99, 255, 0.5)';
             g.fillText('Twyne', tx - 14, ty + 7);
             g.restore();
 
@@ -3309,7 +3582,7 @@
             g.save();
             g.beginPath();
             g.setLineDash([2, 4]);
-            g.strokeStyle = isDark ? 'rgba(169, 112, 224, 0.12)' : 'rgba(123, 44, 191, 0.08)';
+            g.strokeStyle = isDark ? 'rgba(156, 160, 255, 0.12)' : 'rgba(91, 99, 255, 0.08)';
             g.lineWidth = 1;
             g.moveTo(ax + 6, ay);
             g.lineTo(tx - 10, ty);
@@ -3320,7 +3593,7 @@
             // Axis labels
             const labelColor = isDark ? 'rgba(160, 160, 184, 0.55)' : 'rgba(90, 90, 110, 0.55)';
             g.save();
-            g.font = "600 8px 'IBM Plex Mono', monospace";
+            g.font = "600 8px 'Geist Mono', monospace";
             g.letterSpacing = '0.5px';
             g.fillStyle = labelColor;
             g.textAlign = 'center';
@@ -3393,7 +3666,7 @@
             {
               label: 'Aave Threshold',
               data: aaveData,
-              borderColor: isDark ? 'rgba(224, 112, 112, 0.45)' : 'rgba(199, 80, 80, 0.35)',
+              borderColor: isDark ? 'rgba(229, 103, 127, 0.45)' : 'rgba(205, 44, 77, 0.35)',
               borderWidth: 1.5,
               borderDash: [6, 4],
               pointRadius: 0,
@@ -3402,7 +3675,7 @@
               segment: {
                 borderColor: function(ctx) {
                   const v = ctx.p0.parsed.y;
-                  if (v < 0.99) return isDark ? 'rgba(169, 112, 224, 0.55)' : 'rgba(123, 44, 191, 0.45)';
+                  if (v < 0.99) return isDark ? 'rgba(156, 160, 255, 0.55)' : 'rgba(91, 99, 255, 0.45)';
                 }
               },
             },
@@ -3444,7 +3717,7 @@
             const right = xScale.right;
 
             // Threshold labels
-            g.font = isMobileChart ? "600 8px 'IBM Plex Mono', monospace" : "600 9px 'IBM Plex Mono', monospace";
+            g.font = isMobileChart ? "600 8px 'Geist Mono', monospace" : "600 9px 'Geist Mono', monospace";
             g.textAlign = 'left';
 
             g.fillStyle = c.coral;
@@ -3454,7 +3727,7 @@
             // "Loan Health" label on the left, aligned with the blue line start
             g.globalAlpha = 0.7;
             g.fillStyle = isDark ? 'rgba(255,255,255,0.8)' : 'rgba(20,20,30,0.7)';
-            g.font = isMobileChart ? "600 8px 'IBM Plex Mono', monospace" : "600 9px 'IBM Plex Mono', monospace";
+            g.font = isMobileChart ? "600 8px 'Geist Mono', monospace" : "600 9px 'Geist Mono', monospace";
             g.textAlign = 'left';
             const hfStartY = yScale.getPixelForValue(chart.data.datasets[0].data[0]);
             g.fillText('Loan Health', left + 4, hfStartY - 8);
@@ -3464,7 +3737,7 @@
             const aaveMidX = xScale.getPixelForValue(aaveMidIdx);
             const aaveMidVal = chart.data.datasets[1].data[aaveMidIdx];
             const aaveMidY = yScale.getPixelForValue(aaveMidVal);
-            g.font = isMobileChart ? "600 8px 'IBM Plex Mono', monospace" : "600 9px 'IBM Plex Mono', monospace";
+            g.font = isMobileChart ? "600 8px 'Geist Mono', monospace" : "600 9px 'Geist Mono', monospace";
             g.fillStyle = c.purple;
             g.globalAlpha = 0.6;
             g.textAlign = 'center';
@@ -3482,13 +3755,13 @@
             const midHF = chart.data.datasets[0].data[midIdx];
             const midY = yScale.getPixelForValue(midHF);
             const pillText = 'SAVED';
-            g.font = "700 8px 'IBM Plex Mono', monospace";
+            g.font = "700 8px 'Geist Mono', monospace";
             const pillW = g.measureText(pillText).width + 12;
             const pillH = 16;
             const pillX = midX - pillW / 2;
             const pillY = midY - pillH - 8;
             g.globalAlpha = 1;
-            g.fillStyle = isDark ? 'rgba(123, 44, 191, 0.2)' : 'rgba(123, 44, 191, 0.10)';
+            g.fillStyle = isDark ? 'rgba(91, 99, 255, 0.2)' : 'rgba(91, 99, 255, 0.10)';
             g.beginPath();
             g.roundRect(pillX, pillY, pillW, pillH, 3);
             g.fill();
